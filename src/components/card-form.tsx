@@ -67,18 +67,21 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   
   useEffect(() => {
     if (cardToEdit) {
+      // MODO EDIÇÃO: Converte Number -> String para o UI funcionar
       form.reset({
         name: cardToEdit.name,
-        totalLimit: cardToEdit.totalLimit,
-        closingDay: cardToEdit.closingDay,
+        totalLimit: Number(cardToEdit.totalLimit), // Garante number
         color: cardToEdit.color,
+        // AQUI ESTÁ A CURA: Converte para String para o Select reconhecer o valor
+        closingDay: cardToEdit.closingDay ? Number(cardToEdit.closingDay) : undefined,
       });
     } else {
+      // MODO CRIAÇÃO: Limpa tudo
       form.reset({
         name: '',
         totalLimit: 1000,
-        closingDay: 1,
         color: PREDEFINED_COLORS[0].value,
+        closingDay: 1,
       });
     }
   }, [cardToEdit, form]);
@@ -142,7 +145,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(value)}
+                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
                   value={String(field.value)}
                 >
                   <FormControl>
@@ -196,6 +199,12 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           type="submit"
           className="w-full"
           disabled={form.formState.isSubmitting}
+           onClick={() => {
+            const errors = form.formState.errors;
+            if (Object.keys(errors).length > 0) {
+              console.error("⛔ BLOQUEIO DE VALIDAÇÃO:", errors);
+            }
+          }}
         >
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
