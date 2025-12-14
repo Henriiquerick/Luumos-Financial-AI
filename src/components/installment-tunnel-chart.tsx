@@ -15,12 +15,12 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
   const chartData = useMemo(() => {
     return calculateCardBillProjection(transactions, cards);
   }, [transactions, cards]);
-  
-  const cardNameIdMap = useMemo(() => 
-    cards.reduce((acc, card) => {
-        acc[card.name] = card;
-        return acc;
-    }, {} as {[key: string]: CreditCard}), [cards]);
+
+  const cardColors: { [key: string]: string } = {
+    'Nubank': '#820AD1',
+    'Mercado Pago': '#009EE3',
+  };
+  const defaultColor = '#22c55e';
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -75,7 +75,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
                 key={card.id} 
                 dataKey={card.name} 
                 stackId="a" 
-                fill={card.color} 
+                fill={cardColors[card.name] || card.color || defaultColor} 
                 radius={[4, 4, 0, 0]}
               />
             ))}
