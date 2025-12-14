@@ -21,11 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CreditCard } from '@/lib/types';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -40,6 +41,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface CardFormProps {
   onSave: () => void;
+  cardToEdit?: CreditCard | null;
 }
 
 const PREDEFINED_COLORS = [
@@ -50,7 +52,7 @@ const PREDEFINED_COLORS = [
   { name: 'Neon Green', value: '#00FF88' },
 ];
 
-export function CardForm({ onSave }: CardFormProps) {
+export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -63,21 +65,40 @@ export function CardForm({ onSave }: CardFormProps) {
       color: PREDEFINED_COLORS[0].value,
     },
   });
+  
+  useEffect(() => {
+    if (cardToEdit) {
+      form.reset(cardToEdit);
+    } else {
+      form.reset({
+        name: '',
+        totalLimit: 1000,
+        closingDay: 1,
+        color: PREDEFINED_COLORS[0].value,
+      });
+    }
+  }, [cardToEdit, form]);
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-
-    const cardData: Omit<CreditCard, 'id'> = {
-      name: values.name,
-      totalLimit: values.totalLimit,
-      closingDay: values.closingDay,
-      color: values.color,
-    };
-
-    const cardsRef = collection(firestore, 'users', user.uid, 'cards');
-    addDocumentNonBlocking(cardsRef, cardData);
+    
+    if (cardToEdit) {
+      // Update existing card
+      const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
+      updateDocumentNonBlocking(cardRef, values);
+    } else {
+      // Create new card
+      const cardData: Omit<CreditCard, 'id'> = {
+        name: values.name,
+        totalLimit: values.totalLimit,
+        closingDay: values.closingDay,
+        color: values.color,
+      };
+      const cardsRef = collection(firestore, 'users', user.uid, 'cards');
+      addDocumentNonBlocking(cardsRef, cardData);
+    }
+    
     onSave();
-    form.reset();
   };
 
   return (
@@ -119,6 +140,7 @@ export function CardForm({ onSave }: CardFormProps) {
                 <Select
                   onValueChange={(val) => field.onChange(Number(val))}
                   defaultValue={String(field.value)}
+                  value={String(field.value)}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -174,7 +196,7 @@ export function CardForm({ onSave }: CardFormProps) {
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Save Card
+          {cardToEdit ? 'Save Changes' : 'Save Card'}
         </Button>
       </form>
     </Form>

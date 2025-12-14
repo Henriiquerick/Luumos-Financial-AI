@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -38,12 +39,14 @@ interface CreditCardCardProps {
   card: CreditCard;
   allTransactions: Transaction[];
   allCards: CreditCard[];
+  onEdit: () => void;
 }
 
 export function CreditCardCard({
   card,
   allTransactions,
   allCards,
+  onEdit
 }: CreditCardCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const firestore = useFirestore();
@@ -119,15 +122,10 @@ export function CreditCardCard({
             <DropdownMenuContent className="bg-black/80 backdrop-blur-sm border-gray-800 text-white w-40">
               <DropdownMenuItem
                 className="focus:bg-gray-700/50"
-                onSelect={() =>
-                  toast({
-                    title: 'Em breve!',
-                    description: 'A edição de limite estará disponível em breve.',
-                  })
-                }
+                onSelect={onEdit}
               >
                 <Pencil className="mr-2 h-4 w-4" />
-                <span>Edit Limit</span>
+                <span>Edit Card</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-400 focus:bg-red-900/50 focus:text-red-300"

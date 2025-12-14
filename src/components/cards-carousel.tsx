@@ -1,22 +1,21 @@
+
 "use client";
 
-import { useState } from "react";
 import { CreditCardCard } from "@/components/credit-card-card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import type { CreditCard, Transaction } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { AddCardDialog } from "./add-card-dialog";
 
 interface CardsCarouselProps {
   cards: CreditCard[];
   transactions: Transaction[];
+  onAddCard: () => void;
+  onEditCard: (card: CreditCard) => void;
 }
 
-export function CardsCarousel({ cards, transactions }: CardsCarouselProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: CardsCarouselProps) {
   return (
     <>
       <Carousel
@@ -28,13 +27,13 @@ export function CardsCarousel({ cards, transactions }: CardsCarouselProps) {
         <CarouselContent>
           {cards.map((card) => (
             <CarouselItem key={card.id} className="md:basis-1/2">
-              <CreditCardCard card={card} allTransactions={transactions} allCards={cards} />
+              <CreditCardCard card={card} allTransactions={transactions} allCards={cards} onEdit={() => onEditCard(card)} />
             </CarouselItem>
           ))}
           <CarouselItem className="md:basis-1/2">
             <Card className="h-full flex items-center justify-center bg-card/50 border-dashed border-primary/20 hover:border-primary transition-colors">
               <CardContent className="p-6">
-                <Button variant="ghost" className="flex flex-col h-auto" onClick={() => setIsDialogOpen(true)}>
+                <Button variant="ghost" className="flex flex-col h-auto" onClick={onAddCard}>
                   <Plus className="w-8 h-8 text-primary mb-2" />
                   <span className="text-primary">Add New Card</span>
                 </Button>
@@ -49,7 +48,6 @@ export function CardsCarousel({ cards, transactions }: CardsCarouselProps) {
             </>
         )}
       </Carousel>
-      <AddCardDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} />
     </>
   );
 }

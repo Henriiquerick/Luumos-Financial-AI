@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -20,12 +21,15 @@ import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { AddCardDialog } from './add-card-dialog';
 
 
 export default function Dashboard() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
 
   // Memoize Firestore references
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -81,6 +85,20 @@ export default function Dashboard() {
     }
   }
 
+  const handleAddCard = () => {
+    setEditingCard(null);
+    setIsCardDialogOpen(true);
+  };
+
+  const handleEditCard = (card: CreditCard) => {
+    setEditingCard(card);
+    setIsCardDialogOpen(true);
+  };
+  
+  const handleCardDialogFinished = () => {
+    setEditingCard(null);
+  };
+
   const currentBalance = useMemo(() => {
     return (typedTransactions || []).reduce((acc, t) => {
       if (t.cardId) return acc;
@@ -119,14 +137,19 @@ export default function Dashboard() {
               />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div className="lg:col-span-2 space-y-6">
-                  <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
-                  <CardsCarousel cards={creditCards || []} transactions={typedTransactions} />
+                  <BalanceCard balance={currentBalance} onAddTransaction={() => setIsTransactionDialogOpen(true)} />
+                  <CardsCarousel 
+                    cards={creditCards || []} 
+                    transactions={typedTransactions} 
+                    onAddCard={handleAddCard}
+                    onEditCard={handleEditCard}
+                  />
                   <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards || []} />
                   <RecentTransactions transactions={typedTransactions} />
                 </div>
                 <div className="space-y-6">
                   <div className="block lg:hidden">
-                    <Button className="w-full" onClick={() => setIsDialogOpen(true)} >
+                    <Button className="w-full" onClick={() => setIsTransactionDialogOpen(true)} >
                       <PlusCircle className="mr-2 h-4 w-4" /> Add Transaction
                     </Button>
                   </div>
@@ -138,10 +161,16 @@ export default function Dashboard() {
                 </div>
               </div>
               <TransactionDialog 
-                isOpen={isDialogOpen} 
-                setIsOpen={setIsDialogOpen} 
+                isOpen={isTransactionDialogOpen} 
+                setIsOpen={setIsTransactionDialogOpen} 
                 transactions={typedTransactions}
                 creditCards={creditCards || []}
+              />
+              <AddCardDialog
+                isOpen={isCardDialogOpen}
+                setIsOpen={setIsCardDialogOpen}
+                cardToEdit={editingCard}
+                onFinished={handleCardDialogFinished}
               />
             </div>
         )}
