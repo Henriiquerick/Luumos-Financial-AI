@@ -47,7 +47,13 @@ const getDailyInsightFlow = ai.defineFlow(
     outputSchema: GetDailyInsightOutputSchema,
   },
   async input => {
-    const { output } = await prompt(input);
-    return output!;
+    try {
+      const { output } = await prompt(input);
+      return output!;
+    } catch (error) {
+      console.error("AI Error or Quota Exceeded in getDailyInsightFlow:", error);
+      // If there's an error (like 429), return a fallback to prevent the app from crashing.
+      return { insight: "O sistema de IA está sobrecarregado (Muitos acessos!). Mas seus gráficos estão funcionando. Tente novamente em 1 minuto. 🤖💤" };
+    }
   }
 );

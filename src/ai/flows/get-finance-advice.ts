@@ -45,7 +45,12 @@ const getFinanceAdviceFlow = ai.defineFlow(
     outputSchema: GetFinanceAdviceOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      return output!;
+    } catch (error) {
+      console.error("AI Error or Quota Exceeded in getFinanceAdviceFlow:", error);
+      return { advice: "Desculpe, o sistema de IA está sobrecarregado no momento e não consigo gerar um conselho. Por favor, tente novamente em alguns instantes." };
+    }
   }
 );
