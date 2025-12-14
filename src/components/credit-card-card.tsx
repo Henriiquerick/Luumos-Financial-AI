@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Bot, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
-import { useFirestore, useUser, deleteDocumentNonBlocking } from "@/firebase";
+import { useFirestore, useUser } from "@/firebase";
 import { collection, doc, writeBatch, getDocs, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
