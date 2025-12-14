@@ -21,18 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CreditCard } from '@/lib/types';
 import { useEffect } from 'react';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
-  totalLimit: z.coerce
-    .number()
-    .positive('Limit must be a positive number.'),
+  totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
   closingDay: z.coerce.number().int().min(1).max(31),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 });
@@ -85,7 +84,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   }, [cardToEdit, form]);
 
   const onSubmit = (values: FormValues) => {
-    if (!user) return;
+    if (!user || !firestore) return;
     
     if (cardToEdit) {
       // Update existing card
@@ -143,8 +142,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
                 <Select
-                  // CORREÇÃO: Força a conversão para string na mudança e no valor
-                  onValueChange={(val) => field.onChange(Number(val))}
+                  onValueChange={(value) => field.onChange(value)}
                   value={String(field.value)}
                 >
                   <FormControl>
