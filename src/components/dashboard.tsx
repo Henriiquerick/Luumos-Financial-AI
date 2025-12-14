@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
@@ -19,7 +19,21 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [creditCards, setCreditCards] = useState<CreditCard[]>(mockCreditCards);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality}>({ aiPersonality: PERSONAS[0] });
+  const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality} | null>(null);
+
+  useEffect(() => {
+    const storedPreference = localStorage.getItem('user_persona_preference');
+    if (storedPreference) {
+      const persona = PERSONAS.find(p => p.id === storedPreference);
+      if (persona) {
+        setUserPreferences({ aiPersonality: persona });
+      }
+    } else {
+        // Fallback to default if nothing is stored, though the onboarding should prevent this
+        setUserPreferences({ aiPersonality: PERSONAS[0] });
+    }
+  }, []);
+
 
   const currentBalance = useMemo(() => {
     return transactions.reduce((acc, t) => {
@@ -32,6 +46,15 @@ export default function Dashboard() {
   const handleAddTransaction = (newTransactions: Transaction[]) => {
     setTransactions(prev => [...prev, ...newTransactions].sort((a, b) => b.date.getTime() - a.date.getTime()));
   };
+
+  const handlePersonalityChange = (personality: AIPersonality) => {
+    setUserPreferences({ aiPersonality: personality });
+    localStorage.setItem('user_persona_preference', personality.id);
+  }
+
+  if (!userPreferences) {
+    return null; // Or a loading state
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto">
@@ -56,7 +79,7 @@ export default function Dashboard() {
           </div>
           <AiAdvisorCard
             personality={userPreferences.aiPersonality}
-            onPersonalityChange={(p) => setUserPreferences({ aiPersonality: p })}
+            onPersonalityChange={handlePersonalityChange}
             transactions={transactions}
           />
         </div>

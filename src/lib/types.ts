@@ -25,6 +25,7 @@ export type AIPersonality = {
   id: string;
   name: string;
   icon: string;
+  catchphrase: string;
   systemInstruction: string;
 };
 
