@@ -71,7 +71,6 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       form.reset({
         name: cardToEdit.name,
         totalLimit: cardToEdit.totalLimit,
-        // CORREÇÃO: Garante que o closingDay seja um número para o form, o `Select` se encarrega da conversão.
         closingDay: cardToEdit.closingDay,
         color: cardToEdit.color,
       });
