@@ -23,6 +23,7 @@ export default function Dashboard() {
 
   const currentBalance = useMemo(() => {
     return transactions.reduce((acc, t) => {
+      if (t.cardId) return acc; // Don't count card transactions in cash balance
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
@@ -64,6 +65,7 @@ export default function Dashboard() {
         setIsOpen={setIsDialogOpen} 
         onSave={handleAddTransaction}
         transactions={transactions}
+        creditCards={creditCards}
       />
     </div>
   );

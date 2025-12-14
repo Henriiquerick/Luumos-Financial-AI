@@ -1,8 +1,8 @@
 import type { Transaction, CreditCard } from '@/lib/types';
-import { addMonths } from 'date-fns';
+import { addMonths, subDays } from 'date-fns';
 
 const today = new Date();
-const getPastDate = (days: number) => new Date(new Date().setDate(today.getDate() - days));
+const getPastDate = (days: number) => subDays(today, days);
 
 const generateInstallments = (
     id: string, 
@@ -85,6 +85,16 @@ export const mockTransactions: Transaction[] = [
     date: getPastDate(3),
     type: 'expense',
     installments: 1
+  },
+   {
+    id: '7',
+    amount: 1500,
+    description: 'Macbook Pro M4',
+    category: 'Shopping',
+    date: getPastDate(2),
+    type: 'expense',
+    installments: 1,
+    cardId: 'card-2'
   },
 ].sort((a, b) => b.date.getTime() - a.date.getTime());
 

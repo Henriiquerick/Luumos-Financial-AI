@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useCallback, useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addMonths, format } from 'date-fns';
@@ -15,9 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
-import type { Transaction, TransactionCategory } from '@/lib/types';
+import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { categorizeTransaction } from '@/ai/flows/categorize-transaction';
 import { useToast } from '@/hooks/use-toast';
+import { getCardUsage } from '@/lib/finance-utils';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -27,6 +28,8 @@ const formSchema = z.object({
   category: z.custom<TransactionCategory>(),
   isInstallment: z.boolean(),
   installments: z.coerce.number().int().min(2).max(60).optional(),
+  paymentMethod: z.enum(['cash', 'card']),
+  cardId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -34,10 +37,12 @@ type FormValues = z.infer<typeof formSchema>;
 interface TransactionFormProps {
   onSave: (transactions: Transaction[]) => void;
   transactions: Transaction[];
+  creditCards: CreditCard[];
 }
 
-export function TransactionForm({ onSave, transactions }: TransactionFormProps) {
+export function TransactionForm({ onSave, transactions, creditCards }: TransactionFormProps) {
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [isLimitExceeded, setIsLimitExceeded] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -50,14 +55,19 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
       category: 'Other',
       isInstallment: false,
       installments: 2,
+      paymentMethod: 'cash',
     },
   });
 
-  const isInstallment = form.watch('isInstallment');
-  const transactionType = form.watch('type');
+  const { control, getValues, setValue, watch } = form;
+  const watchedValues = useWatch({ control });
+  
+  const isInstallment = watch('isInstallment');
+  const transactionType = watch('type');
+  const paymentMethod = watch('paymentMethod');
 
   const handleAutoCategorize = useCallback(async () => {
-    const description = form.getValues('description');
+    const description = getValues('description');
     if (description.length < 5) return;
 
     setIsCategorizing(true);
@@ -65,7 +75,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
       const userHistory = JSON.stringify(transactions.slice(0, 10).map(t => ({ description: t.description, category: t.category })));
       const result = await categorizeTransaction({ description, userHistory });
       if (result.category && CATEGORIES.includes(result.category as TransactionCategory)) {
-        form.setValue('category', result.category as TransactionCategory);
+        setValue('category', result.category as TransactionCategory);
         toast({ title: 'AI Suggestion', description: `We've categorized this as "${result.category}".` });
       }
     } catch (error) {
@@ -73,7 +83,38 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
     } finally {
       setIsCategorizing(false);
     }
-  }, [form, transactions, toast]);
+  }, [getValues, setValue, transactions, toast]);
+
+  useEffect(() => {
+    const { amount, cardId, paymentMethod } = watchedValues;
+    if (paymentMethod === 'card' && cardId && amount > 0) {
+      try {
+        const usage = getCardUsage(cardId, transactions, creditCards);
+        const willExceed = amount > usage.availableLimit;
+        
+        if (willExceed && !isLimitExceeded) {
+           toast({
+            variant: "destructive",
+            title: "⚠️ Limite insuficiente neste cartão!",
+            description: `Disponível: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usage.availableLimit)}`,
+          });
+        }
+        setIsLimitExceeded(willExceed);
+      } catch (error) {
+        console.error(error);
+        setIsLimitExceeded(false);
+      }
+    } else {
+      setIsLimitExceeded(false);
+    }
+  }, [watchedValues, transactions, creditCards, toast, isLimitExceeded]);
+  
+  useEffect(() => {
+    if (transactionType === 'income') {
+      setValue('paymentMethod', 'cash');
+    }
+  }, [transactionType, setValue]);
+
 
   function onSubmit(values: FormValues) {
     if (values.isInstallment && values.type === 'expense' && values.installments) {
@@ -91,6 +132,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
           type: 'expense',
           installments: values.installments,
           installmentId: installmentId,
+          cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
         });
       }
       onSave(newTransactions);
@@ -100,17 +142,20 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
         ...values,
         amount: values.amount,
         installments: 1,
+        cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
       };
       onSave([newTransaction]);
     }
     form.reset();
   }
 
+  const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && isLimitExceeded);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
-          control={form.control}
+          control={control}
           name="type"
           render={({ field }) => (
             <FormItem>
@@ -131,7 +176,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
         />
         <div className="relative">
           <FormField
-            control={form.control}
+            control={control}
             name="description"
             render={({ field }) => (
               <FormItem>
@@ -149,7 +194,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormField
-            control={form.control}
+            control={control}
             name="amount"
             render={({ field }) => (
               <FormItem>
@@ -162,7 +207,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
             )}
           />
           <FormField
-            control={form.control}
+            control={control}
             name="date"
             render={({ field }) => (
               <FormItem>
@@ -189,7 +234,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
           />
         </div>
         <FormField
-          control={form.control}
+          control={control}
           name="category"
           render={({ field }) => (
             <FormItem>
@@ -208,25 +253,72 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
             </FormItem>
           )}
         />
+        
         {transactionType === 'expense' && (
-          <FormField
-            control={form.control}
-            name="isInstallment"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>Installment Purchase</FormLabel>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
+          <>
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash / Debit</SelectItem>
+                      <SelectItem value="card">Credit Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {paymentMethod === 'card' && (
+              <FormField
+                control={form.control}
+                name="cardId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Card</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a card" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {creditCards.map(card => <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+            <FormField
+              control={control}
+              name="isInstallment"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Installment Purchase</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </>
         )}
+
         {isInstallment && transactionType === 'expense' && (
           <FormField
-            control={form.control}
+            control={control}
             name="installments"
             render={({ field }) => (
               <FormItem>
@@ -239,7 +331,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
             )}
           />
         )}
-        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitDisabled}>
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Add Transaction
         </Button>

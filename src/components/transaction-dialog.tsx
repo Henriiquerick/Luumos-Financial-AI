@@ -2,16 +2,17 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
-import type { Transaction } from '@/lib/types';
+import type { CreditCard, Transaction } from '@/lib/types';
 
 interface TransactionDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onSave: (transactions: Transaction[]) => void;
   transactions: Transaction[];
+  creditCards: CreditCard[];
 }
 
-export function TransactionDialog({ isOpen, setIsOpen, onSave, transactions }: TransactionDialogProps) {
+export function TransactionDialog({ isOpen, setIsOpen, onSave, transactions, creditCards }: TransactionDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
@@ -27,6 +28,7 @@ export function TransactionDialog({ isOpen, setIsOpen, onSave, transactions }: T
             setIsOpen(false);
           }}
           transactions={transactions}
+          creditCards={creditCards}
         />
       </DialogContent>
     </Dialog>
