@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -42,7 +42,6 @@ interface TransactionFormProps {
 
 export function TransactionForm({ onSave, transactions, creditCards }: TransactionFormProps) {
   const [isCategorizing, setIsCategorizing] = useState(false);
-  const [isLimitExceeded, setIsLimitExceeded] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -60,11 +59,34 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
   });
 
   const { control, getValues, setValue, watch } = form;
-  const watchedValues = useWatch({ control });
   
   const isInstallment = watch('isInstallment');
   const transactionType = watch('type');
   const paymentMethod = watch('paymentMethod');
+  const selectedCardId = watch('cardId');
+  const amount = watch('amount');
+
+  const cardUsage = useMemo(() => {
+    if (paymentMethod === 'card' && selectedCardId) {
+      try {
+        return getCardUsage(selectedCardId, transactions, creditCards);
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+    return null;
+  }, [selectedCardId, paymentMethod, transactions, creditCards]);
+
+  const isLimitExceeded = useMemo(() => {
+    if (cardUsage && amount > 0) {
+      const purchaseAmount = isInstallment && form.getValues('installments') 
+        ? amount 
+        : amount;
+      return purchaseAmount > cardUsage.availableLimit;
+    }
+    return false;
+  }, [cardUsage, amount, isInstallment, form]);
 
   const handleAutoCategorize = useCallback(async () => {
     const description = getValues('description');
@@ -84,30 +106,6 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
       setIsCategorizing(false);
     }
   }, [getValues, setValue, transactions, toast]);
-
-  useEffect(() => {
-    const { amount, cardId, paymentMethod } = watchedValues;
-    if (paymentMethod === 'card' && cardId && amount > 0) {
-      try {
-        const usage = getCardUsage(cardId, transactions, creditCards);
-        const willExceed = amount > usage.availableLimit;
-        
-        if (willExceed && !isLimitExceeded) {
-           toast({
-            variant: "destructive",
-            title: "⚠️ Limite insuficiente neste cartão!",
-            description: `Disponível: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usage.availableLimit)}`,
-          });
-        }
-        setIsLimitExceeded(willExceed);
-      } catch (error) {
-        console.error(error);
-        setIsLimitExceeded(false);
-      }
-    } else {
-      setIsLimitExceeded(false);
-    }
-  }, [watchedValues, transactions, creditCards, toast, isLimitExceeded]);
   
   useEffect(() => {
     if (transactionType === 'income') {
@@ -117,6 +115,10 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
 
 
   function onSubmit(values: FormValues) {
+    let purchaseAmount = values.amount;
+    
+    // For installment, the full amount is considered for limit check,
+    // but individual transactions are saved with installment value.
     if (values.isInstallment && values.type === 'expense' && values.installments) {
       const newTransactions: Transaction[] = [];
       const installmentId = crypto.randomUUID();
@@ -140,7 +142,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
       const newTransaction: Transaction = {
         id: crypto.randomUUID(),
         ...values,
-        amount: values.amount,
+        amount: purchaseAmount,
         installments: 1,
         cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
       };
@@ -149,7 +151,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
     form.reset();
   }
 
-  const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && isLimitExceeded);
+  const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
 
   return (
     <Form {...form}>
@@ -294,7 +296,11 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                         {creditCards.map(card => <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    {cardUsage && (
+                       <FormMessage className={cn(isLimitExceeded && "text-destructive")}>
+                        Available: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cardUsage.availableLimit)}
+                       </FormMessage>
+                    )}
                   </FormItem>
                 )}
               />

@@ -54,26 +54,28 @@ export function getCardUsage(
     throw new Error('Card not found');
   }
 
-  // Get all transactions for this card that are expenses
+  // Get all expense transactions for this card
   const cardExpenseTransactions = allTransactions.filter(t => t.cardId === cardId && t.type === 'expense');
 
+  // To calculate limit usage, we need to sum the *total purchase value* of each transaction.
+  // For single payments, it's just the amount.
+  // For installment payments, it's the amount of one installment * number of installments.
+  // We must only count each installment purchase *once*.
+  const processedInstallmentIds = new Set<string>();
+  
   const totalSpent = cardExpenseTransactions.reduce((acc, t) => {
-    // For installment purchases, the total value consumes the limit at once.
-    // We need to find the first installment to get the full amount.
-    if (t.installmentId && t.installments > 1) {
-        // Check if we've already processed this installment group
-        const isFirstInstallment = !allTransactions.some(
-            prev => prev.installmentId === t.installmentId && prev.date < t.date
-        );
-
-        if (isFirstInstallment) {
-            // This is the first time we see this installment group, count the whole purchase value
-            return acc + (t.amount * t.installments);
-        }
-        // If not the first, we've already counted it, so add 0.
+    if (t.installmentId) {
+      if (processedInstallmentIds.has(t.installmentId)) {
+        // We've already accounted for this full purchase, so skip.
         return acc;
+      }
+      // First time seeing this installment purchase.
+      // Add the total purchase value to the spent amount.
+      processedInstallmentIds.add(t.installmentId);
+      return acc + (t.amount * t.installments);
     }
-    // For single payments, just add the amount.
+    
+    // It's a single payment transaction.
     return acc + t.amount;
   }, 0);
 
