@@ -11,7 +11,9 @@ interface RecentTransactionsProps {
 }
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
-  const recent = transactions.slice(0, 5);
+  const recent = transactions
+    .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
+    .slice(0, 5);
 
   return (
     <Card className="bg-card/50 border-primary/20">
@@ -32,7 +34,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
             {recent.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center text-muted-foreground">
-                  No transactions yet.
+                  No transactions yet. Add one to get started!
                 </TableCell>
               </TableRow>
             ) : (
@@ -49,7 +51,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(t.date, 'MMM dd, yyyy')}</TableCell>
+                  <TableCell className="hidden md:table-cell">{format(t.date as Date, 'MMM dd, yyyy')}</TableCell>
                   <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
                     {t.type === 'income' ? '+' : '-'}
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(t.amount)}

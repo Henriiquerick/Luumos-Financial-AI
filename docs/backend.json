@@ -6,17 +6,13 @@
       "type": "object",
       "description": "Represents a financial transaction, either income or expense.",
       "properties": {
-        "id": {
+        "description": {
           "type": "string",
-          "description": "Unique identifier for the transaction."
+          "description": "A descriptive title for the transaction."
         },
         "amount": {
           "type": "number",
           "description": "The amount of the transaction. Positive for income, negative for expense."
-        },
-        "title": {
-          "type": "string",
-          "description": "A descriptive title for the transaction."
         },
         "category": {
           "type": "string",
@@ -27,17 +23,28 @@
           "description": "The date of the transaction.",
           "format": "date-time"
         },
-        "installmentGroupId": {
+        "type": {
+          "type": "string",
+          "enum": ["income", "expense"]
+        },
+        "installments": {
+          "type": "number"
+        },
+        "installmentId": {
           "type": "string",
           "description": "Identifier for grouping transactions related to the same installment purchase. Null if not an installment."
+        },
+        "cardId": {
+          "type": "string"
         }
       },
       "required": [
-        "id",
         "amount",
-        "title",
+        "description",
         "category",
-        "date"
+        "date",
+        "type",
+        "installments"
       ]
     },
     "CreditCard": {
@@ -46,23 +53,26 @@
       "type": "object",
       "description": "Represents a credit card with its associated details.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the credit card."
-        },
         "name": {
           "type": "string",
           "description": "The name of the credit card (e.g., 'Visa', 'Mastercard')."
         },
-        "limit": {
+        "totalLimit": {
           "type": "number",
           "description": "The credit limit of the card."
+        },
+        "color": {
+          "type": "string"
+        },
+        "closingDay": {
+          "type": "number"
         }
       },
       "required": [
-        "id",
         "name",
-        "limit"
+        "totalLimit",
+        "color",
+        "closingDay"
       ]
     },
     "UserProfile": {
@@ -73,7 +83,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user profile."
+          "description": "Unique identifier for the user profile, matching the auth UID."
         },
         "aiPersonality": {
           "type": "string",
@@ -88,7 +98,6 @@
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
@@ -99,19 +108,9 @@
         "definition": {
           "entityName": "Transaction",
           "schema": {
-            "$ref": "#/backend/entities/Transaction"
+            "$ref": "#/entities/Transaction"
           },
-          "description": "Stores financial transaction data for a specific user. Path-based ownership ensures that only the authenticated user can access their own transactions.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier of the transaction."
-            }
-          ]
+          "description": "Stores financial transaction data for a specific user."
         }
       },
       {
@@ -119,19 +118,9 @@
         "definition": {
           "entityName": "CreditCard",
           "schema": {
-            "$ref": "#/backend/entities/CreditCard"
+            "$ref": "#/entities/CreditCard"
           },
-          "description": "Stores credit card details for a specific user. Path-based ownership ensures that only the authenticated user can access their own credit card information.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "cardId",
-              "description": "The unique identifier of the credit card."
-            }
-          ]
+          "description": "Stores credit card details for a specific user."
         }
       },
       {
@@ -139,18 +128,11 @@
         "definition": {
           "entityName": "UserProfile",
           "schema": {
-            "$ref": "#/backend/entities/UserProfile"
+            "$ref": "#/entities/UserProfile"
           },
-          "description": "Stores user profile data including AI personality preferences. Path-based ownership ensures that only the authenticated user can access their own profile information.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "Stores user profile data including AI personality preferences."
         }
       }
-    ],
-    "reasoning": "This Firestore structure is designed to persist transaction and credit card data for the Luumos Financial AI application. The structure prioritizes security and scalability by adhering to the principles of Authorization Independence, Structural Segregation, and Access Modeling. Each user has their own collection of transactions and credit cards to ensure data privacy. User profile data, including AI personality preferences, is stored in a separate collection. This structure will support performant `list` operations because of the path-based ownership and lack of `get()` calls in security rules.\n\n*   **Authorization Independence:** Transactions and credit cards are stored under the `/users/{userId}` path, eliminating the need for `get()` calls to verify ownership.\n*   **Structural Segregation:**  Transactions and credit cards are kept in separate collections, each with its own security posture.\n*   **Access Modeling:** The structure uses path-based ownership (`/users/{userId}/transactions/{transactionId}`) for private data, allowing for simple and robust security rules based on `request.auth.uid`."
+    ]
   }
 }

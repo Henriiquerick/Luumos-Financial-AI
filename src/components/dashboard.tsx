@@ -1,75 +1,98 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
 import { InstallmentTunnelChart } from '@/components/installment-tunnel-chart';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
-import type { Transaction, AIPersonality, CreditCard } from '@/lib/types';
-import { mockTransactions, mockCreditCards } from '@/lib/mock-data';
+import type { Transaction, AIPersonality, CreditCard, UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { PERSONAS } from '@/lib/personas';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { PersonaOnboarding } from './persona-onboarding';
+import { Skeleton } from './ui/skeleton';
 
 export default function Dashboard() {
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [creditCards, setCreditCards] = useState<CreditCard[]>(mockCreditCards);
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality} | null>(null);
 
-  useEffect(() => {
-    const storedPreference = localStorage.getItem('user_persona_preference');
-    if (storedPreference) {
-      const persona = PERSONAS.find(p => p.id === storedPreference);
-      if (persona) {
-        setUserPreferences({ aiPersonality: persona });
-      }
-    } else {
-        // Fallback to default if nothing is stored, though the onboarding should prevent this
-        setUserPreferences({ aiPersonality: PERSONAS[0] });
+  // Memoize Firestore references
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const transactionsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'transactions') : null, [firestore, user]);
+  const cardsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'cards') : null, [firestore, user]);
+
+  // Fetch data using hooks
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
+  const { data: creditCards = [], isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
+  
+  const typedTransactions = useMemo(() => transactions.map(t => ({...t, date: (t.date as any).toDate()})), [transactions]);
+
+  const handlePersonalityChange = (personality: AIPersonality) => {
+    if (userProfileRef) {
+      setDoc(userProfileRef, { aiPersonality: personality.id }, { merge: true });
     }
-  }, []);
+  };
 
+  const handleOnboardingComplete = (persona: AIPersonality) => {
+    if (userProfileRef) {
+      setDoc(userProfileRef, { id: user!.uid, aiPersonality: persona.id }, { merge: true });
+    }
+  }
 
   const currentBalance = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-      if (t.cardId) return acc; // Don't count card transactions in cash balance
+    return typedTransactions.reduce((acc, t) => {
+      if (t.cardId) return acc;
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
-  }, [transactions]);
+  }, [typedTransactions]);
 
-  const handleAddTransaction = (newTransactions: Transaction[]) => {
-    setTransactions(prev => [...prev, ...newTransactions].sort((a, b) => b.date.getTime() - a.date.getTime()));
-  };
+  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading;
 
-  const handlePersonalityChange = (personality: AIPersonality) => {
-    setUserPreferences({ aiPersonality: personality });
-    localStorage.setItem('user_persona_preference', personality.id);
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-background">
+        <div className="w-full max-w-7xl space-y-8">
+          <Skeleton className="h-16 w-1/3" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <Skeleton className="h-12 w-1/4 mx-auto" />
+        </div>
+      </main>
+    );
   }
 
-  if (!userPreferences) {
-    return null; // Or a loading state
-  }
+  const personality = PERSONAS.find(p => p.id === userProfile?.aiPersonality) || PERSONAS[0];
 
+  if (!userProfile?.aiPersonality) {
+    return <PersonaOnboarding onComplete={handleOnboardingComplete} />;
+  }
+  
   return (
     <div className="w-full max-w-7xl mx-auto">
       <Header />
       <DailyInsightCard 
-        transactions={transactions}
-        personality={userPreferences.aiPersonality}
+        transactions={typedTransactions}
+        personality={personality}
         balance={currentBalance}
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2 space-y-6">
           <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
-          <CardsCarousel cards={creditCards} transactions={transactions} />
-          <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
-          <RecentTransactions transactions={transactions} />
+          <CardsCarousel cards={creditCards} transactions={typedTransactions} />
+          <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards} />
+          <RecentTransactions transactions={typedTransactions} />
         </div>
         <div className="space-y-6">
           <div className="block lg:hidden">
@@ -78,17 +101,16 @@ export default function Dashboard() {
             </Button>
           </div>
           <AiAdvisorCard
-            personality={userPreferences.aiPersonality}
+            personality={personality}
             onPersonalityChange={handlePersonalityChange}
-            transactions={transactions}
+            transactions={typedTransactions}
           />
         </div>
       </div>
       <TransactionDialog 
         isOpen={isDialogOpen} 
         setIsOpen={setIsDialogOpen} 
-        onSave={handleAddTransaction}
-        transactions={transactions}
+        transactions={typedTransactions}
         creditCards={creditCards}
       />
     </div>

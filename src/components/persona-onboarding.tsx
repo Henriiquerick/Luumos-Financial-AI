@@ -9,7 +9,7 @@ import type { AIPersonality } from '@/lib/types';
 import { Bot } from 'lucide-react';
 
 interface PersonaOnboardingProps {
-  onComplete: () => void;
+  onComplete: (persona: AIPersonality) => void;
 }
 
 export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
@@ -21,8 +21,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
 
   const handleConfirm = () => {
     if (selectedPersona) {
-      localStorage.setItem('user_persona_preference', selectedPersona.id);
-      onComplete();
+      onComplete(selectedPersona);
     }
   };
 
@@ -54,7 +53,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
       </div>
 
       <Button onClick={handleConfirm} disabled={!selectedPersona} size="lg" className="bg-primary hover:bg-primary/90">
-        Confirm &amp; Enter Dashboard
+        Confirm & Enter Dashboard
       </Button>
     </div>
   );

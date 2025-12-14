@@ -7,12 +7,11 @@ import type { CreditCard, Transaction } from '@/lib/types';
 interface TransactionDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onSave: (transactions: Transaction[]) => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
 }
 
-export function TransactionDialog({ isOpen, setIsOpen, onSave, transactions, creditCards }: TransactionDialogProps) {
+export function TransactionDialog({ isOpen, setIsOpen, transactions, creditCards }: TransactionDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
@@ -23,8 +22,7 @@ export function TransactionDialog({ isOpen, setIsOpen, onSave, transactions, cre
           </DialogDescription>
         </DialogHeader>
         <TransactionForm 
-          onSave={(newTransactions) => {
-            onSave(newTransactions);
+          onSave={() => {
             setIsOpen(false);
           }}
           transactions={transactions}

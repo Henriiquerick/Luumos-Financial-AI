@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type TransactionCategory =
   | 'Groceries'
   | 'Dining'
@@ -13,7 +15,7 @@ export type Transaction = {
   id: string;
   description: string;
   amount: number;
-  date: Date;
+  date: Date | Timestamp;
   installments: number;
   installmentId?: string;
   category: TransactionCategory;
@@ -35,4 +37,9 @@ export type CreditCard = {
   totalLimit: number;
   color: string;
   closingDay: number;
+};
+
+export type UserProfile = {
+  id: string;
+  aiPersonality: string;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addMonths, format } from 'date-fns';
@@ -19,6 +19,8 @@ import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { categorizeTransaction } from '@/ai/flows/categorize-transaction';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage } from '@/lib/finance-utils';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -35,7 +37,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
-  onSave: (transactions: Transaction[]) => void;
+  onSave: () => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
 }
@@ -43,7 +45,9 @@ interface TransactionFormProps {
 export function TransactionForm({ onSave, transactions, creditCards }: TransactionFormProps) {
   const [isCategorizing, setIsCategorizing] = useState(false);
   const { toast } = useToast();
-  
+  const firestore = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,13 +84,10 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
 
   const isLimitExceeded = useMemo(() => {
     if (cardUsage && amount > 0) {
-      const purchaseAmount = isInstallment && form.getValues('installments') 
-        ? amount 
-        : amount;
-      return purchaseAmount > cardUsage.availableLimit;
+      return amount > cardUsage.availableLimit;
     }
     return false;
-  }, [cardUsage, amount, isInstallment, form]);
+  }, [cardUsage, amount]);
 
   const handleAutoCategorize = useCallback(async () => {
     const description = getValues('description');
@@ -115,39 +116,39 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
 
 
   function onSubmit(values: FormValues) {
-    let purchaseAmount = values.amount;
+    if (!user) return;
+    const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
     
-    // For installment, the full amount is considered for limit check,
-    // but individual transactions are saved with installment value.
     if (values.isInstallment && values.type === 'expense' && values.installments) {
-      const newTransactions: Transaction[] = [];
       const installmentId = crypto.randomUUID();
       const installmentAmount = values.amount / values.installments;
 
       for (let i = 0; i < values.installments; i++) {
-        newTransactions.push({
-          id: crypto.randomUUID(),
+        const transactionData = {
           description: `${values.description} (${i + 1}/${values.installments})`,
           amount: installmentAmount,
           category: values.category,
-          date: addMonths(values.date, i),
-          type: 'expense',
+          date: Timestamp.fromDate(addMonths(values.date, i)),
+          type: 'expense' as 'expense',
           installments: values.installments,
           installmentId: installmentId,
           cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
-        });
+        };
+        addDocumentNonBlocking(transactionsRef, transactionData);
       }
-      onSave(newTransactions);
     } else {
-      const newTransaction: Transaction = {
-        id: crypto.randomUUID(),
-        ...values,
-        amount: purchaseAmount,
+      const transactionData = {
+        description: values.description,
+        amount: values.amount,
+        category: values.category,
+        date: Timestamp.fromDate(values.date),
+        type: values.type,
         installments: 1,
         cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
       };
-      onSave([newTransaction]);
+      addDocumentNonBlocking(transactionsRef, transactionData);
     }
+    onSave();
     form.reset();
   }
 
