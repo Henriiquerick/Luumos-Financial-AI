@@ -1,4 +1,4 @@
-import { addMonths, startOfMonth, isSameMonth, startOfToday } from 'date-fns';
+import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, getDate, subMonths, endOfMonth } from 'date-fns';
 import type { Transaction, CreditCard } from '@/lib/types';
 
 export function calculateMonthlyProjection(
@@ -85,4 +85,44 @@ export function getCardUsage(
     availableLimit: availableLimit,
     usagePercentage: (totalSpent / card.totalLimit) * 100,
   };
+}
+
+export function generateInsightAnalysis(transactions: Transaction[], balance: number): string {
+    const today = new Date();
+    const currentMonthStart = startOfMonth(today);
+    const previousMonthStart = startOfMonth(subMonths(today, 1));
+    const previousMonthEnd = endOfMonth(previousMonthStart);
+
+    const expensesThisMonth = transactions
+        .filter(t => t.type === 'expense' && t.date >= currentMonthStart && t.date <= today)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const expensesLastMonth = transactions
+        .filter(t => t.type === 'expense' && t.date >= previousMonthStart && t.date <= previousMonthEnd)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    const daysInMonth = getDaysInMonth(today);
+    const dayOfMonth = getDate(today);
+    const daysRemaining = daysInMonth - dayOfMonth;
+    const balancePerDay = daysRemaining > 0 ? balance / daysRemaining : balance;
+
+    let analysis = `Current cash balance is ${balance.toFixed(2)}. `;
+    analysis += `There are ${daysRemaining} days left in the month. This leaves a budget of ${balancePerDay.toFixed(2)} per day. `;
+    
+    if (expensesLastMonth > 0) {
+        const percentageChange = ((expensesThisMonth - expensesLastMonth) / expensesLastMonth) * 100;
+        if (percentageChange > 10) {
+            analysis += `Spending is up by ${percentageChange.toFixed(0)}% compared to last month. This is a significant increase.`;
+        } else if (percentageChange < -10) {
+            analysis += `User is saving money, spending is down by ${Math.abs(percentageChange.toFixed(0))}% compared to last month. This is great.`;
+        } else {
+            analysis += `Spending is stable compared to last month.`;
+        }
+    } else if (expensesThisMonth > 0) {
+        analysis += `Total spending this month is ${expensesThisMonth.toFixed(2)}.`;
+    } else {
+        analysis += `No expenses recorded this month yet.`;
+    }
+
+    return analysis;
 }

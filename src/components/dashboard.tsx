@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useMemo } from 'react';
 import Header from '@/components/header';
@@ -14,6 +14,7 @@ import { PlusCircle } from 'lucide-react';
 import { calculateMonthlyProjection } from '@/lib/finance-utils';
 import { PERSONAS } from '@/lib/personas';
 import { CardsCarousel } from '@/components/cards-carousel';
+import { DailyInsightCard } from '@/components/daily-insight-card';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
@@ -40,7 +41,12 @@ export default function Dashboard() {
   return (
     <div className="w-full max-w-7xl mx-auto">
       <Header />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <DailyInsightCard 
+        transactions={transactions}
+        personality={userPreferences.aiPersonality}
+        balance={currentBalance}
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         <div className="lg:col-span-2 space-y-6">
           <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
           <CardsCarousel cards={creditCards} transactions={transactions} />
