@@ -42,8 +42,12 @@ export function CardsCarousel({ cards, transactions }: CardsCarouselProps) {
             </Card>
           </CarouselItem>
         </CarouselContent>
-        <CarouselPrevious className="hidden lg:flex" />
-        <CarouselNext className="hidden lg:flex" />
+        {cards.length > 1 && (
+            <>
+                <CarouselPrevious className="hidden lg:flex" />
+                <CarouselNext className="hidden lg:flex" />
+            </>
+        )}
       </Carousel>
       <AddCardDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} />
     </>

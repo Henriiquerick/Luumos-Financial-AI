@@ -18,6 +18,9 @@ import { collection, doc, setDoc } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -31,25 +34,44 @@ export default function Dashboard() {
 
   // Fetch data using hooks
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-  const { data: transactions = [], isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
-  const { data: creditCards = [], isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
+  const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
+  const { data: creditCards, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
   
   const typedTransactions = useMemo(() => (transactions || []).map(t => ({...t, date: (t.date as any).toDate()})), [transactions]);
 
   const handlePersonalityChange = (personality: AIPersonality) => {
     if (userProfileRef) {
-      setDoc(userProfileRef, { aiPersonality: personality.id }, { merge: true });
+       setDoc(userProfileRef, { aiPersonality: personality.id }, { merge: true }).catch(error => {
+        errorEmitter.emit(
+          'permission-error',
+          new FirestorePermissionError({
+            path: userProfileRef.path,
+            operation: 'update',
+            requestResourceData: { aiPersonality: personality.id },
+          })
+        )
+      });
     }
   };
 
   const handleOnboardingComplete = (persona: AIPersonality) => {
-    if (userProfileRef) {
-      setDoc(userProfileRef, { id: user!.uid, aiPersonality: persona.id }, { merge: true });
+    if (userProfileRef && user) {
+        const profileData = { id: user.uid, aiPersonality: persona.id };
+        setDoc(userProfileRef, profileData, { merge: true }).catch(error => {
+            errorEmitter.emit(
+              'permission-error',
+              new FirestorePermissionError({
+                path: userProfileRef.path,
+                operation: 'create',
+                requestResourceData: profileData,
+              })
+            )
+        });
     }
   }
 
   const currentBalance = useMemo(() => {
-    return typedTransactions.reduce((acc, t) => {
+    return (typedTransactions || []).reduce((acc, t) => {
       if (t.cardId) return acc;
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
@@ -87,8 +109,8 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div className="lg:col-span-2 space-y-6">
                   <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
-                  <CardsCarousel cards={creditCards} transactions={typedTransactions} />
-                  <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards} />
+                  <CardsCarousel cards={creditCards || []} transactions={typedTransactions} />
+                  <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards || []} />
                   <RecentTransactions transactions={typedTransactions} />
                 </div>
                 <div className="space-y-6">
@@ -108,7 +130,7 @@ export default function Dashboard() {
                 isOpen={isDialogOpen} 
                 setIsOpen={setIsDialogOpen} 
                 transactions={typedTransactions}
-                creditCards={creditCards}
+                creditCards={creditCards || []}
               />
             </div>
         )}
