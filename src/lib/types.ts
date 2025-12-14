@@ -18,6 +18,7 @@ export type Transaction = {
   installmentId?: string;
   category: TransactionCategory;
   type: 'income' | 'expense';
+  cardId?: string;
 };
 
 export type AIPersonality = {
@@ -25,4 +26,12 @@ export type AIPersonality = {
   name: string;
   icon: string;
   systemInstruction: string;
+};
+
+export type CreditCard = {
+  id: string;
+  name: string;
+  totalLimit: number;
+  color: string;
+  closingDay: number;
 };

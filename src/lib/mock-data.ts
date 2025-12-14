@@ -1,4 +1,4 @@
-import type { Transaction } from '@/lib/types';
+import type { Transaction, CreditCard } from '@/lib/types';
 import { addMonths } from 'date-fns';
 
 const today = new Date();
@@ -10,7 +10,8 @@ const generateInstallments = (
     totalAmount: number, 
     date: Date, 
     installments: number,
-    category: Transaction['category']
+    category: Transaction['category'],
+    cardId?: string,
     ): Transaction[] => {
     
     const installmentAmount = totalAmount / installments;
@@ -27,13 +28,14 @@ const generateInstallments = (
             type: 'expense',
             installments,
             installmentId,
+            cardId
         });
     }
 
     return transactions;
 }
 
-const headphonesInstallments = generateInstallments('5', 'New headphones', 200, getPastDate(5), 3, 'Shopping');
+const headphonesInstallments = generateInstallments('5', 'New headphones', 200, getPastDate(5), 3, 'Shopping', 'card-2');
 
 export const mockTransactions: Transaction[] = [
   {
@@ -61,7 +63,8 @@ export const mockTransactions: Transaction[] = [
     category: 'Groceries',
     date: getPastDate(10),
     type: 'expense',
-    installments: 1
+    installments: 1,
+    cardId: 'card-1'
   },
   {
     id: '4',
@@ -70,7 +73,8 @@ export const mockTransactions: Transaction[] = [
     category: 'Dining',
     date: getPastDate(8),
     type: 'expense',
-    installments: 1
+    installments: 1,
+    cardId: 'card-1'
   },
   ...headphonesInstallments,
   {
@@ -83,3 +87,21 @@ export const mockTransactions: Transaction[] = [
     installments: 1
   },
 ].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+
+export const mockCreditCards: CreditCard[] = [
+  {
+    id: 'card-1',
+    name: 'Nubank',
+    totalLimit: 1500,
+    color: '#8A05BE',
+    closingDay: 20
+  },
+  {
+    id: 'card-2',
+    name: 'Mercado Pago',
+    totalLimit: 3000,
+    color: '#00AEEF',
+    closingDay: 5
+  }
+];

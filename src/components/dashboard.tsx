@@ -7,8 +7,8 @@ import { RecentTransactions } from '@/components/recent-transactions';
 import { ProjectedBalanceTimeline } from '@/components/projected-balance-timeline';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
-import type { Transaction, AIPersonality } from '@/lib/types';
-import { mockTransactions } from '@/lib/mock-data';
+import type { Transaction, AIPersonality, CreditCard } from '@/lib/types';
+import { mockTransactions, mockCreditCards } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { calculateMonthlyProjection } from '@/lib/finance-utils';
@@ -16,6 +16,7 @@ import { PERSONAS } from '@/lib/personas';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>(mockCreditCards);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality}>({ aiPersonality: PERSONAS[0] });
 
