@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { calculateMonthlyProjection } from '@/lib/finance-utils';
 import { PERSONAS } from '@/lib/personas';
+import { CardsCarousel } from '@/components/cards-carousel';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
@@ -41,6 +42,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
+          <CardsCarousel cards={creditCards} transactions={transactions} />
           <ProjectedBalanceTimeline data={projectedData} />
           <RecentTransactions transactions={transactions} />
         </div>
