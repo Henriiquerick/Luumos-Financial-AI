@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -60,28 +59,32 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     defaultValues: {
       name: '',
       totalLimit: 1000,
-      closingDay: '1',
+      closingDay: '', // Mudança 1: Começa vazio para forçar seleção ou reset
       color: PREDEFINED_COLORS[0].value,
     },
   });
+
+  // Watcher para debug (opcional, pode remover depois)
+  const watchedDay = form.watch("closingDay"); 
   
   useEffect(() => {
     if (cardToEdit) {
-      // MODO EDIÇÃO: Converte Number -> String para o UI funcionar
+      // MODO EDIÇÃO
       form.reset({
         name: cardToEdit.name,
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
-        // Converte o número do banco para String para o formulário
-        closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : undefined,
+        // Mudança 2: Tratamento de Nulo mais robusto
+        // Se closingDay for 0 ou nulo, vira string vazia, senão vira string do número
+        closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
       });
     } else {
-      // MODO CRIAÇÃO: Limpa tudo
+      // MODO CRIAÇÃO
       form.reset({
         name: '',
         totalLimit: 1000,
         color: PREDEFINED_COLORS[0].value,
-        closingDay: '1',
+        closingDay: '', // Reset para vazio
       });
     }
   }, [cardToEdit, form]);
@@ -92,16 +95,13 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     const cardData = {
       ...values,
       totalLimit: Number(values.totalLimit),
-      // Converte a string do formulário de volta para número antes de salvar
       closingDay: Number(values.closingDay),
     };
     
     if (cardToEdit) {
-      // Update existing card
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
       updateDocumentNonBlocking(cardRef, cardData);
     } else {
-      // Create new card
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
       addDocumentNonBlocking(cardsRef, cardData);
     }
@@ -145,10 +145,15 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                {/* Mudança 3: Removido defaultValue e adicionado key para forçar re-render */}
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value} 
+                  key={field.value} // O TRUQUE: Força o componente a atualizar se o valor mudar
+                >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Day" />
+                      <SelectValue placeholder="Select Day" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -164,6 +169,8 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             )}
           />
         </div>
+
+        {/* Campo de Cor (Mantido igual) */}
         <FormField
           control={form.control}
           name="color"
@@ -193,16 +200,11 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             </FormItem>
           )}
         />
+        
         <Button
           type="submit"
           className="w-full"
           disabled={form.formState.isSubmitting}
-           onClick={() => {
-            const errors = form.formState.errors;
-            if (Object.keys(errors).length > 0) {
-              console.error("⛔ VALIDATION BLOCK:", errors);
-            }
-          }}
         >
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
