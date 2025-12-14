@@ -71,6 +71,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       form.reset({
         name: cardToEdit.name,
         totalLimit: cardToEdit.totalLimit,
+        // CORREÇÃO: Garante que o closingDay seja um número para o form, o `Select` se encarrega da conversão.
         closingDay: cardToEdit.closingDay,
         color: cardToEdit.color,
       });
@@ -143,8 +144,8 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
                 <Select
+                  // CORREÇÃO: Força a conversão para string na mudança e no valor
                   onValueChange={(val) => field.onChange(Number(val))}
-                  defaultValue={String(field.value)}
                   value={String(field.value)}
                 >
                   <FormControl>
