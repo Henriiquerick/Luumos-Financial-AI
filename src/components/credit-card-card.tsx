@@ -18,12 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useFirestore, useUser } from '@/firebase';
 import {
   collection,
@@ -49,6 +43,7 @@ export function CreditCardCard({
   onEdit
 }: CreditCardCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -66,7 +61,6 @@ export function CreditCardCard({
     try {
       const cardDocRef = doc(firestore, 'users', user.uid, 'cards', card.id);
 
-      // Find and delete all transactions associated with this card
       const transactionsRef = collection(
         firestore,
         'users',
@@ -81,7 +75,6 @@ export function CreditCardCard({
         batch.delete(doc.ref);
       });
 
-      // Delete the card itself
       batch.delete(cardDocRef);
 
       await batch.commit();
@@ -99,50 +92,67 @@ export function CreditCardCard({
       });
     }
     setIsDeleteDialogOpen(false);
+    setIsMenuOpen(false);
   };
   
-  const handleSelectDelete = (e: Event) => {
-    e.preventDefault();
+  const handleSelectDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDeleteDialogOpen(true);
-  }
+    setIsMenuOpen(false);
+  };
+
+  const handleSelectEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit();
+    setIsMenuOpen(false);
+  };
 
   return (
     <>
       <Card
         className="border-none text-white relative overflow-hidden group"
         style={{ backgroundColor: card.color }}
+        onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div className="absolute top-0 left-0 w-full h-full bg-black/20 mix-blend-multiply"></div>
         
-        <div className="absolute top-2 right-2 z-20">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white opacity-60 hover:opacity-100 hover:bg-white/10 transition-opacity"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-black/80 backdrop-blur-sm border-gray-800 text-white w-40">
-              <DropdownMenuItem
-                className="focus:bg-gray-700/50"
-                onSelect={onEdit}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                <span>Edit Card</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-400 focus:bg-red-900/50 focus:text-red-300"
-                onSelect={handleSelectDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Delete Card</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div
+          className="absolute top-2 right-2 z-[100]"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <MoreVertical className="w-5 h-5 text-white opacity-60 hover:opacity-100 transition-opacity" />
+          </button>
+
+          {isMenuOpen && (
+            <div 
+              className="absolute right-0 mt-2 w-48 bg-black/80 backdrop-blur-sm border border-gray-800 rounded-lg shadow-xl z-[101] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ul className="p-1">
+                <li>
+                  <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-white rounded-md hover:bg-gray-700/50 focus:outline-none focus:bg-gray-700/50">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span>Edit Card</span>
+                  </button>
+                </li>
+                <li>
+                   <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete Card</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
         <CardHeader className="relative z-10">
