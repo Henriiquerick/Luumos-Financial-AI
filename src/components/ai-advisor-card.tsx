@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Bot, Send } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard } from '@/lib/types';
 import { PERSONAS } from '@/lib/personas';
-import { contextualChat } from '@/ai/flows/contextual-chat';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +46,20 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         persona: personality,
       };
 
-      const result = await contextualChat({ messages: newMessages, data: financialData });
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: newMessages, data: financialData }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get a response from the AI.');
+      }
       
-      setMessages(prev => [...prev, { role: 'model', content: result.response }]);
+      const resultText = await response.text();
+      setMessages(prev => [...prev, { role: 'model', content: resultText }]);
 
     } catch (error) {
       console.error('Failed to get advice:', error);

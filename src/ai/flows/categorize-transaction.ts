@@ -1,5 +1,3 @@
-'use server';
-
 /**
  * @fileOverview An AI agent that suggests a category for a transaction based on its description.
  *
