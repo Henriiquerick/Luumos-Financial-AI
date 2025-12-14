@@ -145,8 +145,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                  value={String(field.value)}
+                  onValueChange={field.onChange}
+                  value={field.value ? String(field.value) : ''}
+                  defaultValue={field.value ? String(field.value) : ''}
                 >
                   <FormControl>
                     <SelectTrigger>
