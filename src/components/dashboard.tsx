@@ -33,7 +33,7 @@ export default function Dashboard() {
   const { data: transactions = [], isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
   const { data: creditCards = [], isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
   
-  const typedTransactions = useMemo(() => transactions.map(t => ({...t, date: (t.date as any).toDate()})), [transactions]);
+  const typedTransactions = useMemo(() => (transactions || []).map(t => ({...t, date: (t.date as any).toDate()})), [transactions]);
 
   const handlePersonalityChange = (personality: AIPersonality) => {
     if (userProfileRef) {
