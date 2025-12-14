@@ -68,7 +68,12 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   
   useEffect(() => {
     if (cardToEdit) {
-      form.reset(cardToEdit);
+      form.reset({
+        name: cardToEdit.name,
+        totalLimit: cardToEdit.totalLimit,
+        closingDay: cardToEdit.closingDay,
+        color: cardToEdit.color,
+      });
     } else {
       form.reset({
         name: '',
