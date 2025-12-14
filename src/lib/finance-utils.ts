@@ -1,4 +1,4 @@
-import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, getDate, subMonths, endOfMonth } from 'date-fns';
+import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, getDate, subMonths, endOfMonth, format } from 'date-fns';
 import type { Transaction, CreditCard } from '@/lib/types';
 
 export function calculateMonthlyProjection(
@@ -127,4 +127,34 @@ export function generateInsightAnalysis(transactions: Transaction[], balance: nu
     }
 
     return analysis;
+}
+
+export function calculateCardBillProjection(
+  transactions: Transaction[],
+  projectionMonths = 6
+): { name: string; totalBill: number }[] {
+  const today = startOfToday();
+  const monthlyBills: { [key: string]: number } = {};
+
+  // Initialize future months
+  for (let i = 0; i < projectionMonths; i++) {
+    const month = startOfMonth(addMonths(today, i));
+    const monthKey = format(month, 'MMM/yy');
+    monthlyBills[monthKey] = 0;
+  }
+
+  // Sum up all card transactions for each month
+  transactions.forEach(t => {
+    if (t.cardId && t.date >= startOfMonth(today)) {
+      const monthKey = format(startOfMonth(t.date), 'MMM/yy');
+      if (monthKey in monthlyBills) {
+        monthlyBills[monthKey] += t.amount;
+      }
+    }
+  });
+
+  return Object.entries(monthlyBills).map(([name, totalBill]) => ({
+    name,
+    totalBill: Math.round(totalBill), // Round for cleaner chart values
+  }));
 }

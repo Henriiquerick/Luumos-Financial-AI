@@ -4,14 +4,13 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
-import { ProjectedBalanceTimeline } from '@/components/projected-balance-timeline';
+import { InstallmentTunnelChart } from '@/components/installment-tunnel-chart';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
 import type { Transaction, AIPersonality, CreditCard } from '@/lib/types';
 import { mockTransactions, mockCreditCards } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { calculateMonthlyProjection } from '@/lib/finance-utils';
 import { PERSONAS } from '@/lib/personas';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
@@ -29,10 +28,6 @@ export default function Dashboard() {
       return acc + t.amount * multiplier;
     }, 0);
   }, [transactions]);
-  
-  const projectedData = useMemo(() => {
-    return calculateMonthlyProjection(transactions, currentBalance);
-  }, [transactions, currentBalance]);
 
   const handleAddTransaction = (newTransactions: Transaction[]) => {
     setTransactions(prev => [...prev, ...newTransactions].sort((a, b) => b.date.getTime() - a.date.getTime()));
@@ -50,7 +45,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
           <CardsCarousel cards={creditCards} transactions={transactions} />
-          <ProjectedBalanceTimeline data={projectedData} />
+          <InstallmentTunnelChart transactions={transactions} />
           <RecentTransactions transactions={transactions} />
         </div>
         <div className="space-y-6">
