@@ -20,7 +20,7 @@ import { categorizeTransaction } from '@/ai/flows/categorize-transaction';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  title: z.string().min(2, { message: 'Title must be at least 2 characters.' }),
+  description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   date: z.date(),
   type: z.enum(['income', 'expense']),
@@ -43,7 +43,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
+      description: '',
       amount: 0,
       date: new Date(),
       type: 'expense',
@@ -57,13 +57,13 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
   const transactionType = form.watch('type');
 
   const handleAutoCategorize = useCallback(async () => {
-    const title = form.getValues('title');
-    if (title.length < 5) return;
+    const description = form.getValues('description');
+    if (description.length < 5) return;
 
     setIsCategorizing(true);
     try {
-      const userHistory = JSON.stringify(transactions.slice(0, 10).map(t => ({ description: t.title, category: t.category })));
-      const result = await categorizeTransaction({ description: title, userHistory });
+      const userHistory = JSON.stringify(transactions.slice(0, 10).map(t => ({ description: t.description, category: t.category })));
+      const result = await categorizeTransaction({ description, userHistory });
       if (result.category && CATEGORIES.includes(result.category as TransactionCategory)) {
         form.setValue('category', result.category as TransactionCategory);
         toast({ title: 'AI Suggestion', description: `We've categorized this as "${result.category}".` });
@@ -78,18 +78,19 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
   function onSubmit(values: FormValues) {
     if (values.isInstallment && values.type === 'expense' && values.installments) {
       const newTransactions: Transaction[] = [];
-      const groupId = crypto.randomUUID();
+      const installmentId = crypto.randomUUID();
+      const installmentAmount = values.amount / values.installments;
+
       for (let i = 0; i < values.installments; i++) {
         newTransactions.push({
           id: crypto.randomUUID(),
-          title: `${values.title} (${i + 1}/${values.installments})`,
-          amount: values.amount / values.installments,
+          description: `${values.description} (${i + 1}/${values.installments})`,
+          amount: installmentAmount,
           category: values.category,
           date: addMonths(values.date, i),
           type: 'expense',
-          installment_group_id: groupId,
-          installments_paid: i + 1,
-          installments_total: values.installments,
+          installments: values.installments,
+          installmentId: installmentId,
         });
       }
       onSave(newTransactions);
@@ -98,6 +99,7 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
         id: crypto.randomUUID(),
         ...values,
         amount: values.amount,
+        installments: 1,
       };
       onSave([newTransaction]);
     }
@@ -130,10 +132,10 @@ export function TransactionForm({ onSave, transactions }: TransactionFormProps) 
         <div className="relative">
           <FormField
             control={form.control}
-            name="title"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g., Coffee shop" {...field} onBlur={handleAutoCategorize} />
                 </FormControl>

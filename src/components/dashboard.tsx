@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { addMonths } from 'date-fns';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
@@ -12,6 +11,7 @@ import type { Transaction, AIPersonality } from '@/lib/types';
 import { mockTransactions } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import { calculateMonthlyProjection } from '@/lib/finance-utils';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
@@ -26,36 +26,7 @@ export default function Dashboard() {
   }, [transactions]);
   
   const projectedData = useMemo(() => {
-    const projections: { month: Date; balance: number }[] = [];
-    let lastBalance = currentBalance;
-    const today = new Date();
-
-    for (let i = 1; i <= 6; i++) {
-      const targetMonth = addMonths(today, i);
-      const monthStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
-      const monthEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
-
-      const futureInstallments = transactions
-        .filter(t => t.installment_group_id && t.type === 'expense' && t.installments_paid && t.installments_total)
-        .flatMap(t => {
-            const newTransactions: Transaction[] = [];
-            if(t.installments_paid! < t.installments_total!) {
-                for (let j = 1; j < (t.installments_total! - t.installments_paid! + 1); j++) {
-                    const futureDate = addMonths(t.date, j);
-                     if (futureDate >= monthStart && futureDate <= monthEnd) {
-                        newTransactions.push({ ...t, date: futureDate, id: crypto.randomUUID() });
-                    }
-                }
-            }
-            return newTransactions;
-        });
-
-      const monthBalance = futureInstallments.reduce((acc, t) => acc - t.amount, lastBalance);
-      
-      projections.push({ month: monthStart, balance: monthBalance });
-      lastBalance = monthBalance;
-    }
-    return projections;
+    return calculateMonthlyProjection(transactions, currentBalance);
   }, [transactions, currentBalance]);
 
   const handleAddTransaction = (newTransactions: Transaction[]) => {

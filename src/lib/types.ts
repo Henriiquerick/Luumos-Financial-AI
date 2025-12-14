@@ -11,14 +11,13 @@ export type TransactionCategory =
 
 export type Transaction = {
   id: string;
+  description: string;
   amount: number;
-  title: string;
-  category: TransactionCategory;
   date: Date;
+  installments: number;
+  installmentId?: string;
+  category: TransactionCategory;
   type: 'income' | 'expense';
-  installment_group_id?: string;
-  installments_total?: number;
-  installments_paid?: number;
 };
 
 export type AIPersonality = 'Warren Buffett' | 'Suze Orman' | 'Dave Ramsey';

@@ -44,7 +44,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                         <CategoryIcon category={t.category} className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <div className="font-medium">{t.title}</div>
+                        <div className="font-medium">{t.description}</div>
                         <div className="text-sm text-muted-foreground hidden md:block">{t.category}</div>
                       </div>
                     </div>

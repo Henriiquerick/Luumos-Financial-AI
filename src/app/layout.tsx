@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Luumos Financial AI',
+  title: 'Lucent AI',
   description: 'Your personal AI-powered finance assistant.',
 };
 
