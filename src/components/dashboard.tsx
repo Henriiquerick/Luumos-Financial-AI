@@ -38,8 +38,16 @@ export default function Dashboard() {
   const { data: creditCards, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
   
   const typedTransactions = useMemo(() => {
-    if (!transactions) return []; // Null Guard
-    return transactions.map(t => ({...t, date: (t.date as any).toDate()}));
+    // AQUI ESTÁ A CORREÇÃO: Se transactions for null ou undefined, usamos um array vazio []
+    if (!transactions) return [];
+    
+    return transactions.map(t => ({
+      ...t,
+      // Garante que a data seja convertida corretamente se vier do Firestore
+      date: t.date && typeof (t.date as any).toDate === 'function' 
+            ? (t.date as any).toDate() 
+            : new Date(t.date)
+    }));
   }, [transactions]);
 
   const handlePersonalityChange = (personality: AIPersonality) => {
