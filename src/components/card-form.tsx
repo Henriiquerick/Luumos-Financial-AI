@@ -32,7 +32,7 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/no
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
-  closingDay: z.coerce.number().int().min(1).max(31),
+  closingDay: z.string().min(1, "Please select a closing day."),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 });
 
@@ -60,7 +60,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     defaultValues: {
       name: '',
       totalLimit: 1000,
-      closingDay: 1,
+      closingDay: '1',
       color: PREDEFINED_COLORS[0].value,
     },
   });
@@ -70,10 +70,10 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       // MODO EDIÇÃO: Converte Number -> String para o UI funcionar
       form.reset({
         name: cardToEdit.name,
-        totalLimit: Number(cardToEdit.totalLimit), // Garante number
+        totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
-        // AQUI ESTÁ A CURA: Converte para String para o Select reconhecer o valor
-        closingDay: cardToEdit.closingDay ? Number(cardToEdit.closingDay) : undefined,
+        // Converte o número do banco para String para o formulário
+        closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : undefined,
       });
     } else {
       // MODO CRIAÇÃO: Limpa tudo
@@ -81,26 +81,27 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
         name: '',
         totalLimit: 1000,
         color: PREDEFINED_COLORS[0].value,
-        closingDay: 1,
+        closingDay: '1',
       });
     }
   }, [cardToEdit, form]);
 
   const onSubmit = (values: FormValues) => {
     if (!user || !firestore) return;
+
+    const cardData = {
+      ...values,
+      totalLimit: Number(values.totalLimit),
+      // Converte a string do formulário de volta para número antes de salvar
+      closingDay: Number(values.closingDay),
+    };
     
     if (cardToEdit) {
       // Update existing card
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
-      updateDocumentNonBlocking(cardRef, values);
+      updateDocumentNonBlocking(cardRef, cardData);
     } else {
       // Create new card
-      const cardData: Omit<CreditCard, 'id'> = {
-        name: values.name,
-        totalLimit: values.totalLimit,
-        closingDay: values.closingDay,
-        color: values.color,
-      };
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
       addDocumentNonBlocking(cardsRef, cardData);
     }
@@ -144,11 +145,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Closing Day</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value ? String(field.value) : ''}
-                  defaultValue={field.value ? String(field.value) : ''}
-                >
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Day" />
@@ -203,7 +200,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
            onClick={() => {
             const errors = form.formState.errors;
             if (Object.keys(errors).length > 0) {
-              console.error("⛔ BLOQUEIO DE VALIDAÇÃO:", errors);
+              console.error("⛔ VALIDATION BLOCK:", errors);
             }
           }}
         >
