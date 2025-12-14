@@ -160,6 +160,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <FormMessage />
               </FormItem>
             )}
           />
