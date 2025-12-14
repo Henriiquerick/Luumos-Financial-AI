@@ -1,0 +1,125 @@
+/**
+ * Core Philosophy:
+ * This ruleset implements a strict user-ownership model. All user data, including
+ * transactions, credit cards, and profile settings, is private and can only be
+ * accessed by the authenticated user who owns it. The security model relies
+ * exclusively on path-based authorization, ensuring that a user's access is
+ * confined to their own data tree.
+ *
+ * Data Structure:
+ * All user-specific data is nested under the `/users/{userId}` path. This
+ * top-level document stores the user's profile, and two subcollections,
+ * `/transactions` and `/cards`, store their respective financial data. This
+ * hierarchical structure is simple, secure, and performant.
+ *
+ * Key Security Decisions:
+ * - User Isolation: A user can only read or write data within their own
+ *   document tree (e.g., `/users/THEIR_OWN_ID/**`).
+ * - No Public Data: There are no top-level public collections. All data is
+ *   private by default.
+ * - No User Enumeration: Listing the top-level `/users` collection is explicitly
+ *   disallowed to prevent leaking user information.
+ * - Self-Creation: Users are permitted to create their own user profile
+ *   document upon first sign-in, but they cannot create profiles for others.
+ *
+ * Denormalization for Authorization:
+ * This ruleset leverages a path-based ownership model, which is a form of
+ * denormalization. By placing a user's data directly under a path containing
+ * their UID (e.g., `/users/{userId}/transactions/{transactionId}`), we avoid
+ * costly and slow `get()` calls. Authorization checks are fast and simple,
+ * directly comparing the `{userId}` wildcard from the path to the
+ * `request.auth.uid`.
+ *
+ * Structural Segregation:
+ * User transactions and credit cards are stored in separate subcollections
+ * (`/transactions` and `/cards`). This segregation provides clear separation
+ * of concerns and allows for distinct access patterns if needed in the future,
+ * while keeping the current rules simple and consistent.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for update and delete
+     * operations to prevent acting on non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // ----------------------------------------------------------------------
+    // User Data Collections
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user can read their own profile.
+     * @deny (get) An authenticated user cannot read another user's profile.
+     * @allow (create) A new user can create their own profile document.
+     * @deny (list) No one can list all users in the database.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages a user's financial transactions.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow (create) An authenticated user can add a transaction to their own account.
+       * @deny (create) An authenticated user cannot add a transaction to another user's account.
+       * @allow (list) An authenticated user can list all of their own transactions.
+       * @deny (list) An authenticated user cannot list transactions for another user.
+       * @principle Enforces document ownership for all read and write operations.
+       */
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Manages a user's credit cards.
+       * @path /users/{userId}/cards/{cardId}
+       * @allow (create) An authenticated user can add a credit card to their own account.
+       * @deny (create) An authenticated user cannot add a credit card to another user's account.
+       * @allow (list) An authenticated user can list all of their own credit cards.
+       * @deny (list) An authenticated user cannot list credit cards for another user.
+       * @principle Enforces document ownership for all read and write operations.
+       */
+      match /cards/{cardId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+  }
+}
