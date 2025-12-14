@@ -1,0 +1,182 @@
+
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { CreditCard } from '@/lib/types';
+
+const formSchema = z.object({
+  name: z.string().min(2, 'Card name is required.'),
+  totalLimit: z.coerce
+    .number()
+    .positive('Limit must be a positive number.'),
+  closingDay: z.coerce.number().int().min(1).max(31),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface CardFormProps {
+  onSave: () => void;
+}
+
+const PREDEFINED_COLORS = [
+  { name: 'Nubank', value: '#820AD1' },
+  { name: 'Mercado Pago', value: '#009EE3' },
+  { name: 'Inter', value: '#FF7A00' },
+  { name: 'Black', value: '#111111' },
+  { name: 'Neon Green', value: '#00FF88' },
+];
+
+export function CardForm({ onSave }: CardFormProps) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      totalLimit: 1000,
+      closingDay: 1,
+      color: PREDEFINED_COLORS[0].value,
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    if (!user) return;
+
+    const cardData: Omit<CreditCard, 'id'> = {
+      name: values.name,
+      totalLimit: values.totalLimit,
+      closingDay: values.closingDay,
+      color: values.color,
+    };
+
+    const cardsRef = collection(firestore, 'users', user.uid, 'cards');
+    addDocumentNonBlocking(cardsRef, cardData);
+    onSave();
+    form.reset();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Card Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Nubank" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="totalLimit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Total Limit</FormLabel>
+                <FormControl>
+                  <Input type="number" step="100" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="closingDay"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Closing Day</FormLabel>
+                <Select
+                  onValueChange={(val) => field.onChange(Number(val))}
+                  defaultValue={String(field.value)}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Day" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={String(day)}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Card Color</FormLabel>
+              <FormControl>
+                <div className="flex gap-2">
+                  {PREDEFINED_COLORS.map((color) => (
+                    <button
+                      type="button"
+                      key={color.value}
+                      onClick={() => field.onChange(color.value)}
+                      className={cn(
+                        'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
+                        field.value === color.value
+                          ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
+                          : 'border-transparent'
+                      )}
+                      style={{ backgroundColor: color.value }}
+                      aria-label={`Select ${color.name}`}
+                    />
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Save Card
+        </Button>
+      </form>
+    </Form>
+  );
+}
