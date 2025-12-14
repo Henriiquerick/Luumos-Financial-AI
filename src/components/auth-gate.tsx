@@ -2,8 +2,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth, useUser } from '@/firebase/provider';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useUser } from '@/firebase/provider';
+import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuthGateProps {
@@ -11,15 +11,16 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // If auth is initialized, not loading, and there's no user, sign in anonymously.
-    if (auth && !isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
+    // If auth is done loading and there's no user, redirect to login.
+    if (!isUserLoading && !user && pathname !== '/') {
+      router.push('/');
     }
-  }, [auth, user, isUserLoading]);
+  }, [user, isUserLoading, router, pathname]);
 
   // While checking auth state, show a loading skeleton.
   if (isUserLoading) {
@@ -43,6 +44,11 @@ export function AuthGate({ children }: AuthGateProps) {
     return <>{children}</>;
   }
 
-  // Fallback, though should be brief as sign-in is initiated.
+  // If no user and on the login page, let the login page render.
+  if (!user && pathname === '/') {
+    return null; // Or you could render the login page children if it was structured that way.
+  }
+  
+  // This is a fallback state, might show briefly during redirection.
   return null;
 }

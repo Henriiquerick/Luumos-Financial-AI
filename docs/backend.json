@@ -25,7 +25,10 @@
         },
         "type": {
           "type": "string",
-          "enum": ["income", "expense"]
+          "enum": [
+            "income",
+            "expense"
+          ]
         },
         "installments": {
           "type": "number"
@@ -98,7 +101,7 @@
   },
   "auth": {
     "providers": [
-      "anonymous"
+      "google.com"
     ]
   },
   "firestore": {
