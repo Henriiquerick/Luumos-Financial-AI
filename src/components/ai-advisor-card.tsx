@@ -1,51 +1,92 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot } from 'lucide-react';
-import type { AIPersonality, Transaction } from '@/lib/types';
+import { Loader2, Bot, Send } from 'lucide-react';
+import type { AIPersonality, Transaction, CreditCard } from '@/lib/types';
 import { PERSONAS } from '@/lib/personas';
-import { getFinanceAdvice } from '@/ai/flows/get-finance-advice';
+import { contextualChat } from '@/ai/flows/contextual-chat';
+import { ScrollArea } from './ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface AiAdvisorCardProps {
   personality: AIPersonality;
   onPersonalityChange: (p: AIPersonality) => void;
   transactions: Transaction[];
+  cards: CreditCard[];
+  balance: number;
 }
 
-export function AiAdvisorCard({ personality, onPersonalityChange, transactions }: AiAdvisorCardProps) {
-  const [userInput, setUserInput] = useState('');
-  const [advice, setAdvice] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+interface Message {
+  role: 'user' | 'model';
+  content: string;
+}
 
-  const handleGetAdvice = async () => {
-    if (!userInput) return;
+export function AiAdvisorCard({ personality, onPersonalityChange, transactions, cards, balance }: AiAdvisorCardProps) {
+  const [userInput, setUserInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim()) return;
+    
+    const newMessages: Message[] = [...messages, { role: 'user', content: userInput }];
+    setMessages(newMessages);
+    setUserInput('');
     setIsLoading(true);
-    setAdvice('');
+
     try {
-      const fullInput = `Based on my recent transactions (last 10): ${JSON.stringify(transactions.slice(0,10).map(t => ({...t, date: t.date.toISOString().split('T')[0]})))}\n\nMy question is: ${userInput}`;
-      const result = await getFinanceAdvice({ userInput: fullInput, systemInstruction: personality.systemInstruction });
-      setAdvice(result.advice);
+      const financialData = {
+        balance,
+        cards,
+        transactions,
+        persona: personality,
+      };
+
+      const result = await contextualChat({ messages: newMessages, data: financialData });
+      
+      setMessages(prev => [...prev, { role: 'model', content: result.response }]);
+
     } catch (error) {
       console.error('Failed to get advice:', error);
-      setAdvice('Sorry, I was unable to get advice at this time. Please try again later.');
+      setMessages(prev => [...prev, { role: 'model', content: 'Desculpe, ocorreu um erro. Tente novamente.' }]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages]);
+
   
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONAS.find(p => p.id === id);
     if (newPersonality) {
       onPersonalityChange(newPersonality);
+      setMessages([]); // Clear chat history on personality change
     }
   }
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+
   return (
-    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5">
+    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-[70vh] max-h-[800px]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
@@ -53,7 +94,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
         </CardTitle>
         <CardDescription>Get personalized advice from your chosen AI finance personality.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
         <div>
           <label className="text-sm font-medium">Finance Personality</label>
           <Select value={personality.id} onValueChange={handlePersonalityChange}>
@@ -72,24 +113,42 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label htmlFor="user-question" className="text-sm font-medium">Your Question</label>
+        
+        <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
+           <div className="space-y-4">
+            {messages.map((msg, index) => (
+              <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
+                <div className={cn("p-3 rounded-lg max-w-sm whitespace-pre-wrap font-code text-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50')}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+             {isLoading && (
+                <div className="flex items-start gap-3 justify-start">
+                   <span className="text-2xl mt-1">{personality.icon}</span>
+                   <div className="p-3 rounded-lg bg-muted/50">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                   </div>
+                </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="relative">
           <Textarea
             id="user-question"
-            placeholder={`Ask ${personality.name} anything about your finances...`}
+            placeholder={`Ask ${personality.name} anything...`}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
-            className="mt-1"
+            onKeyDown={handleKeyDown}
+            className="pr-12"
+            rows={2}
           />
+          <Button onClick={handleSendMessage} disabled={isLoading || !userInput} className="absolute right-2 bottom-2" size="icon" variant="ghost">
+             <Send className="h-5 w-5 text-primary" />
+          </Button>
         </div>
-        <Button onClick={handleGetAdvice} disabled={isLoading || !userInput} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Get Advice'}
-        </Button>
-        {advice && (
-          <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border">
-            <p className="text-sm whitespace-pre-wrap font-code">{advice}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

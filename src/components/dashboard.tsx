@@ -157,6 +157,8 @@ export default function Dashboard() {
                     personality={personality}
                     onPersonalityChange={handlePersonalityChange}
                     transactions={typedTransactions}
+                    cards={creditCards || []}
+                    balance={currentBalance}
                   />
                 </div>
               </div>
