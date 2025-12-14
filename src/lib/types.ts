@@ -20,4 +20,9 @@ export type Transaction = {
   type: 'income' | 'expense';
 };
 
-export type AIPersonality = 'Warren Buffett' | 'Suze Orman' | 'Dave Ramsey';
+export type AIPersonality = {
+  id: string;
+  name: string;
+  icon: string;
+  systemInstruction: string;
+};

@@ -1,4 +1,4 @@
-import type { TransactionCategory, AIPersonality } from '@/lib/types';
+import type { TransactionCategory } from '@/lib/types';
 
 export const CATEGORIES: TransactionCategory[] = [
   'Groceries',
@@ -10,10 +10,4 @@ export const CATEGORIES: TransactionCategory[] = [
   'Salary',
   'Investments',
   'Other',
-];
-
-export const AI_PERSONALITIES: AIPersonality[] = [
-  'Warren Buffett',
-  'Suze Orman',
-  'Dave Ramsey',
 ];

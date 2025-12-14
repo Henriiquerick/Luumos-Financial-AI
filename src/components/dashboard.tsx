@@ -12,11 +12,12 @@ import { mockTransactions } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { calculateMonthlyProjection } from '@/lib/finance-utils';
+import { PERSONAS } from '@/lib/personas';
 
 export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality}>({ aiPersonality: 'Warren Buffett' });
+  const [userPreferences, setUserPreferences] = useState<{aiPersonality: AIPersonality}>({ aiPersonality: PERSONAS[0] });
 
   const currentBalance = useMemo(() => {
     return transactions.reduce((acc, t) => {

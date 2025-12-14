@@ -13,10 +13,10 @@ import {z} from 'genkit';
 
 const GetFinanceAdviceInputSchema = z.object({
   userInput: z.string().describe('The user\u2019s question or request for financial advice.'),
-  aiPersonality: z
+  systemInstruction: z
     .string()
     .describe(
-      'The selected AI personality to provide the financial advice. Examples: Warren Buffett, Suze Orman, Dave Ramsey'
+      'The system instruction that defines the AI personality.'
     ),
 });
 export type GetFinanceAdviceInput = z.infer<typeof GetFinanceAdviceInputSchema>;
@@ -34,7 +34,8 @@ const prompt = ai.definePrompt({
   name: 'getFinanceAdvicePrompt',
   input: {schema: GetFinanceAdviceInputSchema},
   output: {schema: GetFinanceAdviceOutputSchema},
-  prompt: `You are a financial advisor with the personality of {{{aiPersonality}}}. Please provide financial advice to the user based on the following input:\n\n{{{userInput}}}`,
+  system: '{{{systemInstruction}}}',
+  prompt: `Please provide financial advice to the user based on the following input:\n\n{{{userInput}}}`,
 });
 
 const getFinanceAdviceFlow = ai.defineFlow(

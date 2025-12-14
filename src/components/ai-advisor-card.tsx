@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, Bot } from 'lucide-react';
 import type { AIPersonality, Transaction } from '@/lib/types';
-import { AI_PERSONALITIES } from '@/lib/constants';
+import { PERSONAS } from '@/lib/personas';
 import { getFinanceAdvice } from '@/ai/flows/get-finance-advice';
 
 interface AiAdvisorCardProps {
@@ -27,7 +27,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
     setAdvice('');
     try {
       const fullInput = `Based on my recent transactions (last 10): ${JSON.stringify(transactions.slice(0,10).map(t => ({...t, date: t.date.toISOString().split('T')[0]})))}\n\nMy question is: ${userInput}`;
-      const result = await getFinanceAdvice({ userInput: fullInput, aiPersonality: personality });
+      const result = await getFinanceAdvice({ userInput: fullInput, systemInstruction: personality.systemInstruction });
       setAdvice(result.advice);
     } catch (error) {
       console.error('Failed to get advice:', error);
@@ -36,6 +36,13 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
       setIsLoading(false);
     }
   };
+  
+  const handlePersonalityChange = (id: string) => {
+    const newPersonality = PERSONAS.find(p => p.id === id);
+    if (newPersonality) {
+      onPersonalityChange(newPersonality);
+    }
+  }
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5">
@@ -49,12 +56,19 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
       <CardContent className="space-y-4">
         <div>
           <label className="text-sm font-medium">Finance Personality</label>
-          <Select value={personality} onValueChange={(v) => onPersonalityChange(v as AIPersonality)}>
+          <Select value={personality.id} onValueChange={handlePersonalityChange}>
             <SelectTrigger className="w-full mt-1">
               <SelectValue placeholder="Select a personality" />
             </SelectTrigger>
             <SelectContent>
-              {AI_PERSONALITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              {PERSONAS.map(p => 
+                <SelectItem key={p.id} value={p.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{p.icon}</span>
+                    <span>{p.name}</span>
+                  </div>
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -62,7 +76,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions }
           <label htmlFor="user-question" className="text-sm font-medium">Your Question</label>
           <Textarea
             id="user-question"
-            placeholder={`Ask ${personality} anything about your finances...`}
+            placeholder={`Ask ${personality.name} anything about your finances...`}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             className="mt-1"
