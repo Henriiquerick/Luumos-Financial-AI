@@ -14,6 +14,12 @@ interface DailyInsightCardProps {
   balance: number;
 }
 
+interface CachedInsight {
+  date: string;
+  insight: string;
+  personalityId: string;
+}
+
 export function DailyInsightCard({ transactions, personality, balance }: DailyInsightCardProps) {
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -23,22 +29,53 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
     const fetchInsight = async () => {
       setIsLoading(true);
       setError('');
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const cacheKey = 'daily_insight_cache';
+
       try {
+        const cachedItem = localStorage.getItem(cacheKey);
+        if (cachedItem) {
+          const cached: CachedInsight = JSON.parse(cachedItem);
+          // Use cache if it's from today and for the same personality
+          if (cached.date === todayStr && cached.personalityId === personality.id) {
+            setInsight(cached.insight);
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // If no valid cache, fetch from API
         const analysis = generateInsightAnalysis(transactions, balance);
         const result = await getDailyInsight({
           analysis,
           systemInstruction: personality.systemInstruction,
         });
-        setInsight(result.insight);
+
+        if(result.insight) {
+            setInsight(result.insight);
+            // Save to cache
+            const newCache: CachedInsight = {
+                date: todayStr,
+                insight: result.insight,
+                personalityId: personality.id,
+            };
+            localStorage.setItem(cacheKey, JSON.stringify(newCache));
+        } else {
+             throw new Error("Failed to generate insight.");
+        }
+
       } catch (e) {
         console.error('Failed to generate daily insight:', e);
-        setError('Could not generate an insight at this moment.');
+        setError(`(${personality.name}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.`);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInsight();
+    if (personality && transactions) {
+        fetchInsight();
+    }
   }, [transactions, personality, balance]);
 
   return (
