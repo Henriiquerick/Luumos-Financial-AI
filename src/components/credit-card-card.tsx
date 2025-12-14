@@ -103,6 +103,7 @@ export function CreditCardCard({
   
   const handleSelectDelete = (e: Event) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDeleteDialogOpen(true);
   }
 
@@ -120,7 +121,7 @@ export function CreditCardCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-white/50 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 hover:text-white"
+                className="h-8 w-8 text-white opacity-60 hover:opacity-100 hover:bg-white/10 transition-opacity"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
