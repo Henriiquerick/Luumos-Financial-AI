@@ -131,30 +131,42 @@ export function generateInsightAnalysis(transactions: Transaction[], balance: nu
 
 export function calculateCardBillProjection(
   transactions: Transaction[],
+  cards: CreditCard[],
   projectionMonths = 6
-): { name: string; totalBill: number }[] {
+): ( { name: string } & { [key: string]: number | string } )[] {
   const today = startOfToday();
-  const monthlyBills: { [key: string]: number } = {};
+  const monthlyBills: { [monthKey: string]: { [cardName: string]: number, total: number } } = {};
 
   // Initialize future months
   for (let i = 0; i < projectionMonths; i++) {
     const month = startOfMonth(addMonths(today, i));
     const monthKey = format(month, 'MMM/yy');
-    monthlyBills[monthKey] = 0;
+    monthlyBills[monthKey] = { total: 0 };
+    cards.forEach(card => {
+      monthlyBills[monthKey][card.name] = 0;
+    });
   }
 
   // Sum up all card transactions for each month
   transactions.forEach(t => {
     if (t.cardId && t.date >= startOfMonth(today)) {
+      const card = cards.find(c => c.id === t.cardId);
+      if (!card) return;
+
       const monthKey = format(startOfMonth(t.date), 'MMM/yy');
       if (monthKey in monthlyBills) {
-        monthlyBills[monthKey] += t.amount;
+        monthlyBills[monthKey][card.name] = (monthlyBills[monthKey][card.name] || 0) + t.amount;
+        monthlyBills[monthKey].total += t.amount;
       }
     }
   });
-
-  return Object.entries(monthlyBills).map(([name, totalBill]) => ({
-    name,
-    totalBill: Math.round(totalBill), // Round for cleaner chart values
-  }));
+  
+  return Object.entries(monthlyBills).map(([name, bills]) => {
+    const monthData: { [key: string]: string | number } = { name };
+    cards.forEach(card => {
+        monthData[card.name] = Math.round(bills[card.name] || 0);
+    });
+    monthData.total = Math.round(bills.total);
+    return monthData;
+  });
 }

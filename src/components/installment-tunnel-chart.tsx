@@ -1,40 +1,45 @@
 "use client";
 
 import { useMemo } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateCardBillProjection } from '@/lib/finance-utils';
-import type { Transaction } from '@/lib/types';
+import type { Transaction, CreditCard } from '@/lib/types';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
+  cards: CreditCard[];
 }
 
-export function InstallmentTunnelChart({ transactions }: InstallmentTunnelChartProps) {
+export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunnelChartProps) {
   const chartData = useMemo(() => {
-    return calculateCardBillProjection(transactions);
-  }, [transactions]);
+    return calculateCardBillProjection(transactions, cards);
+  }, [transactions, cards]);
   
-  const maxBill = Math.max(...chartData.map(d => d.totalBill), 0);
+  const cardNameIdMap = useMemo(() => 
+    cards.reduce((acc, card) => {
+        acc[card.name] = card;
+        return acc;
+    }, {} as {[key: string]: CreditCard}), [cards]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
       return (
         <div className="p-2 bg-background border rounded-lg shadow-lg">
           <p className="label font-bold">{`${label}`}</p>
-          <p className="intro text-primary">{`Total Bill: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payload[0].value)}`}</p>
+          {payload.map((entry: any) => (
+             <p key={entry.name} style={{ color: entry.color }}>
+                {`${entry.name}: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.value)}`}
+            </p>
+          ))}
+           <p className="mt-2 font-bold border-t border-border pt-1">
+            Total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}
+          </p>
         </div>
       );
     }
     return null;
-  };
-  
-  const getBarColor = (value: number) => {
-    const percentage = maxBill > 0 ? (value / maxBill) * 100 : 0;
-    if (percentage > 75) return 'hsl(var(--destructive))';
-    if (percentage > 50) return 'hsl(var(--chart-5))';
-    if (percentage > 25) return 'hsl(var(--chart-4))';
-    return 'hsl(var(--primary))';
   };
 
   return (
@@ -64,11 +69,16 @@ export function InstallmentTunnelChart({ transactions }: InstallmentTunnelChartP
               cursor={{ fill: 'hsla(var(--muted), 0.5)' }}
               content={<CustomTooltip />}
             />
-            <Bar dataKey="totalBill" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <cell key={`cell-${index}`} fill={getBarColor(entry.totalBill)} />
-              ))}
-            </Bar>
+            <Legend formatter={(value) => <span className="text-muted-foreground">{value}</span>} />
+            {cards.map((card) => (
+              <Bar 
+                key={card.id} 
+                dataKey={card.name} 
+                stackId="a" 
+                fill={card.color} 
+                radius={[4, 4, 0, 0]}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

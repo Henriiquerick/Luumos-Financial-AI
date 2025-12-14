@@ -68,7 +68,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <BalanceCard balance={currentBalance} onAddTransaction={() => setIsDialogOpen(true)} />
           <CardsCarousel cards={creditCards} transactions={transactions} />
-          <InstallmentTunnelChart transactions={transactions} />
+          <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
           <RecentTransactions transactions={transactions} />
         </div>
         <div className="space-y-6">
