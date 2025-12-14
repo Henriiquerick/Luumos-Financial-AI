@@ -100,6 +100,11 @@ export function CreditCardCard({
     }
     setIsDeleteDialogOpen(false);
   };
+  
+  const handleSelectDelete = (e: Event) => {
+    e.preventDefault();
+    setIsDeleteDialogOpen(true);
+  }
 
   return (
     <>
@@ -108,6 +113,7 @@ export function CreditCardCard({
         style={{ backgroundColor: card.color }}
       >
         <div className="absolute top-0 left-0 w-full h-full bg-black/20 mix-blend-multiply"></div>
+        
         <div className="absolute top-2 right-2 z-20">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -129,7 +135,7 @@ export function CreditCardCard({
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-400 focus:bg-red-900/50 focus:text-red-300"
-                onSelect={() => setIsDeleteDialogOpen(true)}
+                onSelect={handleSelectDelete}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 <span>Delete Card</span>
