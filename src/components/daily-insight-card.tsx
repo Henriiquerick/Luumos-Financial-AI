@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, AlertCircle } from 'lucide-react';
-import { getDailyInsight } from '@/ai/flows/get-daily-insight';
-import { generateInsightAnalysis } from '@/lib/finance-utils';
-import type { Transaction, AIPersonality } from '@/lib/types';
+import type { AIPersonality, Transaction } from '@/lib/types';
+import type { GetDailyInsightOutput } from '@/ai/flows/get-daily-insight';
 
 interface DailyInsightCardProps {
   transactions: Transaction[];
@@ -37,7 +36,6 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
         const cachedItem = localStorage.getItem(cacheKey);
         if (cachedItem) {
           const cached: CachedInsight = JSON.parse(cachedItem);
-          // Use cache if it's from today and for the same personality
           if (cached.date === todayStr && cached.personalityId === personality.id) {
             setInsight(cached.insight);
             setIsLoading(false);
@@ -45,24 +43,34 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
           }
         }
 
-        // If no valid cache, fetch from API
-        const analysis = generateInsightAnalysis(transactions, balance);
-        const result = await getDailyInsight({
-          analysis,
-          systemInstruction: personality.systemInstruction,
+        const response = await fetch('/api/daily-insight', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transactions,
+            balance,
+            personality,
+          }),
         });
 
-        if(result.insight) {
-            setInsight(result.insight);
-            // Save to cache
-            const newCache: CachedInsight = {
-                date: todayStr,
-                insight: result.insight,
-                personalityId: personality.id,
-            };
-            localStorage.setItem(cacheKey, JSON.stringify(newCache));
+        if (!response.ok) {
+          throw new Error('Failed to fetch daily insight');
+        }
+
+        const result: GetDailyInsightOutput = await response.json();
+        
+        if (result.insight) {
+          setInsight(result.insight);
+          const newCache: CachedInsight = {
+            date: todayStr,
+            insight: result.insight,
+            personalityId: personality.id,
+          };
+          localStorage.setItem(cacheKey, JSON.stringify(newCache));
         } else {
-             throw new Error("Failed to generate insight.");
+          throw new Error("Failed to generate insight.");
         }
 
       } catch (e) {
@@ -74,7 +82,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
     };
 
     if (personality && transactions) {
-        fetchInsight();
+      fetchInsight();
     }
   }, [transactions, personality, balance]);
 
