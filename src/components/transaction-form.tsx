@@ -16,7 +16,6 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
 import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
-import { categorizeTransaction } from '@/ai/flows/categorize-transaction';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage } from '@/lib/finance-utils';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
@@ -95,8 +94,20 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
 
     setIsCategorizing(true);
     try {
-      const userHistory = JSON.stringify(transactions.slice(0, 10).map(t => ({ description: t.description, category: t.category })));
-      const result = await categorizeTransaction({ description, userHistory });
+      const userHistory = transactions.slice(0, 10).map(t => ({ description: t.description, category: t.category }));
+      
+      const response = await fetch('/api/categorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description, userHistory }),
+      });
+
+      if (!response.ok) {
+        throw new Error('AI categorization request failed');
+      }
+
+      const result = await response.json();
+
       if (result.category && CATEGORIES.includes(result.category as TransactionCategory)) {
         setValue('category', result.category as TransactionCategory);
         toast({ title: 'AI Suggestion', description: `We've categorized this as "${result.category}".` });
