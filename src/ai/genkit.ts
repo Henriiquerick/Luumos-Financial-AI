@@ -1,13 +1,8 @@
-'use server';
-import { genkit, type ModelAction } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 export const ai = genkit({
-  plugins: [
-    googleAI(),
-  ],
-  logLevel: 'debug',
-  enableTracingAndMetrics: true,
+  plugins: [googleAI()],
+  // Define o modelo padrão globalmente usando a string correta
+  model: 'googleai/gemini-1.5-flash', 
 });
-
-export const model: ModelAction = ai.model('googleai/gemini-1.5-flash');

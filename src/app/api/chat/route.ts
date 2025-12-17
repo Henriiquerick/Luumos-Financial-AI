@@ -1,34 +1,35 @@
 import { contextualChatFlow } from '@/ai/flows/contextual-chat';
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 60;
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     
-    // 1. Extração Inteligente do Texto
-    let finalMessage = "";
-    
-    // Se o frontend mandar array de mensagens (padrão Vercel AI SDK)
+    // Lógica robusta para extrair texto de diferentes formatos
+    let messageText = "";
+
     if (body.messages && Array.isArray(body.messages)) {
-        const lastMsg = body.messages[body.messages.length - 1];
-        finalMessage = lastMsg.content || "";
-    } 
-    // Se o frontend mandar objeto simples
-    else if (body.message) {
-        finalMessage = body.message;
+      const lastMessage = body.messages[body.messages.length - 1];
+      messageText = lastMessage.content || "";
+    } else if (body.message) {
+      messageText = body.message;
     }
 
-    if (!finalMessage) throw new Error("Mensagem vazia recebida.");
+    if (!messageText) {
+      return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
+    }
 
-    // 2. Chamada do Fluxo com o formato correto
-    const responseText = await contextualChatFlow({ message: finalMessage });
+    // Chama o fluxo passando o objeto EXATO que o Zod espera
+    const responseText = await contextualChatFlow({ message: messageText });
     
     return NextResponse.json({ text: responseText });
 
   } catch (error: any) {
-    console.error("🔥 ERRO DETALHADO NA API /api/chat:", error);
-    return NextResponse.json({ error: "Erro interno na IA: " + error.message }, { status: 500 });
+    console.error("🔥 ERRO:", error);
+    // Retorna JSON mesmo em caso de erro, evitando o erro '<' no frontend
+    return NextResponse.json(
+      { error: error.message || 'Erro interno na IA' }, 
+      { status: 500 }
+    );
   }
 }
