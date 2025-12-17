@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ai } from '../genkit';
+import { createCardTool } from '../tools';
 
 export const contextualChatFlow = ai.defineFlow(
   {
@@ -19,7 +20,9 @@ export const contextualChatFlow = ai.defineFlow(
     const contextData = input.data ? JSON.stringify(input.data) : "Sem dados financeiros disponíveis.";
 
     const { text } = await ai.generate({
-      // 3. Prompt Inteligente: Injetamos a Personalidade e o Contexto
+      // Adicionamos a ferramenta para que a IA possa usá-la
+      tools: [createCardTool],
+      // 3. Prompt Inteligente: Injetamos a Personalidade, o Contexto e as Instruções da Ferramenta
       prompt: `
       CONTEXTO DO SISTEMA:
       Você é um assistente financeiro pessoal.
@@ -30,10 +33,16 @@ export const contextualChatFlow = ai.defineFlow(
       DADOS FINANCEIROS DO USUÁRIO:
       ${contextData}
 
+      INSTRUÇÕES DE FERRAMENTAS:
+      - Se o usuário pedir para criar um cartão, você DEVE usar a 'createCardTool'.
+      - Antes de usar a ferramenta, verifique se possui todas as informações necessárias: 'name', 'balance' (limite), e 'type' ('credit', 'debit', ou 'voucher').
+      - Se alguma informação estiver faltando, FAÇA UMA PERGUNTA ao usuário para obtê-la. Por exemplo: "Qual será o limite do cartão?" ou "Será crédito, débito ou voucher?".
+      - Só chame a ferramenta quando tiver todos os três dados.
+
       MENSAGEM DO USUÁRIO: 
       "${input.message}"
       
-      Responda à mensagem do usuário incorporando sua personalidade e usando os dados financeiros acima se for relevante.
+      Responda à mensagem do usuário incorporando sua personalidade, usando os dados financeiros e seguindo as instruções das ferramentas, se for relevante.
       `,
       config: {
         temperature: 0.7, // Um pouco de criatividade para a personalidade brilhar
