@@ -35,7 +35,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
 
   const handleSendMessage = async () => {
@@ -53,6 +53,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         cards: cards,
         knowledgeId: knowledge.id, // Envia o ID do conhecimento
         personalityId: personality.id, // Envia o ID da personalidade
+        language: language,
       };
 
       const response = await fetch('/api/chat', {
