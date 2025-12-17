@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
+import { getBankColor } from '@/lib/bank-colors';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
@@ -19,10 +20,6 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
     return calculateCardBillProjection(transactions, cards);
   }, [transactions, cards]);
 
-  const cardColors: { [key: string]: string } = {
-    'Nubank': '#820AD1',
-    'Mercado Pago': '#009EE3',
-  };
   const defaultColor = '#22c55e';
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -78,7 +75,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
                 key={card.id} 
                 dataKey={card.name} 
                 stackId="a" 
-                fill={cardColors[card.name] || card.color || defaultColor} 
+                fill={getBankColor(card.name) || defaultColor} 
                 radius={[4, 4, 0, 0]}
               />
             ))}

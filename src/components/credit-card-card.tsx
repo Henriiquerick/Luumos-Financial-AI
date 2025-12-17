@@ -30,6 +30,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
+import { getBankColor } from '@/lib/bank-colors';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -52,6 +53,7 @@ export function CreditCardCard({
   const { t } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
+  const cardColor = getBankColor(card.name);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {
@@ -117,8 +119,8 @@ export function CreditCardCard({
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div 
-            className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
-            style={{ backgroundColor: card.color }}
+          className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-opacity duration-300"
+          style={{ backgroundColor: cardColor, opacity: 0.2 }}
         ></div>
         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-300"></div>
         

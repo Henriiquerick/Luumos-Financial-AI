@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -28,6 +29,7 @@ import type { CreditCard } from '@/lib/types';
 import { useEffect } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
+import { getBankColor, BANK_COLORS } from '@/lib/bank-colors';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -43,13 +45,7 @@ interface CardFormProps {
   cardToEdit?: CreditCard | null;
 }
 
-const PREDEFINED_COLORS = [
-  { name: 'Nubank', value: '#820AD1' },
-  { name: 'Mercado Pago', value: '#009EE3' },
-  { name: 'Inter', value: '#FF7A00' },
-  { name: 'Black', value: '#111111' },
-  { name: 'Neon Green', value: '#00FF88' },
-];
+const PREDEFINED_COLORS = Object.entries(BANK_COLORS).map(([name, value]) => ({ name, value }));
 
 export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const firestore = useFirestore();
@@ -62,12 +58,19 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       name: '',
       totalLimit: 1000,
       closingDay: '', 
-      color: PREDEFINED_COLORS[0].value,
+      color: '#333333',
     },
   });
 
-  const watchedDay = form.watch("closingDay"); 
-  
+  const cardName = form.watch('name');
+
+  useEffect(() => {
+    const color = getBankColor(cardName);
+    if(color !== '#333333') {
+        form.setValue('color', color);
+    }
+  }, [cardName, form]);
+
   useEffect(() => {
     if (cardToEdit) {
       form.reset({
@@ -80,7 +83,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       form.reset({
         name: '',
         totalLimit: 1000,
-        color: PREDEFINED_COLORS[0].value,
+        color: '#333333',
         closingDay: '',
       });
     }
@@ -173,7 +176,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             <FormItem>
               <FormLabel>{t.modals.card.fields.color}</FormLabel>
               <FormControl>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {PREDEFINED_COLORS.map((color) => (
                     <button
                       type="button"
