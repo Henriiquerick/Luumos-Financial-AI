@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { ai } from '../genkit'; // Importamos o cérebro que criamos
+import { ai } from '../genkit';
 
-// Usamos ai.defineFlow para criar um fluxo já conectado
 export const contextualChatFlow = ai.defineFlow(
   {
     name: 'contextualChat',
@@ -11,7 +10,7 @@ export const contextualChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Agora a chamada é simples e direta
+    // Não passamos 'model' aqui. O ai.generate usa o padrão do genkit.ts
     const { text } = await ai.generate({
       prompt: `Atue como Lumos, um consultor financeiro. O usuário disse: "${input.message}". Responda em português do Brasil.`,
       config: {
