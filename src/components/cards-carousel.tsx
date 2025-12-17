@@ -24,15 +24,15 @@ export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: Ca
         opts={{
           align: "start",
         }}
-        className="w-full"
+        className="w-full px-4"
       >
-        <CarouselContent>
+        <CarouselContent className="-ml-4">
           {cards.map((card) => (
-            <CarouselItem key={card.id} className="md:basis-1/2 lg:basis-1/2">
+            <CarouselItem key={card.id} className="pl-4 md:basis-1/2">
               <CreditCardCard card={card} allTransactions={transactions} allCards={cards} onEdit={() => onEditCard(card)} />
             </CarouselItem>
           ))}
-          <CarouselItem className="md:basis-1/2 lg:basis-1/2">
+          <CarouselItem className="pl-4 md:basis-1/2">
             <Card className="h-full flex items-center justify-center bg-card/50 border-dashed border-primary/20 hover:border-primary transition-colors">
               <CardContent className="p-6">
                 <Button variant="ghost" className="flex flex-col h-auto" onClick={onAddCard}>
@@ -45,8 +45,8 @@ export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: Ca
         </CarouselContent>
         {cards.length > 1 && (
             <>
-                <CarouselPrevious className="hidden lg:flex" />
-                <CarouselNext className="hidden lg:flex" />
+                <CarouselPrevious className="hidden xl:flex -left-4" />
+                <CarouselNext className="hidden xl:flex -right-4" />
             </>
         )}
       </Carousel>
