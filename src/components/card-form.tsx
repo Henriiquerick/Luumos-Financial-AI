@@ -103,8 +103,8 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     
     if (cardToEdit) {
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
-      updateDocumentNonBlocking(cardRef, cardData);
       const updatedCard = { ...cardToEdit, ...cardData };
+      updateDocumentNonBlocking(cardRef, cardData);
       onSave(updatedCard); // Pass updated card for optimistic UI
     } else {
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
