@@ -139,34 +139,40 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
     const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
     const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount);
     
-    if (values.isInstallment && values.type === 'expense' && values.installments) {
+    const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
+
+    if (values.isInstallment && isCardPayment && values.installments) {
       const installmentId = crypto.randomUUID();
       const installmentAmount = values.amount / values.installments;
 
       for (let i = 0; i < values.installments; i++) {
-        const transactionData = {
+        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
           description: `${values.description} (${i + 1}/${values.installments})`,
           amount: installmentAmount,
           category: values.category,
           date: Timestamp.fromDate(addMonths(values.date, i)),
-          type: 'expense' as const,
+          type: 'expense',
           installments: values.installments,
           installmentId: installmentId,
-          cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
+          cardId: values.cardId,
         };
         addDocumentNonBlocking(transactionsRef, transactionData);
       }
       toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
     } else { 
-      const transactionData = {
+      const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
         description: values.description,
         amount: values.amount,
         category: values.category,
         date: Timestamp.fromDate(values.date),
         type: values.type,
         installments: 1,
-        cardId: values.type === 'expense' && values.paymentMethod === 'card' ? values.cardId : undefined,
       };
+      
+      if (isCardPayment) {
+        transactionData.cardId = values.cardId;
+      }
+
       addDocumentNonBlocking(transactionsRef, transactionData);
       toast({
         title: t.toasts.transaction.title,
@@ -376,5 +382,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
     </Form>
   );
 }
+
+    
 
     
