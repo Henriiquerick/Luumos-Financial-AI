@@ -40,6 +40,16 @@
         },
         "cardId": {
           "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the transaction was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the transaction was last updated."
         }
       },
       "required": [
@@ -48,7 +58,9 @@
         "category",
         "date",
         "type",
-        "installments"
+        "installments",
+        "createdAt",
+        "updatedAt"
       ]
     },
     "CreditCard": {

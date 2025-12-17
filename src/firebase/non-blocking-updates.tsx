@@ -8,6 +8,7 @@ import {
   CollectionReference,
   DocumentReference,
   SetOptions,
+  serverTimestamp
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
@@ -17,17 +18,34 @@ import {FirestorePermissionError} from '@/firebase/errors';
  * Does NOT await the write operation internally.
  */
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  setDoc(docRef, data, options).catch(error => {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'write', // or 'create'/'update' based on options
-        requestResourceData: data,
+  const dataWithTimestamp = {
+    ...data,
+    updatedAt: serverTimestamp(),
+  };
+  if (options.merge) {
+      setDoc(docRef, dataWithTimestamp, options).catch(error => {
+        errorEmitter.emit(
+          'permission-error',
+          new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: dataWithTimestamp,
+          })
+        )
       })
-    )
-  })
-  // Execution continues immediately
+  } else {
+      dataWithTimestamp.createdAt = serverTimestamp();
+      setDoc(docRef, dataWithTimestamp, options).catch(error => {
+        errorEmitter.emit(
+          'permission-error',
+          new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'create',
+            requestResourceData: dataWithTimestamp,
+          })
+        )
+      })
+  }
 }
 
 
@@ -37,14 +55,19 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
  * Returns the Promise for the new doc ref, but typically not awaited by caller.
  */
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  const promise = addDoc(colRef, data)
+  const dataWithTimestamp = {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const promise = addDoc(colRef, dataWithTimestamp)
     .catch(error => {
       errorEmitter.emit(
         'permission-error',
         new FirestorePermissionError({
           path: colRef.path,
           operation: 'create',
-          requestResourceData: data,
+          requestResourceData: dataWithTimestamp,
         })
       )
     });
@@ -57,14 +80,18 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
  * Does NOT await the write operation internally.
  */
 export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
-  updateDoc(docRef, data)
+  const dataWithTimestamp = {
+    ...data,
+    updatedAt: serverTimestamp(),
+  };
+  updateDoc(docRef, dataWithTimestamp)
     .catch(error => {
       errorEmitter.emit(
         'permission-error',
         new FirestorePermissionError({
           path: docRef.path,
           operation: 'update',
-          requestResourceData: data,
+          requestResourceData: dataWithTimestamp,
         })
       )
     });

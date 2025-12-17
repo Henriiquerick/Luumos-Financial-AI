@@ -9,12 +9,31 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function validateTransactionData(data) {
+      return data.description is string && data.description.size() < 200
+          && data.amount is number
+          && data.category is string
+          && data.date is timestamp
+          && data.type is string && (data.type == 'income' || data.type == 'expense')
+          && data.installments is number
+          && (data.cardId == null || data.cardId is string)
+          && data.updatedAt is timestamp;
+    }
 
     match /users/{userId} {
       allow read, write: if isOwner(userId);
 
       match /transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
+        allow read, delete: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+          && validateTransactionData(request.resource.data)
+          && request.resource.data.createdAt is timestamp;
+          
+        allow update: if isOwner(userId)
+          && validateTransactionData(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt; // createdAt is immutable
       }
 
       match /cards/{cardId} {
