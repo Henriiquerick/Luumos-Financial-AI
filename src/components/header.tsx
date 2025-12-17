@@ -2,6 +2,7 @@ import { Bot, LogOut } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
+import { UserProfileDialog } from './user-profile-dialog';
 
 export default function Header() {
   const auth = useAuth();
@@ -20,10 +21,13 @@ export default function Header() {
         <Bot className="w-8 h-8 text-primary" />
         <h1 className="text-3xl font-bold tracking-tighter text-gray-50">Lucent AI</h1>
       </div>
-      <Button variant="ghost" onClick={handleSignOut}>
-        <LogOut className="mr-2" />
-        Sign Out
-      </Button>
+      <div className="flex items-center gap-2">
+        <UserProfileDialog />
+        <Button variant="ghost" onClick={handleSignOut}>
+          <LogOut className="mr-2" />
+          Sign Out
+        </Button>
+      </div>
     </header>
   );
 }
