@@ -7,14 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, Bot, Send } from 'lucide-react';
-import type { AIPersonality, Transaction, CreditCard } from '@/lib/types';
-import { PERSONAS } from '@/lib/personas';
+import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel } from '@/lib/types';
+import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 
 interface AiAdvisorCardProps {
+  knowledge: AIKnowledgeLevel;
   personality: AIPersonality;
+  onKnowledgeChange: (k: AIKnowledgeLevel) => void;
   onPersonalityChange: (p: AIPersonality) => void;
   transactions: Transaction[];
   cards: CreditCard[];
@@ -26,7 +28,7 @@ interface Message {
   content: string;
 }
 
-export function AiAdvisorCard({ personality, onPersonalityChange, transactions, cards, balance }: AiAdvisorCardProps) {
+export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPersonalityChange, transactions, cards, balance }: AiAdvisorCardProps) {
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,12 +44,12 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
     setIsLoading(true);
 
     try {
-      // Prepara os dados de contexto para enviar à API.
       const contextData = {
-        persona: personality.name, // Envia o nome da personalidade
         balance: balance,
-        transactions: transactions.slice(-5), // Envia as últimas 5 transações
+        transactions: transactions.slice(-5),
         cards: cards,
+        knowledgeId: knowledge.id, // Envia o ID do conhecimento
+        personalityId: personality.id, // Envia o ID da personalidade
       };
 
       const response = await fetch('/api/chat', {
@@ -57,7 +59,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         },
         body: JSON.stringify({ 
             messages: newMessages,
-            data: contextData, // Envia o objeto de dados junto com as mensagens
+            data: contextData,
         }),
       });
 
@@ -90,10 +92,18 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
 
   
   const handlePersonalityChange = (id: string) => {
-    const newPersonality = PERSONAS.find(p => p.id === id);
+    const newPersonality = PERSONALITIES.find(p => p.id === id);
     if (newPersonality) {
       onPersonalityChange(newPersonality);
-      setMessages([]); // Clear chat history on personality change
+      setMessages([]); // Clear chat history on change
+    }
+  }
+  
+  const handleKnowledgeChange = (id: string) => {
+    const newKnowledge = KNOWLEDGE_LEVELS.find(k => k.id === id);
+    if (newKnowledge) {
+      onKnowledgeChange(newKnowledge);
+      setMessages([]); // Clear chat history on change
     }
   }
 
@@ -112,26 +122,46 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
           <Bot className="text-accent" />
           <span>AI Financial Agent</span>
         </CardTitle>
-        <CardDescription>Ask questions or tell me to add transactions or cards.</CardDescription>
+        <CardDescription>
+          Acting as: <span className="font-semibold text-foreground">{personality.name}</span> | Level: <span className="font-semibold text-foreground">{knowledge.name}</span>
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
-        <div>
-          <label className="text-sm font-medium">Finance Personality</label>
-          <Select value={personality.id} onValueChange={handlePersonalityChange}>
-            <SelectTrigger className="w-full mt-1">
-              <SelectValue placeholder="Select a personality" />
-            </SelectTrigger>
-            <SelectContent>
-              {PERSONAS.map(p => 
-                <SelectItem key={p.id} value={p.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{p.icon}</span>
-                    <span>{p.name}</span>
-                  </div>
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">Support Level</label>
+            <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
+              <SelectTrigger className="w-full mt-1 text-xs">
+                <SelectValue placeholder="Select a level" />
+              </SelectTrigger>
+              <SelectContent>
+                {KNOWLEDGE_LEVELS.map(k => 
+                  <SelectItem key={k.id} value={k.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{k.name}</span>
+                    </div>
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Personality</label>
+            <Select value={personality.id} onValueChange={handlePersonalityChange}>
+              <SelectTrigger className="w-full mt-1 text-xs">
+                <SelectValue placeholder="Select a personality" />
+              </SelectTrigger>
+              <SelectContent>
+                {PERSONALITIES.map(p => 
+                  <SelectItem key={p.id} value={p.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{p.name}</span>
+                    </div>
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>

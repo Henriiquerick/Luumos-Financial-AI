@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type TransactionCategory =
@@ -31,6 +32,13 @@ export type AIPersonality = {
   systemInstruction: string;
 };
 
+export type AIKnowledgeLevel = {
+  id: string;
+  name: string;
+  description: string;
+  instruction: string;
+}
+
 export type CreditCard = {
   id: string;
   name: string;
@@ -42,6 +50,7 @@ export type CreditCard = {
 export type UserProfile = {
   id: string;
   aiPersonality: string;
+  aiKnowledgeLevel?: string;
   firstName?: string;
   lastName?: string;
   birthDate?: string;

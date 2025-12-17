@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Transaction": {
@@ -91,6 +92,10 @@
         "aiPersonality": {
           "type": "string",
           "description": "The selected AI finance personality for the user."
+        },
+        "aiKnowledgeLevel": {
+            "type": "string",
+            "description": "The selected AI knowledge level for the user."
         },
         "firstName": {
             "type": "string"

@@ -8,10 +8,10 @@ import { RecentTransactions } from '@/components/recent-transactions';
 import { InstallmentTunnelChart } from '@/components/installment-tunnel-chart';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
-import type { Transaction, AIPersonality, CreditCard, UserProfile } from '@/lib/types';
+import type { Transaction, AIPersonality, CreditCard, UserProfile, AIKnowledgeLevel } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { PERSONAS } from '@/lib/personas';
+import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
@@ -69,9 +69,24 @@ export default function Dashboard() {
     }
   };
 
+  const handleKnowledgeChange = (knowledge: AIKnowledgeLevel) => {
+    if (userProfileRef) {
+       setDoc(userProfileRef, { aiKnowledgeLevel: knowledge.id }, { merge: true }).catch(error => {
+        errorEmitter.emit(
+          'permission-error',
+          new FirestorePermissionError({
+            path: userProfileRef.path,
+            operation: 'update',
+            requestResourceData: { aiKnowledgeLevel: knowledge.id },
+          })
+        )
+      });
+    }
+  };
+
   const handleOnboardingComplete = (persona: AIPersonality) => {
     if (userProfileRef && user) {
-        const profileData = { id: user.uid, aiPersonality: persona.id };
+        const profileData = { id: user.uid, aiPersonality: persona.id, aiKnowledgeLevel: 'lumos-one' };
         setDoc(userProfileRef, profileData, { merge: true }).catch(error => {
             errorEmitter.emit(
               'permission-error',
@@ -109,7 +124,8 @@ export default function Dashboard() {
 
   const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading;
 
-  const personality = PERSONAS.find(p => p.id === userProfile?.aiPersonality) || PERSONAS[0];
+  const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
+  const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
 
   return (
     <AuthGate>
@@ -160,7 +176,9 @@ export default function Dashboard() {
                     </Button>
                   </div>
                   <AiAdvisorCard
+                    knowledge={knowledge}
                     personality={personality}
+                    onKnowledgeChange={handleKnowledgeChange}
                     onPersonalityChange={handlePersonalityChange}
                     transactions={typedTransactions}
                     cards={creditCards || []}
