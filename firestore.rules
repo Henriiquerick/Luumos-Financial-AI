@@ -17,8 +17,7 @@ service cloud.firestore {
           && data.date is timestamp
           && data.type is string && (data.type == 'income' || data.type == 'expense')
           && data.installments is number
-          && (data.cardId == null || data.cardId is string)
-          && data.updatedAt is timestamp;
+          && (data.cardId == null || data.cardId is string);
     }
 
     match /users/{userId} {
@@ -29,11 +28,13 @@ service cloud.firestore {
         
         allow create: if isOwner(userId) 
           && validateTransactionData(request.resource.data)
-          && request.resource.data.createdAt is timestamp;
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
           
         allow update: if isOwner(userId)
           && validateTransactionData(request.resource.data)
-          && request.resource.data.createdAt == resource.data.createdAt; // createdAt is immutable
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
       }
 
       match /cards/{cardId} {
