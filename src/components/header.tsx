@@ -3,8 +3,13 @@ import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { UserProfileDialog } from './user-profile-dialog';
+import type { UserProfile } from '@/lib/types';
 
-export default function Header() {
+interface HeaderProps {
+  userProfile: UserProfile | null;
+}
+
+export default function Header({ userProfile }: HeaderProps) {
   const auth = useAuth();
   const router = useRouter();
 

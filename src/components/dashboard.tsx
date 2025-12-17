@@ -129,7 +129,13 @@ export default function Dashboard() {
             <PersonaOnboarding onComplete={handleOnboardingComplete} />
         ) : (
             <div className="w-full max-w-7xl mx-auto">
-              <Header />
+              <Header userProfile={userProfile} />
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold tracking-tighter">
+                  {userProfile?.firstName ? `Bem-vindo(a), ${userProfile.firstName}!` : 'Bem-vindo(a) ao Lucent AI'}
+                </h1>
+                <p className="text-muted-foreground">Aqui está o resumo da sua vida financeira.</p>
+              </div>
               <DailyInsightCard 
                 transactions={typedTransactions}
                 personality={personality}

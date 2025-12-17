@@ -12,6 +12,7 @@ import { PERSONAS } from '@/lib/personas';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { Badge } from './ui/badge';
 
 interface AiAdvisorCardProps {
   personality: AIPersonality;
@@ -106,7 +107,10 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
 
 
   return (
-    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-[70vh] max-h-[800px]">
+    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-[70vh] max-h-[800px] relative overflow-hidden">
+      <Badge variant="secondary" className="absolute top-4 right-4 z-10 border-accent/20">
+        🧠 Personalidade Ativa: {personality.name}
+      </Badge>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
