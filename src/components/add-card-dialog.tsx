@@ -16,14 +16,21 @@ interface AddCardDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   cardToEdit?: CreditCard | null;
-  onFinished: () => void;
+  onFinished: (updatedCard?: CreditCard) => void;
 }
 
 export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: AddCardDialogProps) {
   const { t } = useTranslation();
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onFinished(); // Call onFinished without args when dialog is closed
+    }
+    setIsOpen(open);
+  }
   
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
         <DialogHeader>
           <DialogTitle className="text-primary">{cardToEdit ? t.modals.card.edit.title : t.modals.card.add.title}</DialogTitle>
@@ -32,9 +39,9 @@ export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: Add
           </DialogDescription>
         </DialogHeader>
         <CardForm 
-          onSave={() => {
+          onSave={(updatedCard) => {
             setIsOpen(false);
-            onFinished();
+            onFinished(updatedCard);
           }} 
           cardToEdit={cardToEdit} 
         />

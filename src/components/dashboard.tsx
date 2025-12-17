@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
@@ -45,8 +45,18 @@ export default function Dashboard() {
   // Fetch data using hooks
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
-  const { data: creditCards, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
+  const { data: creditCardsFromHook, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
   
+  // Local state for optimistic UI updates
+  const [localCreditCards, setLocalCreditCards] = useState<CreditCard[]>([]);
+
+  useEffect(() => {
+    if (creditCardsFromHook) {
+      setLocalCreditCards(creditCardsFromHook);
+    }
+  }, [creditCardsFromHook]);
+
+
   const typedTransactions = useMemo(() => {
     if (!transactions) return [];
     
@@ -112,7 +122,13 @@ export default function Dashboard() {
     setIsCardDialogOpen(true);
   };
   
-  const handleCardDialogFinished = () => {
+  const handleCardDialogFinished = (updatedCard?: CreditCard) => {
+     if (updatedCard) {
+      // Optimistic UI update
+      setLocalCreditCards(prevCards => 
+        prevCards.map(c => c.id === updatedCard.id ? updatedCard : c)
+      );
+    }
     setEditingCard(null);
   };
   
@@ -203,12 +219,12 @@ export default function Dashboard() {
                     onAddTransaction={handleAddTransaction} 
                   />
                   <CardsCarousel 
-                    cards={creditCards || []} 
+                    cards={localCreditCards || []} 
                     transactions={typedTransactions} 
                     onAddCard={handleAddCard}
                     onEditCard={handleEditCard}
                   />
-                  <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards || []} />
+                  <InstallmentTunnelChart transactions={typedTransactions} cards={localCreditCards || []} />
                   <RecentTransactions 
                     transactions={typedTransactions}
                     onEdit={handleEditTransaction}
@@ -227,7 +243,7 @@ export default function Dashboard() {
                     onKnowledgeChange={handleKnowledgeChange}
                     onPersonalityChange={handlePersonalityChange}
                     transactions={typedTransactions}
-                    cards={creditCards || []}
+                    cards={localCreditCards || []}
                     balance={netBalance}
                   />
                 </div>
@@ -236,7 +252,7 @@ export default function Dashboard() {
                 isOpen={isTransactionDialogOpen} 
                 setIsOpen={setIsTransactionDialogOpen} 
                 transactions={typedTransactions}
-                creditCards={creditCards || []}
+                creditCards={localCreditCards || []}
                 transactionToEdit={editingTransaction}
                 onFinished={() => setEditingTransaction(null)}
               />

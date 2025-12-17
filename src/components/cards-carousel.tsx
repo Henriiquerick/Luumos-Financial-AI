@@ -43,7 +43,7 @@ export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: Ca
             </Card>
           </CarouselItem>
         </CarouselContent>
-        {cards.length > 1 && (
+        {cards.length > 2 && (
             <>
                 <CarouselPrevious className="hidden xl:flex -left-4" />
                 <CarouselNext className="hidden xl:flex -right-4" />

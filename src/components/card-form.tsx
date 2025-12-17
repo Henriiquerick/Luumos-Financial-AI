@@ -41,7 +41,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface CardFormProps {
-  onSave: () => void;
+  onSave: (updatedCard?: CreditCard) => void;
   cardToEdit?: CreditCard | null;
 }
 
@@ -104,12 +104,13 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     if (cardToEdit) {
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
       updateDocumentNonBlocking(cardRef, cardData);
+      const updatedCard = { ...cardToEdit, ...cardData };
+      onSave(updatedCard); // Pass updated card for optimistic UI
     } else {
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
       addDocumentNonBlocking(cardsRef, cardData);
+      onSave(); // No card to pass for new card
     }
-    
-    onSave();
   };
 
   return (
