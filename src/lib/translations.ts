@@ -33,6 +33,14 @@ export const TRANSLATIONS = {
       welcome: 'Hello! How can I help you today?',
       welcome_prompt: 'Try saying: "Add my new Nubank card with a $5000 limit" or "I just bought a coffee for $10".',
       error: 'Sorry, an error occurred. Please try again.',
+      welcomeMessages: {
+        harvey: "Let's cut to the chase. What's the bottom line?",
+        neytan: "LET'S GO, MONSTER! WHAT'S THE PLAN TODAY? IT'S SHOWTIME!",
+        biris: "Hello! I'm here to help you with your finances. How can I assist you today?",
+        rick: "Alright, Morty, what financial mess have you gotten yourself into this time? Don't waste my time.",
+        biro: "Hey there, kiddo! Your cool uncle is here. What's on your mind? Let's figure this out together.",
+        jorgin: "Hey, bestie! Spill the tea. What are we manifesting today, a million dollars or just brunch? ✨"
+      }
     },
     header: {
       sign_out: 'Sign Out',
@@ -187,6 +195,14 @@ export const TRANSLATIONS = {
       welcome: 'Olá! Como posso ajudar hoje?',
       welcome_prompt: 'Tente dizer: "Adicione meu novo cartão Nubank com limite de R$5000" ou "Acabei de comprar um café por R$10".',
       error: 'Desculpe, ocorreu um erro. Por favor, tente novamente.',
+      welcomeMessages: {
+        harvey: "Vamos direto ao ponto. Qual é o resumo da situação?",
+        neytan: "BORA, MONSTRO! QUAL O PLANO DE HOJE? É HORA DO SHOW!",
+        biris: "Olá! Estou aqui para te ajudar com suas finanças. Como posso te auxiliar hoje?",
+        rick: "Certo, Morty, em que confusão financeira você se meteu dessa vez? Não me faça perder tempo.",
+        biro: "E aí, filhão! O tio tá na área. O que tá pegando? Vamos resolver isso juntos.",
+        jorgin: "E aí, mona! Me conta a fofoca. O que vamos manifestar hoje, um milhão ou só o brunch? ✨"
+      }
     },
     header: {
       sign_out: 'Sair',
@@ -341,6 +357,14 @@ export const TRANSLATIONS = {
       welcome: '¡Hola! ¿Cómo puedo ayudarte hoy?',
       welcome_prompt: 'Intenta decir: "Añade mi nueva tarjeta Nubank con un límite de $5000" o "Acabo de comprar un café por $10".',
       error: 'Lo siento, ocurrió un error. Por favor, inténtalo de nuevo.',
+      welcomeMessages: {
+        harvey: "Vayamos al grano. ¿Cuál es el balance final?",
+        neytan: "¡VAMOS, CAMPEÓN! ¿CUÁL ES EL PLAN DE HOY? ¡ES HORA DEL ESPECTÁCULO!",
+        biris: "¡Hola! Estoy aquí para ayudarte con tus finanzas. ¿Cómo puedo asistirte hoy?",
+        rick: "Muy bien, Morty, ¿en qué lío financiero te has metido esta vez? No me hagas perder el tiempo.",
+        biro: "¡Hola, campeón! Tu tío favorito está aquí. ¿Qué te preocupa? Vamos a resolverlo juntos.",
+        jorgin: "¡Hola, cari! Cuéntame el chisme. ¿Qué vamos a manifestar hoy, un millón de dólares o solo el brunch? ✨"
+      }
     },
     header: {
       sign_out: 'Cerrar Sesión',

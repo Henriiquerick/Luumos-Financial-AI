@@ -37,6 +37,9 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const { user } = useUser();
   const { t, language } = useTranslation();
 
+  // Get the specific welcome message for the current personality
+  const welcomeMessage = t.chat.welcomeMessages[personality.id] || t.chat.welcome;
+
 
   const handleSendMessage = async () => {
     if (!userInput.trim() || !user) return;
@@ -174,8 +177,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                  <div className="flex items-start gap-3 justify-start">
                    <span className="text-2xl mt-1">{personality.icon}</span>
                    <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
-                      <p>{t.chat.welcome}</p>
-                      <p className="text-xs text-muted-foreground mt-2">{t.chat.welcome_prompt}</p>
+                      <p>{welcomeMessage}</p>
                    </div>
                 </div>
             )}
