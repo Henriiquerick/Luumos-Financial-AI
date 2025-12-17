@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
+import { formatCurrency } from '@/lib/i18n-utils';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -50,16 +51,10 @@ export function CreditCardCard({
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
   const theme = getBankTheme(card.name);
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
 
   const handleDeleteCard = async () => {
     if (!user) return;
@@ -111,6 +106,9 @@ export function CreditCardCard({
     onEdit();
     setIsMenuOpen(false);
   };
+
+  const formattedAvailable = formatCurrency(language, usage.availableLimit);
+  const formattedTotal = formatCurrency(language, usage.totalLimit);
 
   return (
     <>
@@ -184,7 +182,7 @@ export function CreditCardCard({
           </div>
           <div className="text-sm font-medium">
             <p>
-              {t.card.limit_info.replace('{available}', formatCurrency(usage.availableLimit)).replace('{total}', formatCurrency(usage.totalLimit))}
+              {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
             </p>
           </div>
         </CardContent>

@@ -4,11 +4,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Transaction } from '@/lib/types';
-import { format } from 'date-fns';
 import { CategoryIcon } from './category-icon';
 import { useTranslation } from '@/contexts/language-context';
 import { Button } from './ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
+import { formatDate, formatCurrency } from '@/lib/i18n-utils';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -17,7 +17,7 @@ interface RecentTransactionsProps {
 }
 
 export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTransactionsProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const recent = transactions
     .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
     .slice(0, 5);
@@ -59,10 +59,10 @@ export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTra
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{format(t.date as Date, 'MMM dd, yyyy')}</TableCell>
+                  <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
                   <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
                     {t.type === 'income' ? '+' : '-'}
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(t.amount)}
+                    {formatCurrency(language, t.amount)}
                   </TableCell>
                    <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => onEdit(t)}>

@@ -8,6 +8,7 @@ import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
+import { formatCurrency, formatMonth } from '@/lib/i18n-utils';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
@@ -15,7 +16,8 @@ interface InstallmentTunnelChartProps {
 }
 
 export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunnelChartProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  
   const chartData = useMemo(() => {
     return calculateCardBillProjection(transactions, cards);
   }, [transactions, cards]);
@@ -27,20 +29,28 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
       const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
       return (
         <div className="p-2 bg-background border rounded-lg shadow-lg">
-          <p className="label font-bold">{`${label}`}</p>
+          <p className="label font-bold">{label}</p>
           {payload.map((entry: any) => (
              <p key={entry.name} style={{ color: entry.color }}>
-                {`${entry.name}: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(entry.value)}`}
+                {`${entry.name}: ${formatCurrency(language, entry.value)}`}
             </p>
           ))}
            <p className="mt-2 font-bold border-t border-border pt-1">
-            Total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}
+            Total: {formatCurrency(language, total)}
           </p>
         </div>
       );
     }
     return null;
   };
+
+  const formattedData = useMemo(() => {
+    return chartData.map(item => ({
+      ...item,
+      name: formatMonth(language, item.name),
+    }));
+  }, [chartData, language]);
+
 
   return (
     <Card className="bg-card/50 border-primary/20">
@@ -50,7 +60,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+          <BarChart data={formattedData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <XAxis
               dataKey="name"
               stroke="hsl(var(--muted-foreground))"
@@ -63,7 +73,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => formatCurrency(language, Number(value), { minimumFractionDigits: 0 })}
             />
             <Tooltip
               cursor={{ fill: 'hsla(var(--muted), 0.5)' }}

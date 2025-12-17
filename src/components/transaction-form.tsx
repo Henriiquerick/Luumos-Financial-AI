@@ -22,6 +22,7 @@ import { collection, Timestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { DatePicker } from './ui/date-picker';
+import { formatCurrency } from '@/lib/i18n-utils';
 
 
 const formSchema = z.object({
@@ -50,7 +51,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -169,7 +170,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
   function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
     
-    const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount);
+    const formattedAmount = formatCurrency(language, values.amount);
     
     if (transactionToEdit) {
       // UPDATE LOGIC
@@ -382,7 +383,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
                     </Select>
                     {cardUsage && (
                        <FormMessage className={cn(isLimitExceeded && "text-destructive")}>
-                        {t.modals.transaction.fields.available}: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cardUsage.availableLimit)}
+                        {t.modals.transaction.fields.available}: {formatCurrency(language, cardUsage.availableLimit)}
                        </FormMessage>
                     )}
                   </FormItem>

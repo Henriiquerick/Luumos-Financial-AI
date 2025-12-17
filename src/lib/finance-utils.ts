@@ -84,7 +84,7 @@ export function calculateCardBillProjection(
   // Initialize months and card totals for each month
   for (let i = 0; i < projectionMonths; i++) {
     const month = startOfMonth(addMonths(today, i));
-    const monthKey = format(month, 'MMM/yy');
+    const monthKey = format(month, 'yyyy-MM'); // Use a sortable format
     monthlyBills[monthKey] = {};
     cards.forEach(card => {
       monthlyBills[monthKey][card.name] = 0;
@@ -94,17 +94,16 @@ export function calculateCardBillProjection(
   // Process each transaction
   transactions.forEach(t => {
     // We only care about card expenses
-    if (!t.cardId || t.type !== 'expense' || !t.installmentId) return;
+    if (!t.cardId || t.type !== 'expense') return;
     
     const card = cards.find(c => c.id === t.cardId);
     if (!card) return;
 
     const billMonth = startOfMonth(getDateFromTimestamp(t.date));
-    const monthKey = format(billMonth, 'MMM/yy');
+    const monthKey = format(billMonth, 'yyyy-MM');
 
     // Add to the bill only if the month is within our projection window
     if (monthKey in monthlyBills) {
-        // Use the transaction amount directly, as it represents one installment
         monthlyBills[monthKey][card.name] += t.amount;
     }
   });
@@ -119,5 +118,5 @@ export function calculateCardBillProjection(
     });
     monthData.total = Math.round(totalOfMonth);
     return monthData;
-  });
+  }).sort((a, b) => (a.name as string).localeCompare(b.name as string)); // Sort by month key
 }

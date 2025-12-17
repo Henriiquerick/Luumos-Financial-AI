@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/i18n-utils';
 
 interface BalanceCardProps {
   netBalance: number;
@@ -14,15 +15,10 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: BalanceCardProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
-  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value);
-
-  const formattedNetBalance = formatCurrency(netBalance);
-  const formattedCashBalance = formatCurrency(cashBalance);
+  const formattedNetBalance = formatCurrency(language, netBalance);
+  const formattedCashBalance = formatCurrency(language, cashBalance);
   const isNegative = netBalance < 0;
 
   return (
