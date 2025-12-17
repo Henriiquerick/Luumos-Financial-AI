@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { ai } from '../genkit';
-// import { createCardTool } from '../tools'; 
 
 export const contextualChatFlow = ai.defineFlow(
   {
@@ -19,7 +18,6 @@ export const contextualChatFlow = ai.defineFlow(
     const contextData = input.data ? JSON.stringify(input.data, null, 2) : "Sem dados financeiros disponíveis.";
 
     const { text } = await ai.generate({
-      // tools: [createCardTool], // Temporarily removed to restore functionality
       // 3. Prompt Inteligente: Injetamos a Personalidade e o Contexto
       prompt: `
       SUA PERSONALIDADE: "${persona}". Adote estritamente o tom de voz e estilo desta personalidade.
