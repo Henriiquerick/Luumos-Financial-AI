@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -47,9 +48,15 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         headers: {
           'Content-Type': 'application/json',
         },
-        // AQUI ESTÁ A CORREÇÃO: Enviando no formato esperado pela API
+        // CORREÇÃO: Enviando a mensagem E os dados de contexto (incluindo a personalidade)
         body: JSON.stringify({ 
-            messages: newMessages
+            messages: newMessages,
+            data: {
+              persona: personality.systemInstruction, // A instrução que define a personalidade
+              balance,
+              transactions,
+              cards,
+            }
         }),
       });
 
