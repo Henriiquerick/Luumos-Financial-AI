@@ -8,23 +8,27 @@ import { useTranslation } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 
 interface BalanceCardProps {
-  balance: number;
+  netBalance: number;
+  cashBalance: number;
   onAddTransaction: () => void;
 }
 
-export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
+export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: BalanceCardProps) {
   const { t } = useTranslation();
-  const formattedBalance = new Intl.NumberFormat('en-US', {
+  
+  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(balance);
+  }).format(value);
 
-  const isNegative = balance < 0;
+  const formattedNetBalance = formatCurrency(netBalance);
+  const formattedCashBalance = formatCurrency(cashBalance);
+  const isNegative = netBalance < 0;
 
   return (
     <Card className="bg-card/50 border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-300">{t.dashboard.balance}</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-300">Disponível Real</CardTitle>
         <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={onAddTransaction}>
           <PlusCircle className="mr-2 h-4 w-4" />
           {t.dashboard.add_transaction}
@@ -35,10 +39,10 @@ export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
           "text-4xl font-bold",
           isNegative ? "text-red-400" : "text-primary"
         )}>
-          {formattedBalance}
+          {formattedNetBalance}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          {balance >= 0 ? 'Looking good!' : 'You might want to check your spending.'}
+          Em conta: {formattedCashBalance}
         </p>
       </CardContent>
     </Card>

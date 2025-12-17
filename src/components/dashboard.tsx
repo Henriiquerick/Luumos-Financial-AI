@@ -113,23 +113,25 @@ export default function Dashboard() {
     setEditingCard(null);
   };
 
-  const netBalance = useMemo(() => {
+  const { netBalance, cashBalance } = useMemo(() => {
     const today = startOfToday();
-    const cashBalance = (typedTransactions || []).reduce((acc, t) => {
+    const currentCashBalance = (typedTransactions || []).reduce((acc, t) => {
       if (t.cardId) return acc; // Ignore card transactions for cash balance
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
     
     const currentMonthCardBill = (typedTransactions || []).reduce((acc, t) => {
-      // Include only card expenses from the current month's bill
       if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
         return acc + t.amount;
       }
       return acc;
     }, 0);
 
-    return cashBalance - currentMonthCardBill;
+    return {
+      netBalance: currentCashBalance - currentMonthCardBill,
+      cashBalance: currentCashBalance
+    };
   }, [typedTransactions]);
 
   const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading;
@@ -169,7 +171,11 @@ export default function Dashboard() {
               />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div className="lg:col-span-2 space-y-6">
-                  <BalanceCard balance={netBalance} onAddTransaction={() => setIsTransactionDialogOpen(true)} />
+                  <BalanceCard 
+                    netBalance={netBalance} 
+                    cashBalance={cashBalance}
+                    onAddTransaction={() => setIsTransactionDialogOpen(true)} 
+                  />
                   <CardsCarousel 
                     cards={creditCards || []} 
                     transactions={typedTransactions} 
