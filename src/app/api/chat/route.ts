@@ -1,28 +1,24 @@
-import { contextualChatFlow } from '@/ai/flows/contextual-chat';
+import { contextualChatFlow } from '@/ai/flows/contextual-chat'; // <--- Agora com o nome certo!
 
-export const maxDuration = 60; // Extend timeout for complex agent actions
+export const maxDuration = 60; // Timeout estendido para a IA pensar
 
 export async function POST(req: Request) {
   try {
-    // We also need to pass the user ID to the flow so it can perform actions on their behalf.
-    const { messages, data, userId } = await req.json();
-    const lastMessage = messages[messages.length - 1]?.content;
+    const { messages, data } = await req.json();
+    const lastMessage = messages[messages.length - 1].content;
 
-
-    // Execute the Genkit flow
-    const response = await contextualChatFlow({
-        userMessage: lastMessage,
-        history: messages.slice(0, -1),
-        userData: data,
+    // Em Genkit 1.0, o fluxo exportado pode ser chamado diretamente como uma função assíncrona
+    const responseText = await contextualChatFlow({
+      userMessage: lastMessage,
+      history: messages.slice(0, -1),
+      userData: data // Passamos os dados de saldo/cartões aqui
     });
 
-    // Return the text part of the response
-    return new Response(response, {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain' },
-    });
+    // Retorna a resposta (seja texto plano ou o JSON da ação)
+    return new Response(responseText, { status: 200 });
+
   } catch (e: any) {
-    console.error('Error in /api/chat:', e);
-    return new Response(e.message || 'An internal error occurred.', { status: 500 });
+    console.error("Erro no fluxo do Genkit:", e);
+    return new Response(e.message || "Erro interno na IA", { status: 500 });
   }
 }
