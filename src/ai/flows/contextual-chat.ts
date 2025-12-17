@@ -1,9 +1,7 @@
+
 // src/ai/flows/contextual-chat.ts
 
 import { z } from 'zod';
-// IMPORTANTE: Importe a instância 'ai' do seu arquivo de configuração
-// Se o seu arquivo for 'src/ai/genkit.ts', o import abaixo deve funcionar.
-// Caso o nome da exportação seja diferente (ex: 'genkitApp'), ajuste aqui.
 import { ai } from '../genkit'; 
 
 // Definimos o formato exato que a API Route vai enviar
@@ -23,6 +21,8 @@ export const contextualChatFlow = ai.defineFlow(
   {
     name: 'contextualChatFlow',
     inputSchema: InputSchema,
+    // O output será uma string (texto ou JSON)
+    outputSchema: z.string(), 
   },
   async (input) => {
     const { userMessage, userData } = input;
@@ -42,7 +42,6 @@ export const contextualChatFlow = ai.defineFlow(
 
     // USAMOS ai.generate AGORA
     // Nota: O modelo é pego automaticamente da configuração do 'ai' (genkit.ts)
-    // ou você pode passar 'model: gemini15Flash' se importá-lo.
     const llmResponse = await ai.generate({
       prompt: `${financialContext}\n\nPERGUNTA DO USUÁRIO: ${userMessage}`,
       config: {
@@ -50,6 +49,7 @@ export const contextualChatFlow = ai.defineFlow(
       },
     });
 
-    return llmResponse.text;
+    // Em Genkit 1.x, a resposta está na propriedade .text
+    return llmResponse.text; 
   }
 );
