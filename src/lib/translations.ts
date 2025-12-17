@@ -6,11 +6,15 @@ export const TRANSLATIONS = {
       welcome_back: 'Welcome to Lucent AI',
       subtitle: 'Here is the summary of your financial life.',
       balance: 'Available Balance',
+      real_available: 'Real Available',
+      in_account: 'In account:',
       add_transaction: 'Add Transaction',
       recent_activity: 'Recent Activity',
       last_transactions: 'Your last 5 transactions.',
       installment_tunnel: 'Installment Tunnel',
       installment_subtitle: 'Your projected credit card bills for the next 6 months.',
+      daily_insight: 'Daily Insight',
+      insight_error: '({personalityName}): The market is volatile, but I am watching. Try again later.',
     },
     transaction: {
       header: 'Transaction',
@@ -26,12 +30,47 @@ export const TRANSLATIONS = {
       personality: 'Personality',
       placeholder: 'Ask {personalityName} anything...',
       welcome: 'Hello! How can I help you today?',
+      welcome_prompt: 'Try saying: "Add my new Nubank card with a $5000 limit" or "I just bought a coffee for $10".',
+      error: 'Sorry, an error occurred. Please try again.',
     },
     header: {
       sign_out: 'Sign Out',
     },
     card: {
-        add_new: 'Add New Card',
+      add_new: 'Add New Card',
+      menu: {
+        edit: 'Edit Card',
+        delete: 'Delete Card',
+      },
+      limit_info: '{available} available of {total}',
+    },
+    toasts: {
+      profile: {
+        title: 'Profile Updated',
+        description: 'Your information has been saved successfully.',
+      },
+      transaction: {
+        title: 'Success!',
+        description: 'Transaction of {amount} added.',
+      },
+      installments: {
+        title: 'Success',
+        description: '{count} installments were created.',
+      },
+      ai: {
+        title: 'AI Suggestion',
+        description: 'We\'ve categorized this as "{category}".',
+      },
+      card: {
+        deleted: {
+          title: 'Card Deleted',
+          description: 'The card "{cardName}" and its transactions have been removed.',
+        },
+      },
+      error: {
+        title: 'Error',
+        description: 'Could not complete the operation.',
+      },
     },
     modals: {
       transaction: {
@@ -69,7 +108,10 @@ export const TRANSLATIONS = {
           birthDate: 'Date of Birth',
           city: 'City',
           job: 'Job Title',
-          company: 'Company'
+          company: 'Company',
+          cityPlaceholder: 'e.g., San Francisco',
+          jobPlaceholder: 'e.g., Software Engineer',
+          companyPlaceholder: 'e.g., Google',
         },
         save: 'Save Changes'
       },
@@ -92,6 +134,12 @@ export const TRANSLATIONS = {
           },
           save: 'Save Card',
           save_changes: 'Save Changes'
+      },
+      delete_card: {
+          title: 'Are you sure?',
+          description: 'This will permanently delete the card "{cardName}" and all of its associated transactions. This action cannot be undone.',
+          cancel: 'Cancel',
+          confirm: 'Delete',
       }
     }
   },
@@ -101,11 +149,15 @@ export const TRANSLATIONS = {
       welcome_back: 'Bem-vindo(a) ao Lucent AI',
       subtitle: 'Aqui está o resumo da sua vida financeira.',
       balance: 'Saldo Disponível',
+      real_available: 'Disponível Real',
+      in_account: 'Em conta:',
       add_transaction: 'Adicionar Transação',
       recent_activity: 'Atividade Recente',
       last_transactions: 'Suas últimas 5 transações.',
       installment_tunnel: 'Túnel de Parcelas',
       installment_subtitle: 'Suas faturas de cartão de crédito projetadas para os próximos 6 meses.',
+      daily_insight: 'Insight Diário',
+      insight_error: '({personalityName}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.',
     },
     transaction: {
       header: 'Transação',
@@ -121,12 +173,47 @@ export const TRANSLATIONS = {
       personality: 'Personalidade',
       placeholder: 'Pergunte qualquer coisa para {personalityName}...',
       welcome: 'Olá! Como posso ajudar hoje?',
+      welcome_prompt: 'Tente dizer: "Adicione meu novo cartão Nubank com limite de R$5000" ou "Acabei de comprar um café por R$10".',
+      error: 'Desculpe, ocorreu um erro. Por favor, tente novamente.',
     },
     header: {
       sign_out: 'Sair',
     },
     card: {
         add_new: 'Adicionar Novo Cartão',
+        menu: {
+          edit: 'Editar Cartão',
+          delete: 'Excluir Cartão',
+        },
+        limit_info: '{available} disponíveis de {total}',
+    },
+    toasts: {
+      profile: {
+        title: 'Perfil Atualizado',
+        description: 'Suas informações foram salvas com sucesso.',
+      },
+      transaction: {
+        title: 'Sucesso!',
+        description: 'Transação de {amount} adicionada.',
+      },
+      installments: {
+        title: 'Sucesso',
+        description: '{count} parcelas foram criadas.',
+      },
+      ai: {
+        title: 'Sugestão da IA',
+        description: 'Categorizamos isso como "{category}".',
+      },
+      card: {
+        deleted: {
+          title: 'Cartão Excluído',
+          description: 'O cartão "{cardName}" e suas transações foram removidos.',
+        },
+      },
+      error: {
+        title: 'Erro',
+        description: 'Não foi possível completar a operação.',
+      },
     },
     modals: {
       transaction: {
@@ -164,7 +251,10 @@ export const TRANSLATIONS = {
           birthDate: 'Data de Nascimento',
           city: 'Cidade',
           job: 'Cargo',
-          company: 'Empresa'
+          company: 'Empresa',
+          cityPlaceholder: 'ex: São Paulo',
+          jobPlaceholder: 'ex: Engenheiro(a) de Software',
+          companyPlaceholder: 'ex: Google',
         },
         save: 'Salvar Alterações'
       },
@@ -187,6 +277,12 @@ export const TRANSLATIONS = {
           },
           save: 'Salvar Cartão',
           save_changes: 'Salvar Alterações'
+      },
+      delete_card: {
+          title: 'Você tem certeza?',
+          description: 'Isso excluirá permanentemente o cartão "{cardName}" e todas as suas transações associadas. Esta ação não pode ser desfeita.',
+          cancel: 'Cancelar',
+          confirm: 'Excluir',
       }
     }
   },
@@ -196,11 +292,15 @@ export const TRANSLATIONS = {
       welcome_back: 'Bienvenido(a) a Lucent AI',
       subtitle: 'Aquí está el resumen de tu vida financiera.',
       balance: 'Saldo Disponible',
+      real_available: 'Disponible Real',
+      in_account: 'En cuenta:',
       add_transaction: 'Añadir Transacción',
       recent_activity: 'Actividad Reciente',
       last_transactions: 'Tus últimas 5 transacciones.',
       installment_tunnel: 'Túnel de Cuotas',
       installment_subtitle: 'Las facturas de tu tarjeta de crédito proyectadas para los próximos 6 meses.',
+      daily_insight: 'Insight Diario',
+      insight_error: '({personalityName}): El mercado está volátil, pero estoy atento. Inténtalo de nuevo más tarde.',
     },
     transaction: {
       header: 'Transacción',
@@ -216,12 +316,47 @@ export const TRANSLATIONS = {
       personality: 'Personalidad',
       placeholder: 'Pregúntale lo que sea a {personalityName}...',
       welcome: '¡Hola! ¿Cómo puedo ayudarte hoy?',
+      welcome_prompt: 'Intenta decir: "Añade mi nueva tarjeta Nubank con un límite de $5000" o "Acabo de comprar un café por $10".',
+      error: 'Lo siento, ocurrió un error. Por favor, inténtalo de nuevo.',
     },
     header: {
       sign_out: 'Cerrar Sesión',
     },
     card: {
         add_new: 'Añadir Nueva Tarjeta',
+        menu: {
+          edit: 'Editar Tarjeta',
+          delete: 'Eliminar Tarjeta',
+        },
+        limit_info: '{available} disponibles de {total}',
+    },
+    toasts: {
+      profile: {
+        title: 'Perfil Actualizado',
+        description: 'Tu información ha sido guardada con éxito.',
+      },
+      transaction: {
+        title: '¡Éxito!',
+        description: 'Transacción de {amount} añadida.',
+      },
+      installments: {
+        title: 'Éxito',
+        description: 'Se crearon {count} cuotas.',
+      },
+      ai: {
+        title: 'Sugerencia de IA',
+        description: 'Hemos categorizado esto como "{category}".',
+      },
+      card: {
+        deleted: {
+          title: 'Tarjeta Eliminada',
+          description: 'La tarjeta "{cardName}" y sus transacciones han sido eliminadas.',
+        },
+      },
+      error: {
+        title: 'Error',
+        description: 'No se pudo completar la operación.',
+      },
     },
     modals: {
       transaction: {
@@ -259,7 +394,10 @@ export const TRANSLATIONS = {
           birthDate: 'Fecha de Nacimiento',
           city: 'Ciudad',
           job: 'Puesto de Trabajo',
-          company: 'Empresa'
+          company: 'Empresa',
+          cityPlaceholder: 'ej: Madrid',
+          jobPlaceholder: 'ej: Ingeniero(a) de Software',
+          companyPlaceholder: 'ej: Google',
         },
         save: 'Guardar Cambios'
       },
@@ -282,6 +420,12 @@ export const TRANSLATIONS = {
           },
           save: 'Guardar Tarjeta',
           save_changes: 'Guardar Cambios'
+      },
+      delete_card: {
+          title: '¿Estás seguro?',
+          description: 'Esto eliminará permanentemente la tarjeta "{cardName}" y todas sus transacciones asociadas. Esta acción no se puede deshacer.',
+          cancel: 'Cancelar',
+          confirm: 'Eliminar',
       }
     }
   },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -87,8 +88,8 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
     updateDocumentNonBlocking(userProfileRef, dataToUpdate);
 
     toast({
-      title: 'Profile Updated',
-      description: 'Your information has been saved successfully.',
+      title: t.toasts.profile.title,
+      description: t.toasts.profile.description,
     });
     onSave();
   };
@@ -147,7 +148,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
               <FormItem>
                 <FormLabel>{t.modals.profile.fields.city}</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., San Francisco" {...field} />
+                  <Input placeholder={t.modals.profile.fields.cityPlaceholder} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -162,7 +163,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
                 <FormItem>
                     <FormLabel>{t.modals.profile.fields.job}</FormLabel>
                     <FormControl>
-                    <Input placeholder="e.g., Software Engineer" {...field} />
+                    <Input placeholder={t.modals.profile.fields.jobPlaceholder} {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
@@ -175,7 +176,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
                 <FormItem>
                     <FormLabel>{t.modals.profile.fields.company}</FormLabel>
                     <FormControl>
-                    <Input placeholder="e.g., Google" {...field} />
+                    <Input placeholder={t.modals.profile.fields.companyPlaceholder} {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>

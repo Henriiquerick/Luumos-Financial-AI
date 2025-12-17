@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, AlertCircle } from 'lucide-react';
 import type { AIPersonality, Transaction } from '@/lib/types';
 import type { GetDailyInsightOutput } from '@/ai/flows/get-daily-insight';
+import { useTranslation } from '@/contexts/language-context';
 
 interface DailyInsightCardProps {
   transactions: Transaction[];
@@ -23,6 +25,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchInsight = async () => {
@@ -75,7 +78,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
 
       } catch (e) {
         console.error('Failed to generate daily insight:', e);
-        setError(`(${personality.name}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.`);
+        setError(t.dashboard.insight_error.replace('{personalityName}', personality.name));
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +87,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
     if (personality && transactions) {
       fetchInsight();
     }
-  }, [transactions, personality, balance]);
+  }, [transactions, personality, balance, t]);
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 animate-fade-in">
@@ -94,7 +97,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
           <div className="flex-grow">
             <h3 className="font-semibold text-accent flex items-center gap-2">
               <Bot className="w-5 h-5" />
-              Daily Insight
+              {t.dashboard.daily_insight}
             </h3>
             {isLoading ? (
               <div className="space-y-2 mt-2">

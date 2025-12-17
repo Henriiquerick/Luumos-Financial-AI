@@ -29,6 +29,7 @@ import {
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/contexts/language-context';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -48,6 +49,7 @@ export function CreditCardCard({
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
 
@@ -81,15 +83,15 @@ export function CreditCardCard({
       await batch.commit();
 
       toast({
-        title: 'Card Deleted',
-        description: `The card "${card.name}" and its transactions have been removed.`,
+        title: t.toasts.card.deleted.title,
+        description: t.toasts.card.deleted.description.replace('{cardName}', card.name),
       });
     } catch (error) {
       console.error('Error deleting card:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Could not delete the card.',
+        title: t.toasts.error.title,
+        description: t.toasts.error.description,
       });
     }
     setIsDeleteDialogOpen(false);
@@ -145,13 +147,13 @@ export function CreditCardCard({
                 <li>
                   <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-white rounded-md hover:bg-gray-700/50 focus:outline-none focus:bg-gray-700/50">
                     <Pencil className="mr-2 h-4 w-4" />
-                    <span>Edit Card</span>
+                    <span>{t.card.menu.edit}</span>
                   </button>
                 </li>
                 <li>
                    <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
                     <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Delete Card</span>
+                    <span>{t.card.menu.delete}</span>
                   </button>
                 </li>
               </ul>
@@ -175,8 +177,7 @@ export function CreditCardCard({
           </div>
           <div className="text-sm font-medium">
             <p>
-              {formatCurrency(usage.availableLimit)} available of{' '}
-              {formatCurrency(usage.totalLimit)}
+              {t.card.limit_info.replace('{available}', formatCurrency(usage.availableLimit)).replace('{total}', formatCurrency(usage.totalLimit))}
             </p>
           </div>
         </CardContent>
@@ -188,19 +189,18 @@ export function CreditCardCard({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t.modals.delete_card.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the card "{card.name}" and all of its
-              associated transactions. This action cannot be undone.
+              {t.modals.delete_card.description.replace('{cardName}', card.name)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t.modals.delete_card.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteCard}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Delete
+              {t.modals.delete_card.confirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

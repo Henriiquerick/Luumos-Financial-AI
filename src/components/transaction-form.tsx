@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -113,14 +114,14 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
 
       if (result.category && CATEGORIES.includes(result.category as TransactionCategory)) {
         setValue('category', result.category as TransactionCategory);
-        toast({ title: 'AI Suggestion', description: `We've categorized this as "${result.category}".` });
+        toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', result.category) });
       }
     } catch (error) {
       console.error('AI categorization failed:', error);
     } finally {
       setIsCategorizing(false);
     }
-  }, [getValues, setValue, transactions, toast]);
+  }, [getValues, setValue, transactions, toast, t]);
   
   useEffect(() => {
     if (transactionType === 'income') {
@@ -136,6 +137,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
   function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
     const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+    const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount);
     
     if (values.isInstallment && values.type === 'expense' && values.installments) {
       const installmentId = crypto.randomUUID();
@@ -154,7 +156,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
         };
         addDocumentNonBlocking(transactionsRef, transactionData);
       }
-      toast({ title: 'Success', description: `${values.installments} installments were created.` });
+      toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
     } else { 
       const transactionData = {
         description: values.description,
@@ -167,8 +169,8 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
       };
       addDocumentNonBlocking(transactionsRef, transactionData);
       toast({
-        title: 'Success!',
-        description: `Transaction of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount)} added.`,
+        title: t.toasts.transaction.title,
+        description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
       });
     }
     

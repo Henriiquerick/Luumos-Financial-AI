@@ -28,7 +28,7 @@ export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: Balan
   return (
     <Card className="bg-card/50 border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-300">Disponível Real</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-300">{t.dashboard.real_available}</CardTitle>
         <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={onAddTransaction}>
           <PlusCircle className="mr-2 h-4 w-4" />
           {t.dashboard.add_transaction}
@@ -42,7 +42,7 @@ export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: Balan
           {formattedNetBalance}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Em conta: {formattedCashBalance}
+          {t.dashboard.in_account} {formattedCashBalance}
         </p>
       </CardContent>
     </Card>

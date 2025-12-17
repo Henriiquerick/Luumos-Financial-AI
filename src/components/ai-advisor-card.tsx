@@ -79,7 +79,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
     } catch (error: any) {
       console.error('Failed to get advice:', error);
-      setMessages(prev => [...prev, { role: 'model', content: error.message || 'Desculpe, ocorreu um erro. Tente novamente.' }]);
+      setMessages(prev => [...prev, { role: 'model', content: t.chat.error }]);
     } finally {
       setIsLoading(false);
     }
@@ -175,7 +175,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                    <span className="text-2xl mt-1">{personality.icon}</span>
                    <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
                       <p>{t.chat.welcome}</p>
-                      <p className="text-xs text-muted-foreground mt-2">Try saying: "Add my new Nubank card with a R$5000 limit" or "I just bought a coffee for R$10".</p>
+                      <p className="text-xs text-muted-foreground mt-2">{t.chat.welcome_prompt}</p>
                    </div>
                 </div>
             )}
