@@ -38,11 +38,18 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
     
     const newMessages: Message[] = [...messages, { role: 'user', content: userInput }];
     setMessages(newMessages);
-    const currentInput = userInput;
     setUserInput('');
     setIsLoading(true);
 
     try {
+      // Prepara os dados de contexto para enviar à API.
+      const contextData = {
+        persona: personality.name, // Envia o nome da personalidade
+        balance: balance,
+        transactions: transactions.slice(-5), // Envia as últimas 5 transações
+        cards: cards,
+      };
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -50,6 +57,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         },
         body: JSON.stringify({ 
             messages: newMessages,
+            data: contextData, // Envia o objeto de dados junto com as mensagens
         }),
       });
 
