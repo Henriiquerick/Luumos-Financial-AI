@@ -67,6 +67,27 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
       const resultText = await response.text();
       setMessages(prev => [...prev, { role: 'model', content: resultText }]);
 
+      let cleanResponse = resultText.trim();
+
+      // 🧹 LIMPEZA DE MARKDOWN: Remove ```json e ``` se existirem
+      if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.replace(/^```(json)?|```$/g, '').trim();
+      }
+      
+      // Tenta detectar se é um JSON de Ação
+      if (cleanResponse.startsWith('{') && cleanResponse.endsWith('}')) {
+        try {
+          const actionData = JSON.parse(cleanResponse);
+          
+          // ... aqui entra o seu switch case (create_card, add_transaction) ...
+          
+          // Se deu certo, pare por aqui para não mostrar o JSON no chat
+          return; 
+        } catch (e) {
+          console.error("Tentativa de parsing de JSON falhou, tratando como texto comum.");
+        }
+      }
+
     } catch (error) {
       console.error('Failed to get advice:', error);
       setMessages(prev => [...prev, { role: 'model', content: 'Desculpe, ocorreu um erro. Tente novamente.' }]);
