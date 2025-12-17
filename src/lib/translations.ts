@@ -1,4 +1,3 @@
-
 export const TRANSLATIONS = {
   en: {
     dashboard: {
@@ -31,7 +30,6 @@ export const TRANSLATIONS = {
       personality: 'Personality',
       placeholder: 'Ask {personalityName} anything...',
       welcome: 'Hello! How can I help you today?',
-      welcome_prompt: 'Try saying: "Add my new Nubank card with a $5000 limit" or "I just bought a coffee for $10".',
       error: 'Sorry, an error occurred. Please try again.',
       welcomeMessages: {
         harvey: "Let's cut to the chase. What's the bottom line?",
@@ -193,7 +191,6 @@ export const TRANSLATIONS = {
       personality: 'Personalidade',
       placeholder: 'Pergunte qualquer coisa para {personalityName}...',
       welcome: 'Olá! Como posso ajudar hoje?',
-      welcome_prompt: 'Tente dizer: "Adicione meu novo cartão Nubank com limite de R$5000" ou "Acabei de comprar um café por R$10".',
       error: 'Desculpe, ocorreu um erro. Por favor, tente novamente.',
       welcomeMessages: {
         harvey: "Vamos direto ao ponto. Qual é o resumo da situação?",
@@ -355,7 +352,6 @@ export const TRANSLATIONS = {
       personality: 'Personalidad',
       placeholder: 'Pregúntale lo que sea a {personalityName}...',
       welcome: '¡Hola! ¿Cómo puedo ayudarte hoy?',
-      welcome_prompt: 'Intenta decir: "Añade mi nueva tarjeta Nubank con un límite de $5000" o "Acabo de comprar un café por $10".',
       error: 'Lo siento, ocurrió un error. Por favor, inténtalo de nuevo.',
       welcomeMessages: {
         harvey: "Vayamos al grano. ¿Cuál es el balance final?",
