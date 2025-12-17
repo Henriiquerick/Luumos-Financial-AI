@@ -91,6 +91,25 @@
         "aiPersonality": {
           "type": "string",
           "description": "The selected AI finance personality for the user."
+        },
+        "firstName": {
+            "type": "string"
+        },
+        "lastName": {
+            "type": "string"
+        },
+        "birthDate": {
+            "type": "string",
+            "format": "date"
+        },
+        "city": {
+            "type": "string"
+        },
+        "jobTitle": {
+            "type": "string"
+        },
+        "company": {
+            "type": "string"
         }
       },
       "required": [

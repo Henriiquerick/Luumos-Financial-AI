@@ -42,4 +42,10 @@ export type CreditCard = {
 export type UserProfile = {
   id: string;
   aiPersonality: string;
+  firstName?: string;
+  lastName?: string;
+  birthDate?: string;
+  city?: string;
+  jobTitle?: string;
+  company?: string;
 };
