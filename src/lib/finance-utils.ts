@@ -93,24 +93,19 @@ export function calculateCardBillProjection(
 
   // Process each transaction
   transactions.forEach(t => {
-    if (!t.cardId || t.type !== 'expense') return; // Skip non-card expenses
-    const card = cards.find(c => c.id === t.cardId);
-    if (!card) return; // Skip if card not found
-
-    const purchaseDate = getDateFromTimestamp(t.date);
-    const installments = t.installments || 1;
+    // We only care about card expenses
+    if (!t.cardId || t.type !== 'expense' || !t.installmentId) return;
     
-    // Correctly calculate the amount per installment
-    const amountPerInstallment = t.amount / installments;
+    const card = cards.find(c => c.id === t.cardId);
+    if (!card) return;
 
-    for (let i = 0; i < installments; i++) {
-      const billMonth = startOfMonth(addMonths(purchaseDate, i));
-      const monthKey = format(billMonth, 'MMM/yy');
+    const billMonth = startOfMonth(getDateFromTimestamp(t.date));
+    const monthKey = format(billMonth, 'MMM/yy');
 
-      // Add to the bill only if the month is within our projection window
-      if (monthKey in monthlyBills) {
-        monthlyBills[monthKey][card.name] += amountPerInstallment;
-      }
+    // Add to the bill only if the month is within our projection window
+    if (monthKey in monthlyBills) {
+        // Use the transaction amount directly, as it represents one installment
+        monthlyBills[monthKey][card.name] += t.amount;
     }
   });
 
