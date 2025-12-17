@@ -1,14 +1,13 @@
-import { genkit } from 'genkit';
-import { openAI } from 'genkitx-openai';
+'use server';
+import { genkit, type ModelAction } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
 export const ai = genkit({
   plugins: [
-    openAI({
-      apiKey: process.env.GROQ_API_KEY,
-      baseURL: 'https://api.groq.com/openai/v1',
-    }),
+    googleAI(),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,
-  model: 'llama3-8b-8192', // Correção: Removido o prefixo 'openai/'
 });
+
+export const model: ModelAction = ai.model('googleai/gemini-1.5-flash');

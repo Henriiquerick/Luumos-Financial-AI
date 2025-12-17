@@ -13,6 +13,7 @@ export const contextualChatFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
+      model: 'googleai/gemini-1.5-flash',
       prompt: `Atue como Lumos, um consultor financeiro. O usuário disse: "${input.message}". Responda em português.`,
     });
 

@@ -22,17 +22,13 @@ export async function POST(req: Request) {
 
     if (!finalMessage) throw new Error("Mensagem vazia recebida.");
 
-    console.log("🗣️ Enviando para o Fluxo:", finalMessage);
-
-    // 2. A CORREÇÃO MÁGICA:
-    // Enviamos um objeto com a chave 'message', EXATAMENTE como definimos no passo 1.
+    // 2. Chamada do Fluxo com o formato correto
     const responseText = await contextualChatFlow({ message: finalMessage });
     
     return NextResponse.json({ text: responseText });
 
   } catch (error: any) {
-    // Isso vai mostrar o erro REAL no seu terminal (VS Code), olhe lá se der erro de novo!
-    console.error("🔥 ERRO DETALHADO:", error);
-    return NextResponse.json({ error: "Erro interno na IA" }, { status: 500 });
+    console.error("🔥 ERRO DETALHADO NA API /api/chat:", error);
+    return NextResponse.json({ error: "Erro interno na IA: " + error.message }, { status: 500 });
   }
 }
