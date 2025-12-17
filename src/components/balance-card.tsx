@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
+import { cn } from '@/lib/utils';
 
 interface BalanceCardProps {
   balance: number;
@@ -18,6 +19,8 @@ export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
     currency: 'USD',
   }).format(balance);
 
+  const isNegative = balance < 0;
+
   return (
     <Card className="bg-card/50 border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -28,7 +31,12 @@ export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="text-4xl font-bold text-primary">{formattedBalance}</div>
+        <div className={cn(
+          "text-4xl font-bold",
+          isNegative ? "text-red-400" : "text-primary"
+        )}>
+          {formattedBalance}
+        </div>
         <p className="text-xs text-muted-foreground mt-1">
           {balance >= 0 ? 'Looking good!' : 'You might want to check your spending.'}
         </p>

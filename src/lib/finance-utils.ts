@@ -2,7 +2,7 @@ import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, get
 import type { Transaction, CreditCard } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 
-function getDateFromTimestamp(date: Date | Timestamp): Date {
+export function getDateFromTimestamp(date: Date | Timestamp): Date {
   return (date instanceof Timestamp) ? date.toDate() : date;
 }
 

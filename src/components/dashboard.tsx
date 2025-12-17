@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -23,6 +22,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { AddCardDialog } from './add-card-dialog';
 import { useTranslation } from '@/contexts/language-context';
+import { isSameMonth, startOfToday } from 'date-fns';
+import { getDateFromTimestamp } from '@/lib/finance-utils';
 
 
 export default function Dashboard() {
@@ -44,15 +45,11 @@ export default function Dashboard() {
   const { data: creditCards, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
   
   const typedTransactions = useMemo(() => {
-    // AQUI ESTÁ A CORREÇÃO: Se transactions for null ou undefined, usamos um array vazio []
     if (!transactions) return [];
     
     return transactions.map(t => ({
       ...t,
-      // Garante que a data seja convertida corretamente se vier do Firestore
-      date: t.date && typeof (t.date as any).toDate === 'function' 
-            ? (t.date as any).toDate() 
-            : new Date(t.date)
+      date: getDateFromTimestamp(t.date)
     }));
   }, [transactions]);
 
@@ -116,12 +113,23 @@ export default function Dashboard() {
     setEditingCard(null);
   };
 
-  const currentBalance = useMemo(() => {
-    return (typedTransactions || []).reduce((acc, t) => {
-      if (t.cardId) return acc;
+  const netBalance = useMemo(() => {
+    const today = startOfToday();
+    const cashBalance = (typedTransactions || []).reduce((acc, t) => {
+      if (t.cardId) return acc; // Ignore card transactions for cash balance
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
+    
+    const currentMonthCardBill = (typedTransactions || []).reduce((acc, t) => {
+      // Include only card expenses from the current month's bill
+      if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
+        return acc + t.amount;
+      }
+      return acc;
+    }, 0);
+
+    return cashBalance - currentMonthCardBill;
   }, [typedTransactions]);
 
   const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading;
@@ -157,11 +165,11 @@ export default function Dashboard() {
               <DailyInsightCard 
                 transactions={typedTransactions}
                 personality={personality}
-                balance={currentBalance}
+                balance={netBalance}
               />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div className="lg:col-span-2 space-y-6">
-                  <BalanceCard balance={currentBalance} onAddTransaction={() => setIsTransactionDialogOpen(true)} />
+                  <BalanceCard balance={netBalance} onAddTransaction={() => setIsTransactionDialogOpen(true)} />
                   <CardsCarousel 
                     cards={creditCards || []} 
                     transactions={typedTransactions} 
@@ -184,7 +192,7 @@ export default function Dashboard() {
                     onPersonalityChange={handlePersonalityChange}
                     transactions={typedTransactions}
                     cards={creditCards || []}
-                    balance={currentBalance}
+                    balance={netBalance}
                   />
                 </div>
               </div>
