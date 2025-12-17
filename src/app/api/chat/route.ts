@@ -1,54 +1,33 @@
 import { contextualChatFlow } from '@/ai/flows/contextual-chat';
-import { NextResponse } from 'next/server';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
+export const maxDuration = 60; // Timeout estendido para a IA pensar
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    
-    // LOG IMPORTANTE: Vamos ver no terminal o que está chegando
-    console.log("📨 Payload recebido:", JSON.stringify(body).substring(0, 100));
+    const { messages, data } = await req.json();
 
-    // --- O TRADUTOR ---
-    // O frontend manda { messages: [...] }, mas o fluxo quer { message: string }
-    let messageText = "";
-
-    if (body.messages && Array.isArray(body.messages)) {
-      // Pega a última mensagem do array
-      const lastMessage = body.messages[body.messages.length - 1];
-      messageText = lastMessage.content || "";
-    } else if (body.message) {
-      messageText = body.message;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response("Formato de 'messages' inválido.", { status: 400 });
     }
 
-    // Se não achou texto, avisa
-    if (!messageText) {
-      console.error("❌ Nenhuma mensagem de texto encontrada no payload");
-      return NextResponse.json({ error: "Mensagem vazia" }, { status: 400, headers: corsHeaders });
-    }
+    const lastMessage = messages[messages.length - 1].content;
 
-    console.log("🗣️ Enviando para IA:", messageText);
+    // Em Genkit 1.0, o fluxo exportado pode ser chamado diretamente como uma função assíncrona
+    const responseText = await contextualChatFlow({
+      userMessage: lastMessage,
+      history: messages.slice(0, -1),
+      userData: data // Passamos os dados de saldo/cartões aqui
+    });
 
-    // Agora chamamos o fluxo com o dado LIMPO
-    const responseText = await contextualChatFlow({ message: messageText });
-    
-    return NextResponse.json({ text: responseText }, { headers: corsHeaders });
+    // Retorna a resposta (seja texto plano ou o JSON da ação)
+    return new Response(responseText, { status: 200, headers: {'Content-Type': 'text/plain'} });
 
-  } catch (error: any) {
-    console.error("🔥 ERRO NO SERVIDOR:", error);
-    // Retornamos o erro JSON para o frontend não ficar tentando adivinhar
-    return NextResponse.json(
-      { error: error.message || 'Erro interno' }, 
-      { status: 500, headers: corsHeaders }
-    );
+  } catch (e: any) {
+    console.error("Erro no fluxo do Genkit:", e);
+    // Para erros de validação do Zod, o erro já é bem descritivo
+    const errorMessage = e.message.includes("Parse Errors") 
+      ? e.message 
+      : "Erro interno na IA";
+    return new Response(errorMessage, { status: 500 });
   }
 }

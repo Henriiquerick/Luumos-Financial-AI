@@ -45,7 +45,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         balance,
         cards,
         transactions,
-        persona: personality,
+        persona: personality.id,
       };
 
       const response = await fetch('/api/chat', {
@@ -53,40 +53,36 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         headers: {
           'Content-Type': 'application/json',
         },
+        // Envia a estrutura que a API route espera
         body: JSON.stringify({ 
             messages: newMessages, 
             data: financialData,
-            userId: user.uid, // Pass userId to the backend
         }),
       });
 
       if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("API Error Response:", errorBody);
         throw new Error('Failed to get a response from the AI.');
       }
       
       const resultText = await response.text();
-      setMessages(prev => [...prev, { role: 'model', content: resultText }]);
-
-      let cleanResponse = resultText.trim();
-
-      // 🧹 LIMPEZA DE MARKDOWN: Remove ```json e ``` se existirem
-      if (cleanResponse.startsWith('```')) {
-        cleanResponse = cleanResponse.replace(/^```(json)?|```$/g, '').trim();
-      }
       
-      // Tenta detectar se é um JSON de Ação
-      if (cleanResponse.startsWith('{') && cleanResponse.endsWith('}')) {
-        try {
-          const actionData = JSON.parse(cleanResponse);
-          
-          // ... aqui entra o seu switch case (create_card, add_transaction) ...
-          
-          // Se deu certo, pare por aqui para não mostrar o JSON no chat
-          return; 
-        } catch (e) {
-          console.error("Tentativa de parsing de JSON falhou, tratando como texto comum.");
+      // Tenta fazer o parse do JSON de ação
+      try {
+        const actionData = JSON.parse(resultText);
+        if (actionData.action) {
+          // TODO: Implementar a lógica para `create_card` e `add_transaction`
+          console.log("AI Action Received:", actionData);
+          setMessages(prev => [...prev, { role: 'model', content: `Ok, let's ${actionData.action.replace('_', ' ')}...` }]);
+          // Aqui você chamaria o dialog correspondente, por exemplo.
+          return; // Para não adicionar o JSON cru ao chat
         }
+      } catch (e) {
+        // Não era um JSON de ação, então trate como texto normal
+         setMessages(prev => [...prev, { role: 'model', content: resultText }]);
       }
+
 
     } catch (error) {
       console.error('Failed to get advice:', error);
