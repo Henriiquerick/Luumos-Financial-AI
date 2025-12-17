@@ -21,6 +21,7 @@ import { getCardUsage } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useTranslation } from '@/contexts/language-context';
 
 
 const formSchema = z.object({
@@ -48,6 +49,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -122,13 +124,12 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
   }, [getValues, setValue, transactions, toast]);
   
   useEffect(() => {
-    // Quando o tipo de transação muda, ajustamos os valores padrão
     if (transactionType === 'income') {
-      setValue('paymentMethod', 'cash'); // Receitas são sempre 'cash' (dinheiro em conta)
-      setValue('isInstallment', false); // Receitas não são parceladas
-      setValue('category', 'Salary'); // Categoria padrão para receita
+      setValue('paymentMethod', 'cash'); 
+      setValue('isInstallment', false); 
+      setValue('category', 'Salary'); 
     } else {
-      setValue('category', 'Other'); // Categoria padrão para despesa
+      setValue('category', 'Other'); 
     }
   }, [transactionType, setValue]);
 
@@ -137,7 +138,6 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
     if (!user || !firestore) return;
     const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
     
-    // Se for despesa parcelada, cria várias transações
     if (values.isInstallment && values.type === 'expense' && values.installments) {
       const installmentId = crypto.randomUUID();
       const installmentAmount = values.amount / values.installments;
@@ -156,14 +156,14 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
         addDocumentNonBlocking(transactionsRef, transactionData);
       }
       toast({ title: 'Success', description: `${values.installments} installments were created.` });
-    } else { // Transação única (receita ou despesa à vista)
+    } else { 
       const transactionData = {
         description: values.description,
         amount: values.amount,
         category: values.category,
         date: Timestamp.fromDate(values.date),
         type: values.type,
-        installments: 1, // Sempre 1 para transações não parceladas
+        installments: 1,
         cardId: values.type === 'expense' && values.paymentMethod === 'card' ? values.cardId : undefined,
       };
       addDocumentNonBlocking(transactionsRef, transactionData);
@@ -197,8 +197,8 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">{t.modals.transaction.tabs.expense}</SelectItem>
+                  <SelectItem value="income">{t.modals.transaction.tabs.income}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -211,9 +211,9 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>{t.modals.transaction.fields.description}</FormLabel>
                 <FormControl>
-                  <Input placeholder={transactionType === 'income' ? 'e.g., Monthly Salary' : 'e.g., Coffee shop'} {...field} onBlur={handleAutoCategorize} />
+                  <Input placeholder={t.modals.transaction.fields.placeholderDesc} {...field} onBlur={handleAutoCategorize} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -229,7 +229,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount</FormLabel>
+                <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -242,7 +242,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
+                <FormLabel>{t.modals.transaction.fields.date}</FormLabel>
                  <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -269,11 +269,11 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel>{t.modals.transaction.fields.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t.modals.transaction.fields.placeholderCategory} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -294,16 +294,16 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
               name="paymentMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Payment Method</FormLabel>
+                  <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a payment method" />
+                        <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="cash">Cash / Debit</SelectItem>
-                      <SelectItem value="card">Credit Card</SelectItem>
+                      <SelectItem value="cash">{t.modals.transaction.fields.cash}</SelectItem>
+                      <SelectItem value="card">{t.modals.transaction.fields.creditCard}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -316,11 +316,11 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                 name="cardId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Card</FormLabel>
+                    <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a card" />
+                          <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -329,7 +329,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                     </Select>
                     {cardUsage && (
                        <FormMessage className={cn(isLimitExceeded && "text-destructive")}>
-                        Available: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cardUsage.availableLimit)}
+                        {t.modals.transaction.fields.available}: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cardUsage.availableLimit)}
                        </FormMessage>
                     )}
                   </FormItem>
@@ -343,7 +343,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Installment Purchase</FormLabel>
+                      <FormLabel>{t.modals.transaction.fields.installments}</FormLabel>
                     </div>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -358,7 +358,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                 name="installments"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Number of Installments</FormLabel>
+                    <FormLabel>{t.modals.transaction.fields.installments_number}</FormLabel>
                     <FormControl>
                       <Input type="number" min="2" max="60" {...field} />
                     </FormControl>
@@ -379,7 +379,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
           disabled={isSubmitDisabled}
         >
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {transactionType === 'income' ? 'Add Income' : 'Add Expense'}
+          {transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense}
         </Button>
       </form>
     </Form>

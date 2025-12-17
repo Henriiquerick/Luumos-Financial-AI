@@ -15,11 +15,13 @@ import { UserProfileForm } from './user-profile-form';
 import { useDoc, useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
+import { useTranslation } from '@/contexts/language-context';
 
 export function UserProfileDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
+  const { t } = useTranslation();
 
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -34,9 +36,9 @@ export function UserProfileDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[520px] bg-background border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-primary">Edit Your Profile</DialogTitle>
+          <DialogTitle className="text-primary">{t.modals.profile.title}</DialogTitle>
           <DialogDescription>
-            Keep your information up to date. This helps the AI provide more personalized advice.
+            {t.modals.profile.subtitle}
           </DialogDescription>
         </DialogHeader>
         {isProfileLoading ? (

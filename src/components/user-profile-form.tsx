@@ -23,6 +23,7 @@ import type { UserProfile } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useEffect } from 'react';
 import { DatePicker } from './ui/date-picker';
+import { useTranslation } from '@/contexts/language-context';
 
 const formSchema = z.object({
   firstName: z.string().optional(),
@@ -44,6 +45,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -100,7 +102,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel>{t.modals.profile.fields.firstName}</FormLabel>
                 <FormControl>
                   <Input placeholder="John" {...field} />
                 </FormControl>
@@ -113,7 +115,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel>{t.modals.profile.fields.lastName}</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} />
                 </FormControl>
@@ -128,7 +130,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
             name="birthDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Date of Birth</FormLabel>
+                <FormLabel>{t.modals.profile.fields.birthDate}</FormLabel>
                 <DatePicker
                   value={field.value}
                   onChange={field.onChange}
@@ -143,7 +145,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City</FormLabel>
+                <FormLabel>{t.modals.profile.fields.city}</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g., San Francisco" {...field} />
                 </FormControl>
@@ -158,7 +160,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
                 name="jobTitle"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Job Title</FormLabel>
+                    <FormLabel>{t.modals.profile.fields.job}</FormLabel>
                     <FormControl>
                     <Input placeholder="e.g., Software Engineer" {...field} />
                     </FormControl>
@@ -171,7 +173,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
                 name="company"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Company</FormLabel>
+                    <FormLabel>{t.modals.profile.fields.company}</FormLabel>
                     <FormControl>
                     <Input placeholder="e.g., Google" {...field} />
                     </FormControl>
@@ -189,7 +191,7 @@ export function UserProfileForm({ userProfile, onSave }: UserProfileFormProps) {
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Save Changes
+          {t.modals.profile.save}
         </Button>
       </form>
     </Form>

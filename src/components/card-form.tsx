@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import type { CreditCard } from '@/lib/types';
 import { useEffect } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useTranslation } from '@/contexts/language-context';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -53,38 +54,34 @@ const PREDEFINED_COLORS = [
 export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       totalLimit: 1000,
-      closingDay: '', // Mudança 1: Começa vazio para forçar seleção ou reset
+      closingDay: '', 
       color: PREDEFINED_COLORS[0].value,
     },
   });
 
-  // Watcher para debug (opcional, pode remover depois)
   const watchedDay = form.watch("closingDay"); 
   
   useEffect(() => {
     if (cardToEdit) {
-      // MODO EDIÇÃO
       form.reset({
         name: cardToEdit.name,
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
-        // Mudança 2: Tratamento de Nulo mais robusto
-        // Se closingDay for 0 ou nulo, vira string vazia, senão vira string do número
         closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
       });
     } else {
-      // MODO CRIAÇÃO
       form.reset({
         name: '',
         totalLimit: 1000,
         color: PREDEFINED_COLORS[0].value,
-        closingDay: '', // Reset para vazio
+        closingDay: '',
       });
     }
   }, [cardToEdit, form]);
@@ -117,9 +114,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Card Name</FormLabel>
+              <FormLabel>{t.modals.card.fields.name}</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Nubank" {...field} />
+                <Input placeholder={t.modals.card.fields.namePlaceholder} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -131,7 +128,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             name="totalLimit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Limit</FormLabel>
+                <FormLabel>{t.modals.card.fields.limit}</FormLabel>
                 <FormControl>
                   <Input type="number" step="100" {...field} />
                 </FormControl>
@@ -144,16 +141,15 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             name="closingDay"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Closing Day</FormLabel>
-                {/* Mudança 3: Removido defaultValue e adicionado key para forçar re-render */}
+                <FormLabel>{t.modals.card.fields.closingDay}</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
                   value={field.value} 
-                  key={field.value} // O TRUQUE: Força o componente a atualizar se o valor mudar
+                  key={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Day" />
+                      <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -170,13 +166,12 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           />
         </div>
 
-        {/* Campo de Cor (Mantido igual) */}
         <FormField
           control={form.control}
           name="color"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Card Color</FormLabel>
+              <FormLabel>{t.modals.card.fields.color}</FormLabel>
               <FormControl>
                 <div className="flex gap-2">
                   {PREDEFINED_COLORS.map((color) => (
@@ -209,7 +204,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           {form.formState.isSubmitting && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          {cardToEdit ? 'Save Changes' : 'Save Card'}
+          {cardToEdit ? t.modals.card.save_changes : t.modals.card.save}
         </Button>
       </form>
     </Form>

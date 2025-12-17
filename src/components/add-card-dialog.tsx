@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { CardForm } from './card-form';
 import type { CreditCard } from '@/lib/types';
+import { useTranslation } from '@/contexts/language-context';
 
 interface AddCardDialogProps {
   isOpen: boolean;
@@ -19,13 +20,15 @@ interface AddCardDialogProps {
 }
 
 export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: AddCardDialogProps) {
+  const { t } = useTranslation();
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-primary">{cardToEdit ? 'Edit Credit Card' : 'Add New Credit Card'}</DialogTitle>
+          <DialogTitle className="text-primary">{cardToEdit ? t.modals.card.edit.title : t.modals.card.add.title}</DialogTitle>
           <DialogDescription>
-            {cardToEdit ? 'Update the details for your card.' : 'Enter the details for your new card.'}
+            {cardToEdit ? t.modals.card.edit.subtitle : t.modals.card.add.subtitle}
           </DialogDescription>
         </DialogHeader>
         <CardForm 
