@@ -1,5 +1,3 @@
-
-
 /**
  * @fileOverview This file defines a Genkit flow for generating a proactive daily financial insight.
  *
