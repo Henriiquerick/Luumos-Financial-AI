@@ -432,7 +432,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
           disabled={isSubmitDisabled}
         >
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {transactionToEdit ? 'Save Changes' : (transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense)}
+          {transactionToEdit ? t.modals.transaction.submit.save : (transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense)}
         </Button>
       </form>
     </Form>

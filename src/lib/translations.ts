@@ -20,6 +20,7 @@ export const TRANSLATIONS = {
       header: 'Transaction',
       date: 'Date',
       amount: 'Amount',
+      actions: 'Actions',
       no_transactions: 'No transactions yet. Add one to get started!',
     },
     chat: {
@@ -53,6 +54,10 @@ export const TRANSLATIONS = {
         title: 'Success!',
         description: 'Transaction of {amount} added.',
       },
+      transaction_deleted: {
+        title: 'Transaction Deleted',
+        description: 'The transaction has been successfully removed.',
+      },
       installments: {
         title: 'Success',
         description: '{count} installments were created.',
@@ -75,7 +80,9 @@ export const TRANSLATIONS = {
     modals: {
       transaction: {
         title: 'Add Transaction',
+        edit_title: 'Edit Transaction',
         subtitle: 'Add a new income or expense to your account. AI can help you categorize it.',
+        edit_subtitle: 'Update the details of your transaction.',
         tabs: { expense: 'Expense', income: 'Income' },
         fields: {
           description: 'Description',
@@ -96,7 +103,8 @@ export const TRANSLATIONS = {
         },
         submit: {
           addExpense: 'Add Expense',
-          addIncome: 'Add Income'
+          addIncome: 'Add Income',
+          save: 'Save Changes'
         }
       },
       profile: {
@@ -140,6 +148,9 @@ export const TRANSLATIONS = {
           description: 'This will permanently delete the card "{cardName}" and all of its associated transactions. This action cannot be undone.',
           cancel: 'Cancel',
           confirm: 'Delete',
+      },
+      delete_transaction: {
+          confirmation: 'Are you sure you want to delete this transaction?',
       }
     }
   },
@@ -163,6 +174,7 @@ export const TRANSLATIONS = {
       header: 'Transação',
       date: 'Data',
       amount: 'Valor',
+      actions: 'Ações',
       no_transactions: 'Nenhuma transação ainda. Adicione uma para começar!',
     },
     chat: {
@@ -196,6 +208,10 @@ export const TRANSLATIONS = {
         title: 'Sucesso!',
         description: 'Transação de {amount} adicionada.',
       },
+      transaction_deleted: {
+        title: 'Transação Excluída',
+        description: 'A transação foi removida com sucesso.',
+      },
       installments: {
         title: 'Sucesso',
         description: '{count} parcelas foram criadas.',
@@ -218,7 +234,9 @@ export const TRANSLATIONS = {
     modals: {
       transaction: {
         title: 'Adicionar Transação',
+        edit_title: 'Editar Transação',
         subtitle: 'Adicione uma nova receita ou despesa à sua conta. A IA pode ajudar a categorizar.',
+        edit_subtitle: 'Atualize os detalhes da sua transação.',
         tabs: { expense: 'Despesa', income: 'Receita' },
         fields: {
           description: 'Descrição',
@@ -239,7 +257,8 @@ export const TRANSLATIONS = {
         },
         submit: {
           addExpense: 'Adicionar Despesa',
-          addIncome: 'Adicionar Receita'
+          addIncome: 'Adicionar Receita',
+          save: 'Salvar Alterações'
         }
       },
       profile: {
@@ -283,6 +302,9 @@ export const TRANSLATIONS = {
           description: 'Isso excluirá permanentemente o cartão "{cardName}" e todas as suas transações associadas. Esta ação não pode ser desfeita.',
           cancel: 'Cancelar',
           confirm: 'Excluir',
+      },
+      delete_transaction: {
+          confirmation: 'Você tem certeza que deseja excluir esta transação?',
       }
     }
   },
@@ -306,6 +328,7 @@ export const TRANSLATIONS = {
       header: 'Transacción',
       date: 'Fecha',
       amount: 'Monto',
+      actions: 'Acciones',
       no_transactions: 'Aún no hay transacciones. ¡Añade una para empezar!',
     },
     chat: {
@@ -339,11 +362,15 @@ export const TRANSLATIONS = {
         title: '¡Éxito!',
         description: 'Transacción de {amount} añadida.',
       },
+      transaction_deleted: {
+        title: 'Transacción Eliminada',
+        description: 'La transacción ha sido eliminada con éxito.',
+      },
       installments: {
         title: 'Éxito',
         description: 'Se crearon {count} cuotas.',
       },
-      ai: {
+ai: {
         title: 'Sugerencia de IA',
         description: 'Hemos categorizado esto como "{category}".',
       },
@@ -361,7 +388,9 @@ export const TRANSLATIONS = {
     modals: {
       transaction: {
         title: 'Añadir Transacción',
+        edit_title: 'Editar Transacción',
         subtitle: 'Añade un nuevo ingreso o gasto a tu cuenta. La IA puede ayudar a categorizarlo.',
+        edit_subtitle: 'Actualiza los detalles de tu transacción.',
         tabs: { expense: 'Gasto', income: 'Ingreso' },
         fields: {
           description: 'Descripción',
@@ -382,7 +411,8 @@ export const TRANSLATIONS = {
         },
         submit: {
           addExpense: 'Añadir Gasto',
-          addIncome: 'Añadir Ingreso'
+          addIncome: 'Añadir Ingreso',
+          save: 'Guardar Cambios'
         }
       },
       profile: {
@@ -426,6 +456,9 @@ export const TRANSLATIONS = {
           description: 'Esto eliminará permanentemente la tarjeta "{cardName}" y todas sus transacciones asociadas. Esta acción no se puede deshacer.',
           cancel: 'Cancelar',
           confirm: 'Eliminar',
+      },
+      delete_transaction: {
+          confirmation: '¿Estás seguro de que quieres eliminar esta transacción?',
       }
     }
   },

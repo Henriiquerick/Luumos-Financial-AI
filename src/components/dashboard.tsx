@@ -128,13 +128,13 @@ export default function Dashboard() {
   
   const handleDeleteTransaction = async (transactionId: string) => {
     if (!user || !firestore) return;
-    if (window.confirm('Are you sure you want to delete this transaction?')) {
+    if (window.confirm(t.modals.delete_transaction.confirmation)) {
       try {
         await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionId));
-        toast({ title: 'Transaction deleted', description: 'The transaction has been removed.' });
+        toast({ title: t.toasts.transaction_deleted.title, description: t.toasts.transaction_deleted.description });
       } catch (error) {
         console.error("Error deleting transaction: ", error);
-        toast({ title: 'Error', description: 'Could not delete the transaction.', variant: 'destructive' });
+        toast({ title: t.toasts.error.title, description: t.toasts.error.description, variant: 'destructive' });
       }
     }
   };

@@ -35,7 +35,7 @@ export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTra
               <TableHead>{t.transaction.header}</TableHead>
               <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
               <TableHead className="text-right">{t.transaction.amount}</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="text-right">{t.transaction.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

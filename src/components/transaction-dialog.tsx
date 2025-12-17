@@ -35,9 +35,9 @@ export function TransactionDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-primary">{transactionToEdit ? 'Edit Transaction' : t.modals.transaction.title}</DialogTitle>
+          <DialogTitle className="text-primary">{transactionToEdit ? t.modals.transaction.edit_title : t.modals.transaction.title}</DialogTitle>
           <DialogDescription>
-            {transactionToEdit ? 'Update the details of your transaction.' : t.modals.transaction.subtitle}
+            {transactionToEdit ? t.modals.transaction.edit_subtitle : t.modals.transaction.subtitle}
           </DialogDescription>
         </DialogHeader>
         <TransactionForm 
