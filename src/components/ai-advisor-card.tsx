@@ -37,56 +37,34 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
     
     const newMessages: Message[] = [...messages, { role: 'user', content: userInput }];
     setMessages(newMessages);
+    const currentInput = userInput;
     setUserInput('');
     setIsLoading(true);
 
     try {
-      const financialData = {
-        balance,
-        cards,
-        transactions,
-        persona: personality.id,
-      };
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Envia a estrutura que a API route espera
         body: JSON.stringify({ 
-            messages: newMessages, 
-            data: financialData,
+            message: currentInput,
         }),
       });
 
       if (!response.ok) {
-        const errorBody = await response.text();
+        const errorBody = await response.json();
         console.error("API Error Response:", errorBody);
-        throw new Error('Failed to get a response from the AI.');
+        throw new Error(errorBody.error || 'Failed to get a response from the AI.');
       }
       
-      const resultText = await response.text();
+      const result = await response.json();
       
-      // Tenta fazer o parse do JSON de ação
-      try {
-        const actionData = JSON.parse(resultText);
-        if (actionData.action) {
-          // TODO: Implementar a lógica para `create_card` e `add_transaction`
-          console.log("AI Action Received:", actionData);
-          setMessages(prev => [...prev, { role: 'model', content: `Ok, let's ${actionData.action.replace('_', ' ')}...` }]);
-          // Aqui você chamaria o dialog correspondente, por exemplo.
-          return; // Para não adicionar o JSON cru ao chat
-        }
-      } catch (e) {
-        // Não era um JSON de ação, então trate como texto normal
-         setMessages(prev => [...prev, { role: 'model', content: resultText }]);
-      }
+      setMessages(prev => [...prev, { role: 'model', content: result.text }]);
 
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to get advice:', error);
-      setMessages(prev => [...prev, { role: 'model', content: 'Desculpe, ocorreu um erro. Tente novamente.' }]);
+      setMessages(prev => [...prev, { role: 'model', content: error.message || 'Desculpe, ocorreu um erro. Tente novamente.' }]);
     } finally {
       setIsLoading(false);
     }

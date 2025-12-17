@@ -1,33 +1,30 @@
 import { contextualChatFlow } from '@/ai/flows/contextual-chat';
+import { NextResponse } from 'next/server';
 
-export const maxDuration = 60; // Timeout estendido para a IA pensar
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, data } = await req.json();
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response("Formato de 'messages' inválido.", { status: 400 });
+    const body = await req.json();
+    
+    let finalMessage = "";
+    
+    if (body.messages && Array.isArray(body.messages)) {
+        const lastMsg = body.messages[body.messages.length - 1];
+        finalMessage = lastMsg.content || "";
+    } 
+    else if (body.message) {
+        finalMessage = body.message;
     }
 
-    const lastMessage = messages[messages.length - 1].content;
+    if (!finalMessage) throw new Error("Mensagem vazia recebida.");
 
-    // Em Genkit 1.0, o fluxo exportado pode ser chamado diretamente como uma função assíncrona
-    const responseText = await contextualChatFlow({
-      userMessage: lastMessage,
-      history: messages.slice(0, -1),
-      userData: data // Passamos os dados de saldo/cartões aqui
-    });
+    const responseText = await contextualChatFlow({ message: finalMessage });
+    
+    return NextResponse.json({ text: responseText });
 
-    // Retorna a resposta (seja texto plano ou o JSON da ação)
-    return new Response(responseText, { status: 200, headers: {'Content-Type': 'text/plain'} });
-
-  } catch (e: any) {
-    console.error("Erro no fluxo do Genkit:", e);
-    // Para erros de validação do Zod, o erro já é bem descritivo
-    const errorMessage = e.message.includes("Parse Errors") 
-      ? e.message 
-      : "Erro interno na IA";
-    return new Response(errorMessage, { status: 500 });
+  } catch (error: any) {
+    console.error("🔥 ERRO DETALHADO:", error);
+    return NextResponse.json({ error: "Erro interno na IA" }, { status: 500 });
   }
 }
