@@ -6,7 +6,7 @@ import type { CreditCard, Transaction } from '@/lib/types';
 import { getCardUsage } from '@/lib/finance-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Bot, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Landmark, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   AlertDialog,
@@ -28,6 +28,8 @@ import {
   where,
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { getBankStyles } from '@/lib/bank-utils';
+import { cn } from '@/lib/utils';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -110,8 +112,10 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="border-none text-white relative overflow-hidden group"
-        style={{ backgroundColor: card.color }}
+        className={cn(
+            "border-none text-white relative overflow-hidden group",
+            getBankStyles(card.name)
+        )}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div className="absolute top-0 left-0 w-full h-full bg-black/20 mix-blend-multiply"></div>
@@ -158,7 +162,7 @@ export function CreditCardCard({
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-center justify-between">
             <span>{card.name}</span>
-            <Bot className="w-6 h-6 opacity-50" />
+            <Landmark className="w-6 h-6 opacity-50" />
           </CardTitle>
         </CardHeader>
         <CardContent className="relative z-10 space-y-2">
