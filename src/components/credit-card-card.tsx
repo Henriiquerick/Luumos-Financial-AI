@@ -112,11 +112,11 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="border-none text-white relative overflow-hidden group bg-slate-900"
+        className="border-none text-white relative overflow-hidden group"
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        <div className={cn("absolute inset-0 opacity-80", getBankStyles(card.name))}></div>
-        <div className="absolute inset-0 bg-black/20 mix-blend-multiply"></div>
+        <div className={cn("absolute inset-0 opacity-100", getBankStyles(card.name))}></div>
+        <div className="absolute inset-0 bg-black/10 mix-blend-multiply"></div>
         
         <div
           className="absolute top-2 right-2 z-20"
