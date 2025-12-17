@@ -19,23 +19,22 @@ interface DatePickerProps {
   value?: Date;
   onChange: (date: Date | undefined) => void;
   className?: string;
+  placeholder?: string;
 }
 
-export function DatePicker({ value, onChange, className }: DatePickerProps) {
+export function DatePicker({ value, onChange, className, placeholder = "DD/MM/AAAA" }: DatePickerProps) {
   const [inputValue, setInputValue] = React.useState<string>("");
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
   const currentYear = new Date().getFullYear();
 
-  // Quando o valor externo (do formulário) muda, atualiza o input interno
   React.useEffect(() => {
-    if (value) {
+    if (value && isValid(value)) {
       setInputValue(format(value, "dd/MM/yyyy"));
     } else {
       setInputValue("");
     }
   }, [value]);
 
-  // Lida com a digitação no input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let rawValue = e.target.value.replace(/[^0-9]/g, "");
     
@@ -51,15 +50,15 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
       const parsedDate = parse(rawValue, "dd/MM/yyyy", new Date());
       if (isValid(parsedDate)) {
         onChange(parsedDate);
-        // Opcional: fechar o popover se estiver aberto
-        // setIsPopoverOpen(false);
       } else {
-        onChange(undefined); // Envia undefined se a data for inválida
+        onChange(undefined);
       }
+    } else {
+      // Se não estiver completo, consideramos como indefinido.
+      onChange(undefined);
     }
   };
 
-  // Lida com a seleção no calendário
   const handleCalendarSelect = (date: Date | undefined) => {
     if (date) {
       onChange(date);
@@ -75,7 +74,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
     <div className={cn("relative w-full", className)}>
         <Input
             type="text"
-            placeholder="DD/MM/AAAA"
+            placeholder={placeholder}
             value={inputValue}
             onChange={handleInputChange}
             className="pr-10" // Adiciona espaço para o ícone
