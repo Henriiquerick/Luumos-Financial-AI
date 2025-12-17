@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { format } from "date-fns"
+import { format, parse, isValid } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -12,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Input } from "./input"
 
 interface DatePickerProps {
   value?: Date;
@@ -20,36 +22,90 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ value, onChange, className }: DatePickerProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState<string>("");
+  const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+  const currentYear = new Date().getFullYear();
 
-  const handleSelect = (date: Date | undefined) => {
-    onChange(date);
-    setIsOpen(false);
-  }
+  // Quando o valor externo (do formulário) muda, atualiza o input interno
+  React.useEffect(() => {
+    if (value) {
+      setInputValue(format(value, "dd/MM/yyyy"));
+    } else {
+      setInputValue("");
+    }
+  }, [value]);
+
+  // Lida com a digitação no input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let rawValue = e.target.value.replace(/[^0-9]/g, "");
+    
+    if (rawValue.length > 2 && rawValue.length <= 4) {
+      rawValue = `${rawValue.slice(0, 2)}/${rawValue.slice(2)}`;
+    } else if (rawValue.length > 4) {
+      rawValue = `${rawValue.slice(0, 2)}/${rawValue.slice(2, 4)}/${rawValue.slice(4, 8)}`;
+    }
+
+    setInputValue(rawValue);
+
+    if (rawValue.length === 10) {
+      const parsedDate = parse(rawValue, "dd/MM/yyyy", new Date());
+      if (isValid(parsedDate)) {
+        onChange(parsedDate);
+        // Opcional: fechar o popover se estiver aberto
+        // setIsPopoverOpen(false);
+      } else {
+        onChange(undefined); // Envia undefined se a data for inválida
+      }
+    }
+  };
+
+  // Lida com a seleção no calendário
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      onChange(date);
+      setInputValue(format(date, "dd/MM/yyyy"));
+    } else {
+      onChange(undefined);
+      setInputValue("");
+    }
+    setIsPopoverOpen(false);
+  };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-            className
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>Selecione uma data</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={value}
-          onSelect={handleSelect}
-          initialFocus
+    <div className={cn("relative w-full", className)}>
+        <Input
+            type="text"
+            placeholder="DD/MM/AAAA"
+            value={inputValue}
+            onChange={handleInputChange}
+            className="pr-10" // Adiciona espaço para o ícone
         />
-      </PopoverContent>
-    </Popover>
-  )
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant={"ghost"}
+                    size="icon"
+                    className={cn(
+                        "absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground",
+                        !value && "text-muted-foreground"
+                    )}
+                    aria-label="Abrir calendário"
+                >
+                    <CalendarIcon className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+                <Calendar
+                    mode="single"
+                    selected={value}
+                    onSelect={handleCalendarSelect}
+                    initialFocus
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={currentYear}
+                />
+            </PopoverContent>
+        </Popover>
+    </div>
+  );
 }
