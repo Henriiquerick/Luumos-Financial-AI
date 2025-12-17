@@ -1,4 +1,5 @@
 
+
 export const BANK_COLORS: Record<string, string> = {
   // Gigantes
   'banco do brasil': '#0038A9',

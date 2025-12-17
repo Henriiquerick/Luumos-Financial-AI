@@ -45,7 +45,10 @@ interface CardFormProps {
   cardToEdit?: CreditCard | null;
 }
 
-const PREDEFINED_COLORS = Object.entries(BANK_COLORS).map(([name, value]) => ({ name, value }));
+// Criar um conjunto de valores de cores únicos para evitar duplicatas
+const uniqueColors = Array.from(new Set(Object.values(BANK_COLORS)));
+const PREDEFINED_COLORS = uniqueColors.map(color => ({ name: '', value: color }));
+
 
 export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const firestore = useFirestore();
