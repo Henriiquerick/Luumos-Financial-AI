@@ -47,8 +47,9 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         headers: {
           'Content-Type': 'application/json',
         },
+        // AQUI ESTÁ A CORREÇÃO: Enviando no formato esperado pela API
         body: JSON.stringify({ 
-            message: currentInput,
+            messages: newMessages
         }),
       });
 
