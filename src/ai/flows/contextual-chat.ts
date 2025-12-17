@@ -1,8 +1,8 @@
-import { defineFlow } from '@genkit-ai/flow';
 import { z } from 'zod';
-import { ai } from '../genkit'; // <--- Importamos nossa instância criada no Passo 1
+import { ai } from '../genkit'; // Importamos o cérebro que criamos
 
-export const contextualChatFlow = defineFlow(
+// Usamos ai.defineFlow para criar um fluxo já conectado
+export const contextualChatFlow = ai.defineFlow(
   {
     name: 'contextualChat',
     inputSchema: z.object({
@@ -11,18 +11,14 @@ export const contextualChatFlow = defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Agora usamos ai.generate()
-    // Ele aceita apenas 1 argumento (as opções) porque o registry já está configurado dentro do 'ai'
-    const llmResponse = await ai.generate({
-      // Como definimos o modelo padrão no genkit.ts, nem precisaria repetir aqui, mas é bom ser explícito:
-      model: 'gemini-1.5-flash', 
+    // Agora a chamada é simples e direta
+    const { text } = await ai.generate({
       prompt: `Atue como Lumos, um consultor financeiro. O usuário disse: "${input.message}". Responda em português do Brasil.`,
       config: {
         temperature: 0.7,
       },
     });
 
-    // Na versão nova, .text é uma propriedade (sem parênteses)
-    return llmResponse.text; 
+    return text;
   }
 );
