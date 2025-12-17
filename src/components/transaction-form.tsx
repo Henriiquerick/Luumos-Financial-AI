@@ -18,8 +18,10 @@ import { CATEGORIES } from '@/lib/constants';
 import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage } from '@/lib/finance-utils';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -120,16 +122,22 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
   }, [getValues, setValue, transactions, toast]);
   
   useEffect(() => {
+    // Quando o tipo de transação muda, ajustamos os valores padrão
     if (transactionType === 'income') {
-      setValue('paymentMethod', 'cash');
+      setValue('paymentMethod', 'cash'); // Receitas são sempre 'cash' (dinheiro em conta)
+      setValue('isInstallment', false); // Receitas não são parceladas
+      setValue('category', 'Salary'); // Categoria padrão para receita
+    } else {
+      setValue('category', 'Other'); // Categoria padrão para despesa
     }
   }, [transactionType, setValue]);
 
 
   function onSubmit(values: FormValues) {
-    if (!user) return;
+    if (!user || !firestore) return;
     const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
     
+    // Se for despesa parcelada, cria várias transações
     if (values.isInstallment && values.type === 'expense' && values.installments) {
       const installmentId = crypto.randomUUID();
       const installmentAmount = values.amount / values.installments;
@@ -140,30 +148,39 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
           amount: installmentAmount,
           category: values.category,
           date: Timestamp.fromDate(addMonths(values.date, i)),
-          type: 'expense' as 'expense',
+          type: 'expense' as const,
           installments: values.installments,
           installmentId: installmentId,
           cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
         };
         addDocumentNonBlocking(transactionsRef, transactionData);
       }
-    } else {
+      toast({ title: 'Success', description: `${values.installments} installments were created.` });
+    } else { // Transação única (receita ou despesa à vista)
       const transactionData = {
         description: values.description,
         amount: values.amount,
         category: values.category,
         date: Timestamp.fromDate(values.date),
         type: values.type,
-        installments: 1,
-        cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
+        installments: 1, // Sempre 1 para transações não parceladas
+        cardId: values.type === 'expense' && values.paymentMethod === 'card' ? values.cardId : undefined,
       };
       addDocumentNonBlocking(transactionsRef, transactionData);
+      toast({
+        title: 'Success!',
+        description: `Transaction of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount)} added.`,
+      });
     }
+    
     onSave();
     form.reset();
   }
 
   const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
+  const incomeCategories = ['Salary', 'Investments', 'Other'];
+  const expenseCategories = CATEGORIES.filter(c => !incomeCategories.includes(c) || c === 'Other');
+
 
   return (
     <Form {...form}>
@@ -175,7 +192,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
             <FormItem>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger className="bg-transparent">
+                  <SelectTrigger className="bg-transparent text-lg font-semibold py-6">
                     <SelectValue placeholder="Select transaction type" />
                   </SelectTrigger>
                 </FormControl>
@@ -196,7 +213,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Coffee shop" {...field} onBlur={handleAutoCategorize} />
+                  <Input placeholder={transactionType === 'income' ? 'e.g., Monthly Salary' : 'e.g., Coffee shop'} {...field} onBlur={handleAutoCategorize} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -224,9 +241,9 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
             control={control}
             name="date"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Date</FormLabel>
-                <Popover>
+                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -260,7 +277,9 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  {(transactionType === 'income' ? incomeCategories : expenseCategories).map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -317,41 +336,50 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                 )}
               />
             )}
-            <FormField
-              control={control}
-              name="isInstallment"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Installment Purchase</FormLabel>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {paymentMethod === 'card' && (
+              <FormField
+                control={control}
+                name="isInstallment"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Installment Purchase</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
+             {isInstallment && paymentMethod === 'card' && (
+              <FormField
+                control={control}
+                name="installments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Installments</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="2" max="60" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </>
         )}
-
-        {isInstallment && transactionType === 'expense' && (
-          <FormField
-            control={control}
-            name="installments"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Number of Installments</FormLabel>
-                <FormControl>
-                  <Input type="number" min="2" max="60" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        <Button type="submit" className="w-full" disabled={isSubmitDisabled}>
+       
+        <Button 
+          type="submit" 
+          className={cn(
+            "w-full",
+            transactionType === 'income' ? 'bg-green-600 hover:bg-green-700' : ''
+          )} 
+          disabled={isSubmitDisabled}
+        >
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Add Transaction
+          {transactionType === 'income' ? 'Add Income' : 'Add Expense'}
         </Button>
       </form>
     </Form>
