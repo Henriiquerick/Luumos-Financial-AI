@@ -10,5 +10,5 @@ export const ai = genkit({
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,
-  model: 'openai/llama3-8b-8192',
+  model: 'llama3-8b-8192', // Correção: Removido o prefixo 'openai/'
 });
