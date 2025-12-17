@@ -20,22 +20,17 @@ service cloud.firestore {
           && (data.cardId == null || data.cardId is string);
     }
 
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      match /transactions/{transactionId} {
-        allow read, delete: if isOwner(userId);
-        
-        allow create: if isOwner(userId) 
-          && validateTransactionData(request.resource.data)
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time;
-          
-        allow update: if isOwner(userId)
-          && validateTransactionData(request.resource.data)
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.updatedAt == request.time;
-      }
+    match /databases/{database}/documents {
+    
+    // Regra para a coleção de usuários e suas subcoleções
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      allow create: if request.auth.uid == userId 
+        && request.resource.data.amount is number
+        && request.resource.data.createdAt == request.time; // Valida o serverTimestamp
+    }
+  }
 
       match /cards/{cardId} {
         allow read, write: if isOwner(userId);
