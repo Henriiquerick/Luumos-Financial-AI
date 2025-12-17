@@ -33,6 +33,67 @@ export const TRANSLATIONS = {
     card: {
         add_new: 'Add New Card',
     },
+    modals: {
+      transaction: {
+        title: 'Add Transaction',
+        subtitle: 'Add a new income or expense to your account. AI can help you categorize it.',
+        tabs: { expense: 'Expense', income: 'Income' },
+        fields: {
+          description: 'Description',
+          amount: 'Amount',
+          date: 'Date',
+          category: 'Category',
+          paymentMethod: 'Payment Method',
+          card: 'Card',
+          installments: 'Installment Purchase',
+          installments_number: 'Number of Installments',
+          placeholderDesc: 'e.g., Coffee shop',
+          placeholderCategory: 'Select a category',
+          placeholderPayment: 'Select a payment method',
+          placeholderCard: 'Select a card',
+          available: 'Available',
+          cash: 'Cash / Debit',
+          creditCard: 'Credit Card',
+        },
+        submit: {
+          addExpense: 'Add Expense',
+          addIncome: 'Add Income'
+        }
+      },
+      profile: {
+        title: 'Edit Your Profile',
+        subtitle: 'Keep your information up to date. This helps the AI provide more personalized advice.',
+        fields: {
+          firstName: 'First Name',
+          lastName: 'Last Name',
+          birthDate: 'Date of Birth',
+          city: 'City',
+          job: 'Job Title',
+          company: 'Company'
+        },
+        save: 'Save Changes'
+      },
+      card: {
+          add: {
+              title: 'Add New Credit Card',
+              subtitle: 'Enter the details for your new card.'
+          },
+          edit: {
+              title: 'Edit Credit Card',
+              subtitle: 'Update the details for your card.'
+          },
+          fields: {
+              name: 'Card Name',
+              limit: 'Total Limit',
+              closingDay: 'Closing Day',
+              color: 'Card Color',
+              namePlaceholder: 'e.g., Nubank',
+              dayPlaceholder: 'Select Day'
+          },
+          save: 'Save Card',
+          save_changes: 'Save Changes'
+      }
+    }
   },
   pt: {
     dashboard: {
@@ -65,8 +126,69 @@ export const TRANSLATIONS = {
       sign_out: 'Sair',
     },
     card: {
-      add_new: 'Adicionar Novo Cartão',
+        add_new: 'Adicionar Novo Cartão',
     },
+    modals: {
+      transaction: {
+        title: 'Adicionar Transação',
+        subtitle: 'Adicione uma nova receita ou despesa à sua conta. A IA pode ajudar a categorizar.',
+        tabs: { expense: 'Despesa', income: 'Receita' },
+        fields: {
+          description: 'Descrição',
+          amount: 'Valor',
+          date: 'Data',
+          category: 'Categoria',
+          paymentMethod: 'Meio de Pagamento',
+          card: 'Cartão',
+          installments: 'Compra Parcelada',
+          installments_number: 'Número de Parcelas',
+          placeholderDesc: 'ex: Cafeteria',
+          placeholderCategory: 'Selecione uma categoria',
+          placeholderPayment: 'Selecione um meio de pagamento',
+          placeholderCard: 'Selecione um cartão',
+          available: 'Disponível',
+          cash: 'Dinheiro / Débito',
+          creditCard: 'Cartão de Crédito'
+        },
+        submit: {
+          addExpense: 'Adicionar Despesa',
+          addIncome: 'Adicionar Receita'
+        }
+      },
+      profile: {
+        title: 'Editar Seu Perfil',
+        subtitle: 'Mantenha suas informações atualizadas. Isso ajuda a IA a fornecer conselhos mais personalizados.',
+        fields: {
+          firstName: 'Nome',
+          lastName: 'Sobrenome',
+          birthDate: 'Data de Nascimento',
+          city: 'Cidade',
+          job: 'Cargo',
+          company: 'Empresa'
+        },
+        save: 'Salvar Alterações'
+      },
+      card: {
+          add: {
+              title: 'Adicionar Novo Cartão de Crédito',
+              subtitle: 'Insira os detalhes do seu novo cartão.'
+          },
+          edit: {
+              title: 'Editar Cartão de Crédito',
+              subtitle: 'Atualize os detalhes do seu cartão.'
+          },
+          fields: {
+              name: 'Nome do Cartão',
+              limit: 'Limite Total',
+              closingDay: 'Dia de Fechamento',
+              color: 'Cor do Cartão',
+              namePlaceholder: 'ex: Nubank',
+              dayPlaceholder: 'Selecione o Dia'
+          },
+          save: 'Salvar Cartão',
+          save_changes: 'Salvar Alterações'
+      }
+    }
   },
   es: {
     dashboard: {
@@ -101,6 +223,67 @@ export const TRANSLATIONS = {
     card: {
         add_new: 'Añadir Nueva Tarjeta',
     },
+    modals: {
+      transaction: {
+        title: 'Añadir Transacción',
+        subtitle: 'Añade un nuevo ingreso o gasto a tu cuenta. La IA puede ayudar a categorizarlo.',
+        tabs: { expense: 'Gasto', income: 'Ingreso' },
+        fields: {
+          description: 'Descripción',
+          amount: 'Monto',
+          date: 'Fecha',
+          category: 'Categoría',
+          paymentMethod: 'Método de Pago',
+          card: 'Tarjeta',
+          installments: 'Compra a Plazos',
+          installments_number: 'Número de Cuotas',
+          placeholderDesc: 'ej: Cafetería',
+          placeholderCategory: 'Selecciona una categoría',
+          placeholderPayment: 'Selecciona un método de pago',
+          placeholderCard: 'Selecciona una tarjeta',
+          available: 'Disponible',
+          cash: 'Efectivo / Débito',
+          creditCard: 'Tarjeta de Crédito'
+        },
+        submit: {
+          addExpense: 'Añadir Gasto',
+          addIncome: 'Añadir Ingreso'
+        }
+      },
+      profile: {
+        title: 'Editar Tu Perfil',
+        subtitle: 'Mantén tu información actualizada. Esto ayuda a la IA a proporcionar consejos más personalizados.',
+        fields: {
+          firstName: 'Nombre',
+          lastName: 'Apellido',
+          birthDate: 'Fecha de Nacimiento',
+          city: 'Ciudad',
+          job: 'Puesto de Trabajo',
+          company: 'Empresa'
+        },
+        save: 'Guardar Cambios'
+      },
+      card: {
+          add: {
+              title: 'Añadir Nueva Tarjeta de Crédito',
+              subtitle: 'Introduce los detalles de tu nueva tarjeta.'
+          },
+          edit: {
+              title: 'Editar Tarjeta de Crédito',
+              subtitle: 'Actualiza los detalles de tu tarjeta.'
+          },
+          fields: {
+              name: 'Nombre de la Tarjeta',
+              limit: 'Límite Total',
+              closingDay: 'Día de Cierre',
+              color: 'Color de la Tarjeta',
+              namePlaceholder: 'ej: Nubank',
+              dayPlaceholder: 'Seleccione el Día'
+          },
+          save: 'Guardar Tarjeta',
+          save_changes: 'Guardar Cambios'
+      }
+    }
   },
 };
 
