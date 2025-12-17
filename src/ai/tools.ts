@@ -4,7 +4,7 @@ import { ai } from './genkit';
 import { createCard as createCardInDb } from '@/firebase/mutations';
 import { initializeFirebase } from '@/firebase';
 
-// 1. Schema (O que precisamos para criar um cartão)
+// 1. Schema (O que precisamos para criar um cartão, alinhado com o Firestore)
 export const CreateCardSchema = z.object({
   name: z.string().describe('O nome do cartão (ex: Nubank)'),
   totalLimit: z.number().describe('O limite total do cartão (ex: 5000)'),
@@ -17,7 +17,7 @@ export const CreateCardSchema = z.object({
 export const createCardTool = ai.defineTool(
   {
     name: 'createCard',
-    description: 'Cria um novo cartão de crédito ou débito para o usuário no banco de dados, quando todas as informações (nome, limite, cor, dia de fechamento) forem fornecidas.',
+    description: 'Cria um novo cartão de crédito para o usuário no banco de dados, quando todas as informações (nome, limite, cor, dia de fechamento) forem fornecidas.',
     inputSchema: CreateCardSchema,
     outputSchema: z.string(),
   },
