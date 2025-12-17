@@ -24,7 +24,7 @@ export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: Add
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      onFinished(); // Call onFinished without args when dialog is closed
+      onFinished(); // Call onFinished without args when dialog is closed by 'X' or outside click
     }
     setIsOpen(open);
   }
@@ -41,7 +41,7 @@ export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: Add
         <CardForm 
           onSave={(updatedCard) => {
             setIsOpen(false);
-            onFinished(updatedCard);
+            onFinished(updatedCard); // Pass the updated card data up
           }} 
           cardToEdit={cardToEdit} 
         />

@@ -123,6 +123,7 @@ export default function Dashboard() {
   };
   
   const handleCardDialogFinished = (updatedCard?: CreditCard) => {
+    console.log("Cartão atualizado para UI otimista:", updatedCard);
      if (updatedCard) {
       // Optimistic UI update
       setLocalCreditCards(prevCards => 
