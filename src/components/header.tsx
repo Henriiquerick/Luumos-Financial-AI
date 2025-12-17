@@ -38,7 +38,7 @@ export default function Header({ userProfile }: HeaderProps) {
       <div className="flex items-center gap-2">
         {activePersonality && (
           <Badge variant="secondary" className="border-accent/20 hidden sm:flex items-center gap-2">
-            <span>🧠</span>
+            <span>{activePersonality.icon}</span>
             <span>{activePersonality.name}</span>
           </Badge>
         )}
