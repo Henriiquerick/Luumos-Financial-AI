@@ -48,11 +48,11 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         headers: {
           'Content-Type': 'application/json',
         },
-        // CORREÇÃO: Enviando a mensagem E os dados de contexto (incluindo a personalidade)
         body: JSON.stringify({ 
             messages: newMessages,
             data: {
-              persona: personality.systemInstruction, // A instrução que define a personalidade
+              userId: user.uid, // <--- ADICIONADO!
+              persona: personality.systemInstruction,
               balance,
               transactions,
               cards,

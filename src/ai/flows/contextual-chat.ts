@@ -1,6 +1,5 @@
-import { z } from 'genkit';
+import { z } from 'zod';
 import { ai } from '../genkit';
-// IMPORTANTE: O caminho '../tools' busca o arquivo na pasta 'src/ai'
 import { createCardTool } from '../tools'; 
 
 export const contextualChatFlow = ai.defineFlow(
@@ -14,23 +13,31 @@ export const contextualChatFlow = ai.defineFlow(
   },
   async (input) => {
     const persona = input.data?.persona || "Lumos";
-    const contextData = input.data ? JSON.stringify(input.data) : "Sem dados financeiros.";
+    const contextData = input.data ? JSON.stringify(input.data, null, 2) : "Sem dados financeiros.";
+    const userId = input.data?.userId; // Extraindo o userId
 
     const { text } = await ai.generate({
-      // Adicionamos a ferramenta aqui
       tools: [createCardTool],
-      
       prompt: `
-      Você é um assistente financeiro com a personalidade: "${persona}".
+      Sua Personalidade: "${persona}".
+
+      DADOS FINANCEIROS DO USUÁRIO:
+      ${contextData}
+
+      MENSAGEM DO USUÁRIO: "${input.message}"
       
-      DADOS DO USUÁRIO: ${contextData}
-      MENSAGEM ATUAL: "${input.message}"
-      
-      INSTRUÇÕES:
-      1. Se o usuário pedir para criar um cartão, verifique se tem Nome, Saldo e Tipo.
-      2. Se tiver tudo, chame a ferramenta 'createCard'.
-      3. Se faltar algo, pergunte.
-      4. Se não for sobre cartões, apenas responda amigavelmente.
+      SEU OBJETIVO: Ajudar o usuário a gerenciar suas finanças. Se ele pedir para criar um cartão, você TEM que coletar TODAS as informações abaixo antes de chamar a ferramenta:
+      1. 'name': Nome do Cartão (ex: Nubank)
+      2. 'totalLimit': Limite total (ex: 5000)
+      3. 'color': Cor em hexadecimal (ex: #820AD1)
+      4. 'closingDay': Dia do fechamento da fatura (ex: 15)
+
+      IMPORTANTE: O 'userId' para a ferramenta é '${userId}'. Você já tem essa informação, não precisa perguntar.
+
+      COMO AGIR:
+      - Se o usuário pedir para criar um cartão e já der todas as 4 informações, chame a ferramenta 'createCard' imediatamente.
+      - Se faltar QUALQUER uma das 4 informações, pergunte educadamente pela informação que falta. NÃO chame a ferramenta.
+      - Para qualquer outro assunto, converse normalmente, mantendo sua personalidade.
       `,
     });
 
