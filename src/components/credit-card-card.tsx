@@ -112,16 +112,14 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className={cn(
-            "border-none text-white relative overflow-hidden group",
-            getBankStyles(card.name)
-        )}
+        className="border-none text-white relative overflow-hidden group bg-slate-900"
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        <div className="absolute top-0 left-0 w-full h-full bg-black/20 mix-blend-multiply"></div>
+        <div className={cn("absolute inset-0 opacity-80", getBankStyles(card.name))}></div>
+        <div className="absolute inset-0 bg-black/20 mix-blend-multiply"></div>
         
         <div
-          className="absolute top-2 right-2 z-[100]"
+          className="absolute top-2 right-2 z-20"
           style={{ pointerEvents: 'auto' }}
         >
           <button
@@ -138,7 +136,7 @@ export function CreditCardCard({
 
           {isMenuOpen && (
             <div 
-              className="absolute right-0 mt-2 w-48 bg-black/80 backdrop-blur-sm border border-gray-800 rounded-lg shadow-xl z-[101] overflow-hidden"
+              className="absolute right-0 mt-2 w-48 bg-black/80 backdrop-blur-sm border border-gray-800 rounded-lg shadow-xl z-30 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <ul className="p-1">
