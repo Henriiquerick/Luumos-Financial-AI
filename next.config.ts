@@ -46,6 +46,31 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  /* --- Blindagem para erros de 'async_hooks' e módulos do Node --- */
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        module: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        async_hooks: false, // O culpado principal
+      };
+    }
+    return config;
+  },
+
+  /* --- Opcional: Ajuda a evitar erros de pacotes ESM --- */
+  experimental: {
+    serverComponentsExternalPackages: ['genkit', '@genkit-ai/google-genai'],
+  },
 };
 
 export default nextConfig;

@@ -1,4 +1,4 @@
-'use client';
+'use server';
 import { z } from 'genkit';
 import { ai } from './genkit';
 import { createCard as createCardInDb } from '@/firebase/mutations';
