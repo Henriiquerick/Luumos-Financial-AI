@@ -1,2 +1,1 @@
-// This file is temporarily unused to stabilize the application.
-// The function calling feature will be re-implemented in a future step.
+// This file is intentionally left empty to disconnect tool functionality.

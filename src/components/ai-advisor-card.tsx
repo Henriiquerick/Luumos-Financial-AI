@@ -50,13 +50,6 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         },
         body: JSON.stringify({ 
             messages: newMessages,
-            data: {
-              userId: user.uid, // <--- ADICIONADO!
-              persona: personality.systemInstruction,
-              balance,
-              transactions,
-              cards,
-            }
         }),
       });
 
