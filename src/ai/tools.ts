@@ -1,33 +1,24 @@
-'use server';
+import { z } from 'genkit';
+import { ai } from './genkit'; 
 
-import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-/**
- * Schema for the input of the createCardTool.
- * Defines the necessary information to create a new card.
- */
+// 1. Schema (O que precisamos para criar um cartão)
 export const CreateCardSchema = z.object({
-  name: z.string().describe('The name for the new card, e.g., "Nubank", "iFood Card"'),
-  balance: z.number().describe('The total limit for a credit card, or initial balance for debit/voucher cards.'),
-  type: z.enum(['credit', 'debit', 'voucher']).describe("The type of the card."),
+  name: z.string().describe('O nome do cartão (ex: Nubank, Vale Refeição)'),
+  balance: z.number().describe('O limite ou saldo inicial'),
+  type: z.enum(['credit', 'debit', 'voucher']).describe('Tipo: credit, debit ou voucher'),
 });
 
-/**
- * A Genkit tool that allows the AI agent to create a new virtual card.
- * Currently, it simulates the creation by logging to the console.
- */
+// 2. A Ferramenta em si
 export const createCardTool = ai.defineTool(
   {
-    name: 'createCardTool',
-    description: 'Use this tool to create a new virtual card for the user. It can be a credit, debit, or voucher card.',
-    input: { schema: CreateCardSchema },
-    output: { schema: z.string() },
+    name: 'createCard',
+    description: 'Cria um cartão financeiro para o usuário quando ele solicitar explicitamente.',
+    inputSchema: CreateCardSchema,
+    outputSchema: z.string(),
   },
   async (input) => {
-    // For now, we just log the action and simulate success.
-    // In the future, this could be connected to Firestore.
-    console.log('🛠️ [TOOL] Creating Card:', input);
-    return `Card "${input.name}" of type "${input.type}" with a balance/limit of ${input.balance} created successfully.`;
+    // SIMULAÇÃO: Veremos isso no terminal
+    console.log("🛠️ AÇÃO EXECUTADA: Criar Cartão", input);
+    return `Cartão ${input.name} (${input.type}) criado com sucesso com saldo de ${input.balance}.`;
   }
 );
