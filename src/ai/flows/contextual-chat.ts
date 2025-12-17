@@ -10,10 +10,10 @@ export const contextualChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
+    // SEGREDO DO SUCESSO: Removemos a linha 'model: ...'.
+    // Agora o Chat vai usar EXATAMENTE o mesmo modelo que o daily-insight usa (o padrão).
     const { text } = await ai.generate({
-      // CORREÇÃO: Removemos a especificação do modelo aqui.
-      // Ele agora usará o modelo padrão definido em `src/ai/genkit.ts`.
-      prompt: `Atue como Lumos, um consultor financeiro especialista. O usuário disse: "${input.message}". Responda em português do Brasil de forma útil e direta.`,
+      prompt: `Atue como Lumos, um consultor financeiro. O usuário disse: "${input.message}". Responda em português do Brasil.`,
       config: {
         temperature: 0.7,
       },
