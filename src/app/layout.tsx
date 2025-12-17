@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LanguageProvider } from '@/contexts/language-context';
 
 export const metadata: Metadata = {
   title: 'Lucent AI',
@@ -30,12 +31,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            <div className="p-4 md:p-8">
-              {children}
-            </div>
-            <Toaster />
-          </FirebaseClientProvider>
+          <LanguageProvider>
+            <FirebaseClientProvider>
+              <div className="p-4 md:p-8">
+                {children}
+              </div>
+              <Toaster />
+            </FirebaseClientProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
