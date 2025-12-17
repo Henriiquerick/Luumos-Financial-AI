@@ -110,7 +110,7 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
-          AI Financial Agent
+          <span>AI Financial Agent</span>
         </CardTitle>
         <CardDescription>Ask questions or tell me to add transactions or cards.</CardDescription>
       </CardHeader>
