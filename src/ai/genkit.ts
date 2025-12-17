@@ -1,7 +1,7 @@
-import { genkit, configureGenkit } from 'genkit';
+import { genkit } from 'genkit';
 import { openAI } from 'genkitx-openai';
 
-configureGenkit({
+export const ai = genkit({
   plugins: [
     openAI({
       apiKey: process.env.GROQ_API_KEY,
@@ -10,8 +10,5 @@ configureGenkit({
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,
-});
-
-export const ai = genkit({
   model: 'openai/llama3-8b-8192',
 });
