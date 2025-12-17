@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -5,12 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Transaction } from '@/lib/types';
 import { format } from 'date-fns';
 import { CategoryIcon } from './category-icon';
+import { useTranslation } from '@/contexts/language-context';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  const { t } = useTranslation();
   const recent = transactions
     .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
     .slice(0, 5);
@@ -18,23 +21,23 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
     <Card className="bg-card/50 border-primary/20">
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
-        <CardDescription>Your last 5 transactions.</CardDescription>
+        <CardTitle>{t.dashboard.recent_activity}</CardTitle>
+        <CardDescription>{t.dashboard.last_transactions}</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Transaction</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>{t.transaction.header}</TableHead>
+              <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
+              <TableHead className="text-right">{t.transaction.amount}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {recent.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center text-muted-foreground">
-                  No transactions yet. Add one to get started!
+                  {t.transaction.no_transactions}
                 </TableCell>
               </TableRow>
             ) : (

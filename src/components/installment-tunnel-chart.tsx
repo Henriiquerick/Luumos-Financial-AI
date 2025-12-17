@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -5,6 +6,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
+import { useTranslation } from '@/contexts/language-context';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
@@ -12,6 +14,7 @@ interface InstallmentTunnelChartProps {
 }
 
 export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunnelChartProps) {
+  const { t } = useTranslation();
   const chartData = useMemo(() => {
     return calculateCardBillProjection(transactions, cards);
   }, [transactions, cards]);
@@ -45,8 +48,8 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
   return (
     <Card className="bg-card/50 border-primary/20">
       <CardHeader>
-        <CardTitle>Installment Tunnel</CardTitle>
-        <CardDescription>Your projected credit card bills for the next 6 months.</CardDescription>
+        <CardTitle>{t.dashboard.installment_tunnel}</CardTitle>
+        <CardDescription>{t.dashboard.installment_subtitle}</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={250}>

@@ -1,8 +1,10 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
+import { useTranslation } from '@/contexts/language-context';
 
 interface BalanceCardProps {
   balance: number;
@@ -10,6 +12,7 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
+  const { t } = useTranslation();
   const formattedBalance = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -18,10 +21,10 @@ export function BalanceCard({ balance, onAddTransaction }: BalanceCardProps) {
   return (
     <Card className="bg-card/50 border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-300">Available Balance</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-300">{t.dashboard.balance}</CardTitle>
         <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={onAddTransaction}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Transaction
+          {t.dashboard.add_transaction}
         </Button>
       </CardHeader>
       <CardContent>

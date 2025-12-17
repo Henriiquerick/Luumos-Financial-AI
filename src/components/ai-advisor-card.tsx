@@ -12,6 +12,7 @@ import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { useTranslation } from '@/contexts/language-context';
 
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
@@ -34,6 +35,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+  const { t } = useTranslation();
+
 
   const handleSendMessage = async () => {
     if (!userInput.trim() || !user) return;
@@ -120,16 +123,16 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
-          <span>AI Financial Agent</span>
+          <span>{t.chat.agent_title}</span>
         </CardTitle>
         <CardDescription>
-          Acting as: <span className="font-semibold text-foreground">{personality.name}</span> | Level: <span className="font-semibold text-foreground">{knowledge.name}</span>
+          {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium">Support Level</label>
+            <label className="text-sm font-medium">{t.chat.support_level}</label>
             <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
               <SelectTrigger className="w-full mt-1 text-xs">
                 <SelectValue placeholder="Select a level" />
@@ -146,7 +149,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium">Personality</label>
+            <label className="text-sm font-medium">{t.chat.personality}</label>
             <Select value={personality.id} onValueChange={handlePersonalityChange}>
               <SelectTrigger className="w-full mt-1 text-xs">
                 <SelectValue placeholder="Select a personality" />
@@ -170,7 +173,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                  <div className="flex items-start gap-3 justify-start">
                    <span className="text-2xl mt-1">{personality.icon}</span>
                    <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
-                      <p>Hello! How can I help you today?</p>
+                      <p>{t.chat.welcome}</p>
                       <p className="text-xs text-muted-foreground mt-2">Try saying: "Add my new Nubank card with a R$5000 limit" or "I just bought a coffee for R$10".</p>
                    </div>
                 </div>
@@ -197,7 +200,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         <div className="relative">
           <Textarea
             id="user-question"
-            placeholder={`Ask ${personality.name} anything...`}
+            placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             onKeyDown={handleKeyDown}

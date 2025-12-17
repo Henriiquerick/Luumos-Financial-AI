@@ -22,6 +22,7 @@ import { AuthGate } from './auth-gate';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { AddCardDialog } from './add-card-dialog';
+import { useTranslation } from '@/contexts/language-context';
 
 
 export default function Dashboard() {
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+  const { t } = useTranslation();
 
   // Memoize Firestore references
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -148,9 +150,9 @@ export default function Dashboard() {
               <Header userProfile={userProfile} />
               <div className="mb-8">
                 <h1 className="text-4xl font-bold tracking-tighter">
-                  {userProfile?.firstName ? `Bem-vindo(a), ${userProfile.firstName}!` : 'Bem-vindo(a) ao Lucent AI'}
+                  {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
                 </h1>
-                <p className="text-muted-foreground">Aqui está o resumo da sua vida financeira.</p>
+                <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
               </div>
               <DailyInsightCard 
                 transactions={typedTransactions}
@@ -172,7 +174,7 @@ export default function Dashboard() {
                 <div className="space-y-6">
                   <div className="block lg:hidden">
                     <Button className="w-full" onClick={() => setIsTransactionDialogOpen(true)} >
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Transaction
+                      <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
                     </Button>
                   </div>
                   <AiAdvisorCard

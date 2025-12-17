@@ -7,6 +7,7 @@ import type { CreditCard, Transaction } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useTranslation } from "@/contexts/language-context";
 
 interface CardsCarouselProps {
   cards: CreditCard[];
@@ -16,6 +17,7 @@ interface CardsCarouselProps {
 }
 
 export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: CardsCarouselProps) {
+    const { t } = useTranslation();
   return (
     <>
       <Carousel
@@ -35,7 +37,7 @@ export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: Ca
               <CardContent className="p-6">
                 <Button variant="ghost" className="flex flex-col h-auto" onClick={onAddCard}>
                   <Plus className="w-8 h-8 text-primary mb-2" />
-                  <span className="text-primary">Add New Card</span>
+                  <span className="text-primary">{t.card.add_new}</span>
                 </Button>
               </CardContent>
             </Card>
