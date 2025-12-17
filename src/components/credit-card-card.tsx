@@ -111,14 +111,14 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="bg-card/50 backdrop-blur-sm text-white relative overflow-hidden group border-white/10"
+        className="bg-card/50 backdrop-blur-sm text-white relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div 
-            className="absolute inset-0 opacity-20"
+            className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-300"
             style={{ backgroundColor: card.color }}
         ></div>
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-300"></div>
         
         <div
           className="absolute top-2 right-2 z-20"
