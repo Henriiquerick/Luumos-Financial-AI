@@ -10,6 +10,7 @@ import type { AIPersonality, Transaction, CreditCard } from '@/lib/types';
 import { PERSONAS } from '@/lib/personas';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/firebase';
 
 interface AiAdvisorCardProps {
   personality: AIPersonality;
@@ -29,9 +30,10 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { user } = useUser();
 
   const handleSendMessage = async () => {
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || !user) return;
     
     const newMessages: Message[] = [...messages, { role: 'user', content: userInput }];
     setMessages(newMessages);
@@ -51,7 +53,11 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages, data: financialData }),
+        body: JSON.stringify({ 
+            messages: newMessages, 
+            data: financialData,
+            userId: user.uid, // Pass userId to the backend
+        }),
       });
 
       if (!response.ok) {
@@ -100,9 +106,9 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
-          AI Financial Advisor
+          AI Financial Agent
         </CardTitle>
-        <CardDescription>Get personalized advice from your chosen AI finance personality.</CardDescription>
+        <CardDescription>Ask questions or tell me to add transactions or cards.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
         <div>
@@ -126,6 +132,15 @@ export function AiAdvisorCard({ personality, onPersonalityChange, transactions, 
         
         <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
            <div className="space-y-4">
+            {messages.length === 0 && (
+                 <div className="flex items-start gap-3 justify-start">
+                   <span className="text-2xl mt-1">{personality.icon}</span>
+                   <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
+                      <p>Hello! How can I help you today?</p>
+                      <p className="text-xs text-muted-foreground mt-2">Try saying: "Add my new Nubank card with a R$5000 limit" or "I just bought a coffee for R$10".</p>
+                   </div>
+                </div>
+            )}
             {messages.map((msg, index) => (
               <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}

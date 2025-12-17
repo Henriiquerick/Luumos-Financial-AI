@@ -1,16 +1,20 @@
 import { contextualChat } from '@/ai/flows/contextual-chat';
 
+export const maxDuration = 60; // Extend timeout for complex agent actions
+
 export async function POST(req: Request) {
   try {
-    const { messages, data } = await req.json();
+    // We also need to pass the user ID to the flow so it can perform actions on their behalf.
+    const { messages, data, userId } = await req.json();
 
-    // Executa o fluxo do Genkit
+    // Execute the Genkit flow
     const result = await contextualChat({
       messages,
       data,
+      userId,
     });
 
-    // Retorna apenas o texto da resposta
+    // Return the text part of the response
     return new Response(result.response, {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
