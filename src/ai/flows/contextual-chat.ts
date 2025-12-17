@@ -10,9 +10,9 @@ export const contextualChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Note: NÃO TEM 'model:' aqui. Ele usa o padrão do genkit.ts
+    // Sem 'model' especificado aqui!
     const { text } = await ai.generate({
-      prompt: `Atue como Lumos... O usuário disse: "${input.message}"...`,
+      prompt: `Atue como Lumos, um consultor financeiro. O usuário disse: "${input.message}". Responda em português do Brasil.`,
       config: {
         temperature: 0.7,
       },
