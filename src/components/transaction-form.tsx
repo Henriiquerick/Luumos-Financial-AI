@@ -16,10 +16,10 @@ import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
 import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getCardUsage } from '@/lib/finance-utils';
+import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, Timestamp, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { DatePicker } from './ui/date-picker';
 
@@ -42,9 +42,10 @@ interface TransactionFormProps {
   onSave: () => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
+  transactionToEdit?: Transaction | null;
 }
 
-export function TransactionForm({ onSave, transactions, creditCards }: TransactionFormProps) {
+export function TransactionForm({ onSave, transactions, creditCards, transactionToEdit }: TransactionFormProps) {
   const [isCategorizing, setIsCategorizing] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -65,8 +66,38 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
     },
   });
 
-  const { control, getValues, setValue, watch } = form;
+  const { control, getValues, setValue, watch, reset } = form;
   
+  useEffect(() => {
+    if (transactionToEdit) {
+      const isCard = !!transactionToEdit.cardId;
+      reset({
+        description: transactionToEdit.description,
+        amount: transactionToEdit.amount,
+        date: getDateFromTimestamp(transactionToEdit.date),
+        type: transactionToEdit.type,
+        category: transactionToEdit.category,
+        isInstallment: (transactionToEdit.installments || 1) > 1,
+        installments: transactionToEdit.installments,
+        paymentMethod: isCard ? 'card' : 'cash',
+        cardId: transactionToEdit.cardId,
+      });
+    } else {
+      reset({
+        description: '',
+        amount: 0,
+        date: new Date(),
+        type: 'expense',
+        category: 'Other',
+        isInstallment: false,
+        installments: 2,
+        paymentMethod: 'cash',
+        cardId: undefined
+      });
+    }
+  }, [transactionToEdit, reset]);
+
+
   const isInstallment = watch('isInstallment');
   const transactionType = watch('type');
   const paymentMethod = watch('paymentMethod');
@@ -129,55 +160,80 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
       setValue('isInstallment', false); 
       setValue('category', 'Salary'); 
     } else {
-      setValue('category', 'Other'); 
+      // Don't reset category if we are not in income mode
+      // setValue('category', 'Other'); 
     }
   }, [transactionType, setValue]);
 
 
   function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
-    const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+    
     const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(values.amount);
     
-    const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
-
-    if (values.isInstallment && isCardPayment && values.installments) {
-      const installmentId = crypto.randomUUID();
-      const installmentAmount = values.amount / values.installments;
-
-      for (let i = 0; i < values.installments; i++) {
-        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
-          description: `${values.description} (${i + 1}/${values.installments})`,
-          amount: installmentAmount,
-          category: values.category,
-          date: Timestamp.fromDate(addMonths(values.date, i)),
-          type: 'expense',
-          installments: values.installments,
-          installmentId: installmentId,
-          cardId: values.cardId,
-        };
-        addDocumentNonBlocking(transactionsRef, transactionData);
-      }
-      toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
-    } else { 
-      const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
+    if (transactionToEdit) {
+      // UPDATE LOGIC
+      const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
+      const dataToUpdate: Partial<Transaction> & { date: Timestamp } = {
         description: values.description,
         amount: values.amount,
         category: values.category,
         date: Timestamp.fromDate(values.date),
         type: values.type,
-        installments: 1,
       };
-      
-      if (isCardPayment) {
-        transactionData.cardId = values.cardId;
-      }
 
-      addDocumentNonBlocking(transactionsRef, transactionData);
-      toast({
-        title: t.toasts.transaction.title,
-        description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
-      });
+      if (values.type === 'expense' && values.paymentMethod === 'card') {
+        dataToUpdate.cardId = values.cardId;
+      } else {
+        dataToUpdate.cardId = undefined; // Explicitly remove for non-card expenses/incomes
+      }
+      
+      updateDocumentNonBlocking(transactionRef, dataToUpdate);
+      toast({ title: "Transaction Updated", description: `Transaction of ${formattedAmount} was updated.` });
+
+    } else {
+      // CREATE LOGIC
+      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+      const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
+
+      if (values.isInstallment && isCardPayment && values.installments) {
+        const installmentId = crypto.randomUUID();
+        const installmentAmount = values.amount / values.installments;
+
+        for (let i = 0; i < values.installments; i++) {
+          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
+            description: `${values.description} (${i + 1}/${values.installments})`,
+            amount: installmentAmount,
+            category: values.category,
+            date: Timestamp.fromDate(addMonths(values.date, i)),
+            type: 'expense',
+            installments: values.installments,
+            installmentId: installmentId,
+            cardId: values.cardId,
+          };
+          addDocumentNonBlocking(transactionsRef, transactionData);
+        }
+        toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
+      } else { 
+        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string } = {
+          description: values.description,
+          amount: values.amount,
+          category: values.category,
+          date: Timestamp.fromDate(values.date),
+          type: values.type,
+          installments: 1,
+        };
+        
+        if (isCardPayment) {
+          transactionData.cardId = values.cardId;
+        }
+
+        addDocumentNonBlocking(transactionsRef, transactionData as any);
+        toast({
+          title: t.toasts.transaction.title,
+          description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
+        });
+      }
     }
     
     onSave();
@@ -197,7 +253,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
           name="type"
           render={({ field }) => (
             <FormItem>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={!!transactionToEdit}>
                 <FormControl>
                   <SelectTrigger className="bg-transparent text-lg font-semibold py-6">
                     <SelectValue placeholder="Select transaction type" />
@@ -238,7 +294,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
               <FormItem>
                 <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input type="number" step="0.01" {...field} readOnly={isInstallment} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -292,7 +348,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
@@ -314,7 +370,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
@@ -343,7 +399,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                       <FormLabel>{t.modals.transaction.fields.installments}</FormLabel>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} disabled={!!transactionToEdit}/>
                     </FormControl>
                   </FormItem>
                 )}
@@ -357,7 +413,7 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.installments_number}</FormLabel>
                     <FormControl>
-                      <Input type="number" min="2" max="60" {...field} />
+                      <Input type="number" min="2" max="60" {...field} readOnly={!!transactionToEdit}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -371,18 +427,14 @@ export function TransactionForm({ onSave, transactions, creditCards }: Transacti
           type="submit" 
           className={cn(
             "w-full",
-            transactionType === 'income' ? 'bg-green-600 hover:bg-green-700' : ''
+            transactionType === 'income' && !transactionToEdit ? 'bg-green-600 hover:bg-green-700' : ''
           )} 
           disabled={isSubmitDisabled}
         >
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense}
+          {transactionToEdit ? 'Save Changes' : (transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense)}
         </Button>
       </form>
     </Form>
   );
 }
-
-    
-
-    

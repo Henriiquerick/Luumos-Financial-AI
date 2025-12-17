@@ -10,25 +10,44 @@ interface TransactionDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
+  transactionToEdit?: Transaction | null;
+  onFinished: () => void;
 }
 
-export function TransactionDialog({ isOpen, setIsOpen, transactions, creditCards }: TransactionDialogProps) {
+export function TransactionDialog({ 
+  isOpen, 
+  setIsOpen, 
+  transactions, 
+  creditCards, 
+  transactionToEdit,
+  onFinished,
+}: TransactionDialogProps) {
   const { t } = useTranslation();
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onFinished();
+    }
+    setIsOpen(open);
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-primary">{t.modals.transaction.title}</DialogTitle>
+          <DialogTitle className="text-primary">{transactionToEdit ? 'Edit Transaction' : t.modals.transaction.title}</DialogTitle>
           <DialogDescription>
-            {t.modals.transaction.subtitle}
+            {transactionToEdit ? 'Update the details of your transaction.' : t.modals.transaction.subtitle}
           </DialogDescription>
         </DialogHeader>
         <TransactionForm 
           onSave={() => {
             setIsOpen(false);
+            onFinished();
           }}
           transactions={transactions}
           creditCards={creditCards}
+          transactionToEdit={transactionToEdit}
         />
       </DialogContent>
     </Dialog>

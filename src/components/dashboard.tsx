@@ -14,7 +14,7 @@ import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
@@ -24,6 +24,7 @@ import { AddCardDialog } from './add-card-dialog';
 import { useTranslation } from '@/contexts/language-context';
 import { isSameMonth, startOfToday } from 'date-fns';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function Dashboard() {
@@ -32,7 +33,9 @@ export default function Dashboard() {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   // Memoize Firestore references
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -112,6 +115,29 @@ export default function Dashboard() {
   const handleCardDialogFinished = () => {
     setEditingCard(null);
   };
+  
+  const handleAddTransaction = () => {
+    setEditingTransaction(null);
+    setIsTransactionDialogOpen(true);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsTransactionDialogOpen(true);
+  };
+  
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!user || !firestore) return;
+    if (window.confirm('Are you sure you want to delete this transaction?')) {
+      try {
+        await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionId));
+        toast({ title: 'Transaction deleted', description: 'The transaction has been removed.' });
+      } catch (error) {
+        console.error("Error deleting transaction: ", error);
+        toast({ title: 'Error', description: 'Could not delete the transaction.', variant: 'destructive' });
+      }
+    }
+  };
 
   const { netBalance, cashBalance } = useMemo(() => {
     const today = startOfToday();
@@ -174,7 +200,7 @@ export default function Dashboard() {
                   <BalanceCard 
                     netBalance={netBalance} 
                     cashBalance={cashBalance}
-                    onAddTransaction={() => setIsTransactionDialogOpen(true)} 
+                    onAddTransaction={handleAddTransaction} 
                   />
                   <CardsCarousel 
                     cards={creditCards || []} 
@@ -183,11 +209,15 @@ export default function Dashboard() {
                     onEditCard={handleEditCard}
                   />
                   <InstallmentTunnelChart transactions={typedTransactions} cards={creditCards || []} />
-                  <RecentTransactions transactions={typedTransactions} />
+                  <RecentTransactions 
+                    transactions={typedTransactions}
+                    onEdit={handleEditTransaction}
+                    onDelete={handleDeleteTransaction}
+                  />
                 </div>
                 <div className="space-y-6">
                   <div className="block lg:hidden">
-                    <Button className="w-full" onClick={() => setIsTransactionDialogOpen(true)} >
+                    <Button className="w-full" onClick={handleAddTransaction} >
                       <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
                     </Button>
                   </div>
@@ -207,6 +237,8 @@ export default function Dashboard() {
                 setIsOpen={setIsTransactionDialogOpen} 
                 transactions={typedTransactions}
                 creditCards={creditCards || []}
+                transactionToEdit={editingTransaction}
+                onFinished={() => setEditingTransaction(null)}
               />
               <AddCardDialog
                 isOpen={isCardDialogOpen}

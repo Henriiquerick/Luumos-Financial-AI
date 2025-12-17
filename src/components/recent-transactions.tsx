@@ -7,12 +7,16 @@ import type { Transaction } from '@/lib/types';
 import { format } from 'date-fns';
 import { CategoryIcon } from './category-icon';
 import { useTranslation } from '@/contexts/language-context';
+import { Button } from './ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transactionId: string) => void;
 }
 
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTransactionsProps) {
   const { t } = useTranslation();
   const recent = transactions
     .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
@@ -31,12 +35,13 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
               <TableHead>{t.transaction.header}</TableHead>
               <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
               <TableHead className="text-right">{t.transaction.amount}</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {recent.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
                   {t.transaction.no_transactions}
                 </TableCell>
               </TableRow>
@@ -58,6 +63,14 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
                     {t.type === 'income' ? '+' : '-'}
                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(t.amount)}
+                  </TableCell>
+                   <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(t)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(t.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
