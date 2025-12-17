@@ -1,44 +1,40 @@
-import { contextualChatFlow } from '@/ai/flows/contextual-chat'; // Verifique se o caminho está correto
-import { runFlow } from '@genkit-ai/flow';
+import { contextualChatFlow } from '@/ai/flows/contextual-chat';
+import { runFlow } from '@genkit-ai/flow'; // <--- Trazemos de volta o executor
 import { NextResponse } from 'next/server';
 
-// 1. Configuração para permitir CORS (Evita o bloqueio entre porta 9000 e 6000)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// 2. Manipula a requisição OPTIONS (o "aperto de mão" do navegador)
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.GOOGLE_GENAI_API_KEY) {
+      return NextResponse.json({ error: 'API Key missing' }, { status: 500, headers: corsHeaders });
+    }
+
     const body = await req.json();
     const { message } = body;
 
-    console.log("Recebendo mensagem na API:", message);
+    console.log("📨 Recebendo:", message);
 
-    if (!message) {
-      return NextResponse.json(
-        { error: 'Mensagem é obrigatória' }, 
-        { status: 400, headers: corsHeaders }
-      );
-    }
-    const response = await contextualChatFlow({ 
-      userMessage: message 
-    });
+    // CORREÇÃO CRUCIAL AQUI:
+    // Usamos runFlow porque seu Genkit define o fluxo como um objeto, não uma função.
+    const response = await runFlow(contextualChatFlow, { message });
     
-    console.log("Resposta do Genkit:", response);
+    console.log("✅ Resposta:", response);
 
     return NextResponse.json({ text: response }, { headers: corsHeaders });
 
   } catch (error: any) {
-    console.error("ERRO CRÍTICO NA API:", error);
+    console.error("🔥 ERRO NO SERVIDOR:", error);
     return NextResponse.json(
-      { error: error.message || 'Erro interno no processamento da IA' }, 
+      { error: error.message || 'Erro ao processar IA' }, 
       { status: 500, headers: corsHeaders }
     );
   }
