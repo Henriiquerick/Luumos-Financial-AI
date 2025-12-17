@@ -28,7 +28,6 @@ import {
   where,
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { getBankStyles } from '@/lib/bank-utils';
 import { cn } from '@/lib/utils';
 
 interface CreditCardCardProps {
@@ -112,11 +111,14 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="border-none text-white relative overflow-hidden group"
+        className="bg-card/50 backdrop-blur-sm text-white relative overflow-hidden group border-white/10"
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        <div className={cn("absolute inset-0 opacity-100", getBankStyles(card.name))}></div>
-        <div className="absolute inset-0 bg-black/10 mix-blend-multiply"></div>
+        <div 
+            className="absolute inset-0 opacity-20"
+            style={{ backgroundColor: card.color }}
+        ></div>
+        <div className="absolute inset-0 bg-black/30"></div>
         
         <div
           className="absolute top-2 right-2 z-20"
@@ -167,7 +169,8 @@ export function CreditCardCard({
           <div>
             <Progress
               value={usage.usagePercentage}
-              className="h-2 bg-white/20 [&>div]:bg-white"
+              className="h-2 bg-white/20"
+              indicatorClassName="bg-white"
             />
           </div>
           <div className="text-sm font-medium">
