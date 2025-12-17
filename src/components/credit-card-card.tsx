@@ -30,7 +30,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankColor } from '@/lib/bank-colors';
+import { getBankTheme } from '@/lib/bank-colors';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -53,7 +53,7 @@ export function CreditCardCard({
   const { t } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
-  const cardColor = getBankColor(card.name);
+  const theme = getBankTheme(card.name);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {
@@ -115,14 +115,16 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="bg-card/50 backdrop-blur-sm text-white relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
+        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
+        style={{
+          backgroundColor: theme.bg,
+          color: theme.text,
+        }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div 
-          className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-opacity duration-300"
-          style={{ backgroundColor: cardColor, opacity: 0.2 }}
+          className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
-        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors duration-300"></div>
         
         <div
           className="absolute top-2 right-2 z-20"
@@ -135,19 +137,22 @@ export function CreditCardCard({
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
-            className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className={cn(
+              "p-2 rounded-full transition-colors cursor-pointer",
+              theme.text === '#FFFFFF' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/10 text-black'
+            )}
           >
-            <MoreVertical className="w-5 h-5 text-white opacity-60 hover:opacity-100 transition-opacity" />
+            <MoreVertical className="w-5 h-5 opacity-60 hover:opacity-100 transition-opacity" />
           </button>
 
           {isMenuOpen && (
             <div 
-              className="absolute right-0 mt-2 w-48 bg-black/80 backdrop-blur-sm border border-gray-800 rounded-lg shadow-xl z-30 overflow-hidden"
+              className="absolute right-0 mt-2 w-48 bg-background/80 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl z-30 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <ul className="p-1">
                 <li>
-                  <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-white rounded-md hover:bg-gray-700/50 focus:outline-none focus:bg-gray-700/50">
+                  <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted/50 focus:outline-none focus:bg-muted/50">
                     <Pencil className="mr-2 h-4 w-4" />
                     <span>{t.card.menu.edit}</span>
                   </button>
@@ -173,8 +178,8 @@ export function CreditCardCard({
           <div>
             <Progress
               value={usage.usagePercentage}
-              className="h-2 bg-white/20"
-              indicatorClassName="bg-white"
+              className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+              indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
             />
           </div>
           <div className="text-sm font-medium">

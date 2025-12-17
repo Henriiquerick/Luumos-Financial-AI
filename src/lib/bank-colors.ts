@@ -1,38 +1,36 @@
 
 
-export const BANK_COLORS: Record<string, string> = {
-  // Gigantes
-  'banco do brasil': '#0038A9',
-  'caixa': '#005C9F',
-  'caixa economica federal': '#005C9F',
-  'santander': '#EC0000',
-  'bradesco': '#CC092F',
-  'itau': '#EC7000',
-  'itaú': '#EC7000',
+export const BANK_THEMES: Record<string, { bg: string; text: string }> = {
+  // Temas Escuros -> Texto Branco
+  'banco do brasil': { bg: '#0038A9', text: '#FFFFFF' },
+  'caixa': { bg: '#005C9F', text: '#FFFFFF' },
+  'caixa economica federal': { bg: '#005C9F', text: '#FFFFFF' },
+  'santander': { bg: '#EC0000', text: '#FFFFFF' },
+  'bradesco': { bg: '#CC092F', text: '#FFFFFF' },
+  'itau': { bg: '#EC7000', text: '#FFFFFF' },
+  'itaú': { bg: '#EC7000', text: '#FFFFFF' },
+  'nubank': { bg: '#820AD1', text: '#FFFFFF' },
+  'inter': { bg: '#FF7A00', text: '#FFFFFF' },
+  'c6 bank': { bg: '#242424', text: '#FFFFFF' },
+  'c6': { bg: '#242424', text: '#FFFFFF' },
+  'btg pactual': { bg: '#002D62', text: '#FFFFFF' },
+  'btg': { bg: '#002D62', text: '#FFFFFF' },
+  'xp investimentos': { bg: '#000000', text: '#FFFFFF' },
+  'xp': { bg: '#000000', text: '#FFFFFF' },
+  'original': { bg: '#3AB54A', text: '#FFFFFF' },
+  'picpay': { bg: '#11C76F', text: '#FFFFFF' },
+  'mercado pago': { bg: '#009EE3', text: '#FFFFFF' },
+  'sicredi': { bg: '#366528', text: '#FFFFFF' },
+  'sicoob': { bg: '#003641', text: '#FFFFFF' },
 
-  // Digitais & Fintechs
-  'nubank': '#820AD1',
-  'inter': '#FF7A00',
-  'c6 bank': '#242424',
-  'c6': '#242424',
-  'btg pactual': '#002D62',
-  'btg': '#002D62',
-  'xp investimentos': '#000000',
-  'xp': '#000000',
-  'neon': '#00A3A3', // Tom mais escuro para contraste
-  'next': '#00FF5F',
-  'original': '#3AB54A',
-  'picpay': '#11C76F',
-  'mercado pago': '#009EE3',
-  'pagbank': '#96C12E',
-  'pagseguro': '#96C12E',
-
-  // Cooperativas
-  'sicredi': '#366528',
-  'sicoob': '#003641',
+  // Temas Claros/Neon -> Texto Preto
+  'neon': { bg: '#00FFFF', text: '#1A1A1A' },
+  'next': { bg: '#00FF5F', text: '#1A1A1A' },
+  'pagbank': { bg: '#96C12E', text: '#1A1A1A' },
+  'pagseguro': { bg: '#96C12E', text: '#1A1A1A' },
 };
 
-const FALLBACK_COLOR = '#333333';
+const FALLBACK_THEME = { bg: '#242424', text: '#FFFFFF' };
 
 /**
  * Normaliza o nome de um banco para uma chave consistente.
@@ -50,24 +48,23 @@ function normalizeBankName(name: string): string {
 }
 
 /**
- * Obtém a cor hexadecimal correspondente a um nome de banco.
+ * Obtém o tema de cores (fundo e texto) correspondente a um nome de banco.
  * @param bankName O nome do banco (ex: 'Nubank', 'Itaú').
- * @returns A cor hexadecimal da marca ou uma cor de fallback.
+ * @returns Um objeto { bg: string, text: string } com as cores do tema.
  */
-export function getBankColor(bankName: string): string {
+export function getBankTheme(bankName: string): { bg: string; text: string } {
   const normalizedName = normalizeBankName(bankName);
 
   // Procura por uma correspondência exata primeiro
-  if (BANK_COLORS[normalizedName]) {
-    return BANK_COLORS[normalizedName];
+  if (BANK_THEMES[normalizedName]) {
+    return BANK_THEMES[normalizedName];
   }
 
-  // Se não encontrar, procura por uma chave que contenha o nome normalizado
-  // (útil para "Cartão Nubank")
-  const key = Object.keys(BANK_COLORS).find(key => normalizedName.includes(key));
+  // Se não encontrar, procura por uma chave que o nome normalizado inclua
+  const key = Object.keys(BANK_THEMES).find(key => normalizedName.includes(key));
   if (key) {
-    return BANK_COLORS[key];
+    return BANK_THEMES[key];
   }
   
-  return FALLBACK_COLOR;
+  return FALLBACK_THEME;
 }

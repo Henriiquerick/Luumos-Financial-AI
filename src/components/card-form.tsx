@@ -29,7 +29,7 @@ import type { CreditCard } from '@/lib/types';
 import { useEffect } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankColor, BANK_COLORS } from '@/lib/bank-colors';
+import { getBankTheme, BANK_THEMES } from '@/lib/bank-colors';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -46,7 +46,7 @@ interface CardFormProps {
 }
 
 // Criar um conjunto de valores de cores únicos para evitar duplicatas
-const uniqueColors = Array.from(new Set(Object.values(BANK_COLORS)));
+const uniqueColors = Array.from(new Set(Object.values(BANK_THEMES).map(theme => theme.bg)));
 const PREDEFINED_COLORS = uniqueColors.map(color => ({ name: '', value: color }));
 
 
@@ -68,9 +68,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const cardName = form.watch('name');
 
   useEffect(() => {
-    const color = getBankColor(cardName);
-    if(color !== '#333333') {
-        form.setValue('color', color);
+    const theme = getBankTheme(cardName);
+    if(theme.bg !== '#242424') { // Don't auto-set the fallback color
+        form.setValue('color', theme.bg);
     }
   }, [cardName, form]);
 

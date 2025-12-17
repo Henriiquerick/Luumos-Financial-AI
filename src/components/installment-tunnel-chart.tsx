@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankColor } from '@/lib/bank-colors';
+import { getBankTheme } from '@/lib/bank-colors';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
@@ -75,7 +75,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
                 key={card.id} 
                 dataKey={card.name} 
                 stackId="a" 
-                fill={getBankColor(card.name) || defaultColor} 
+                fill={getBankTheme(card.name).bg || defaultColor} 
                 radius={[4, 4, 0, 0]}
               />
             ))}
