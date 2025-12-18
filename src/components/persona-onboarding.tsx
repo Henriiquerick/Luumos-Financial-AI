@@ -109,4 +109,3 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
     </div>
   );
 }
-

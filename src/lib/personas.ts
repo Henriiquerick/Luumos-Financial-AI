@@ -19,7 +19,7 @@ export const PERSONAS: AIPersonality[] = [
   },
   {
     id: 'biris',
-    name: 'Lumos Padrão (O Mentor)',
+    name: 'Biris (O Mentor)',
     icon: '💡',
     catchphrase: 'Passo a passo rumo à tranquilidade.',
     systemInstruction:
