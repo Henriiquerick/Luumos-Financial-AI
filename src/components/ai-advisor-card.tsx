@@ -128,7 +128,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
 
   return (
-    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-[70vh] max-h-[800px] relative overflow-hidden">
+    <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-full max-h-[70vh] relative overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bot className="text-accent" />
