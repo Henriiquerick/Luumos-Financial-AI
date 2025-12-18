@@ -19,11 +19,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { BrandIcon } from "./brand-icon"
 
 interface ComboboxOption {
     value: string;
     label: string;
-    icon?: string;
+    position?: string;
 }
 
 interface ComboboxProps {
@@ -57,10 +58,8 @@ export function Combobox({
           className="w-full justify-between"
         >
           <div className="flex items-center gap-2">
-            {selectedOption?.icon && (
-                <div className="flex items-center justify-center w-10 h-6 bg-white rounded-sm p-1 shadow-sm">
-                    <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: selectedOption.icon }} />
-                </div>
+            {selectedOption?.position && (
+                <BrandIcon position={selectedOption.position} className="w-8 h-5" />
             )}
             {selectedOption ? selectedOption.label : placeholder}
           </div>
@@ -89,10 +88,8 @@ export function Combobox({
                     )}
                   />
                    <div className="flex items-center gap-2">
-                    {option.icon && (
-                        <div className="flex items-center justify-center w-10 h-6 bg-white rounded-sm p-1 shadow-sm">
-                            <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: option.icon }} />
-                        </div>
+                    {option.position && (
+                       <BrandIcon position={option.position} className="mr-2 w-8 h-5" />
                     )}
                     {option.label}
                   </div>

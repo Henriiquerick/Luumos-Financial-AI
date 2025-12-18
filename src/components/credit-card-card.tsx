@@ -33,6 +33,7 @@ import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency } from '@/lib/i18n-utils';
 import { CARD_BRANDS } from '@/lib/card-brands';
+import { BrandIcon } from './ui/brand-icon';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -171,11 +172,10 @@ export function CreditCardCard({
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-start justify-between">
             <span>{card.name}</span>
-             {brand?.icon && (
-              <div 
-                className="absolute top-4 right-4 h-8 w-auto brightness-0 invert opacity-60"
-                dangerouslySetInnerHTML={{ __html: brand.icon }} 
-              />
+             {brand?.position && (
+              <div className="absolute top-4 right-4">
+                <BrandIcon position={brand.position} className="w-12 h-8" />
+              </div>
             )}
           </CardTitle>
         </CardHeader>
