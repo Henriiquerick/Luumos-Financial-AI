@@ -1,40 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
     
-    function validateTransactionData(data) {
-      return data.description is string && data.description.size() < 200
-          && data.amount is number
-          && data.category is string
-          && data.date is timestamp
-          && data.type is string && (data.type == 'income' || data.type == 'expense')
-          && data.installments is number
-          && (data.cardId == null || data.cardId is string);
-    }
-
-    match /databases/{database}/documents {
-    
-    // Regra para a coleção de usuários e suas subcoleções
-    match /users/{userId}/{document=**} {
+    // Aplicamos a regra de forma recursiva para o usuário e TUDO que estiver dentro dele
+    match /users/{userId}/{allPaths=**} {
+      
+      // Permite ler e escrever se o UID do token for igual ao ID do documento
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      allow create: if request.auth.uid == userId 
-        && request.resource.data.amount is number
-        && request.resource.data.createdAt == request.time; // Valida o serverTimestamp
-    }
-  }
-
-      match /cards/{cardId} {
-        allow read, write: if isOwner(userId);
-      }
+      // Regra específica de criação para garantir que o serverTimestamp passe
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
     }
   }
 }
