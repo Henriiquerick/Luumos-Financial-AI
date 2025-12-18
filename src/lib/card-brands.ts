@@ -25,12 +25,12 @@ export const CARD_BRANDS: CardBrand[] = [
   { 
     value: 'elo', 
     label: 'Elo', 
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Elo_Logo.svg' 
+    icon: 'https://raw.githubusercontent.com/alvarotrigo/social-share-urls/master/public/img/elo.svg' 
   },
   { 
     value: 'hipercard', 
     label: 'Hipercard', 
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Hipercard_logo.svg' 
+    icon: 'https://raw.githubusercontent.com/aaronfischer/payment-icons/main/assets/hipercard.svg' 
   },
   { 
     value: 'diners', 
@@ -50,8 +50,7 @@ export const CARD_BRANDS: CardBrand[] = [
   { 
     value: 'aura', 
     label: 'Aura', 
-    // Aura é difícil achar SVG, vamos de PNG transparente
-    icon: 'https://upload.wikimedia.org/wikipedia/pt/e/e4/Aura_logo.png' 
+    icon: 'https://seeklogo.com/images/C/Cartao_Aura-logo-1563B3D9DE-seeklogo.com.png' 
   },
   {
     value: 'nubank',
