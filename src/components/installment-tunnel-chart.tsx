@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useMemo } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell } from 'recharts';
+import { useMemo, useState, useEffect } from 'react';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency, formatMonth } from '@/lib/i18n-utils';
+import { Skeleton } from './ui/skeleton';
 
 interface InstallmentTunnelChartProps {
   transactions: Transaction[];
@@ -17,12 +17,17 @@ interface InstallmentTunnelChartProps {
 
 export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunnelChartProps) {
   const { t, language } = useTranslation();
-  
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const chartData = useMemo(() => {
     return calculateCardBillProjection(transactions, cards);
   }, [transactions, cards]);
 
-  const defaultColor = '#22c55e';
+  const defaultColor = 'hsl(var(--primary))';
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -47,10 +52,23 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
   const formattedData = useMemo(() => {
     return chartData.map(item => ({
       ...item,
-      name: formatMonth(language, item.name),
+      name: formatMonth(language, item.name as string),
     }));
   }, [chartData, language]);
-
+  
+  if (!isMounted) {
+    return (
+      <Card className="bg-card/50 border-primary/20">
+        <CardHeader>
+          <CardTitle>{t.dashboard.installment_tunnel}</CardTitle>
+          <CardDescription>{t.dashboard.installment_subtitle}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="w-full h-[250px]" />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="bg-card/50 border-primary/20">
@@ -85,7 +103,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
                 key={card.id} 
                 dataKey={card.name} 
                 stackId="a" 
-                fill={getBankTheme(card.name).bg || defaultColor} 
+                fill={card.color || defaultColor} 
                 radius={[4, 4, 0, 0]}
               />
             ))}
