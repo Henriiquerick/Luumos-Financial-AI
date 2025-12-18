@@ -87,9 +87,9 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       form.setValue('brand', issuerValue);
     }
 
-    // Auto-preenche a cor baseada no emissor
     const issuerData = getIssuer(issuerValue);
-    if (issuerData?.color) {
+    // Apenas define a cor padrão se o campo de cor não tiver sido modificado manualmente pelo usuário
+    if (issuerData?.color && !form.getFieldState('color').isDirty) {
       form.setValue('color', issuerData.color);
     }
   }, [cardType, issuerValue, form]);
