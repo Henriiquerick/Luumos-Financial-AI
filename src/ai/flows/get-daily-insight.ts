@@ -3,7 +3,7 @@
  *
  * - `getDailyInsight`: A function that takes a financial analysis and an AI personality to generate a comment.
  * - `GetDailyInsightInput`: The input type for the `getDailyInsight` function.
- * - `GetDailyInsightOutput`: The return type for the `getDailyInsight` function.
+ * - `GetDailyInsightOutput`: The return type for the `getDaily-insight` function.
  */
 
 import { ai } from '@/ai/genkit';
