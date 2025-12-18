@@ -173,7 +173,7 @@ export function CreditCardCard({
             <span>{card.name}</span>
              {brand?.icon && (
               <div 
-                className="w-14 h-auto drop-shadow-lg"
+                className="absolute top-4 right-4 h-8 w-auto brightness-0 invert opacity-60"
                 dangerouslySetInnerHTML={{ __html: brand.icon }} 
               />
             )}
