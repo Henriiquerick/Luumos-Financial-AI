@@ -43,9 +43,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { t } = useTranslation();
-  // Ref para rastrear se já notificamos a mudança de cor inicial
-  const hasNotifiedInitialColor = useRef(false);
   const isInitialLoad = useRef(true);
+  const hasNotifiedInitialColor = useRef(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,9 +73,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         hasNotifiedInitialColor.current = true;
       }
     }
-  }, [colorValue]); // IMPORTANTE: Removido onColorChange e cardToEdit das dependências
+  }, [colorValue]);
 
-  // Lógica de filtragem dos emissores e bandeiras
   const availableIssuers = useMemo(() => {
     return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes(cardType));
   }, [cardType]);
@@ -115,14 +113,12 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       });
     }
     setTimeout(() => { isInitialLoad.current = false; }, 100);
-  }, [cardToEdit?.id]); // IMPORTANTE: Só depende do ID do cartão
+  }, [cardToEdit?.id]);
 
   // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
   useEffect(() => {
-    // 1. Bloqueia se o formulário está carregando ou resetando
     if (isInitialLoad.current) return;
   
-    // 2. Lógica para Vouchers: Só atualiza a brand se for diferente do issuer
     if (cardType === 'voucher') {
       const currentBrand = form.getValues('brand');
       if (currentBrand !== issuerValue) {
@@ -130,15 +126,10 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       }
     }
   
-    // 3. Lógica para Cores: Auto-Theme
     const issuerData = getIssuer(issuerValue);
     const { isDirty } = form.getFieldState('color');
     const currentColor = form.getValues('color');
   
-    // Só aplica a cor padrão do banco se:
-    // - O usuário não mexeu manualmente na cor (isDirty é falso)
-    // - A cor atual é diferente da sugerida
-    // - Não estamos em um carregamento inicial de edição
     if (issuerData?.color && !isDirty && currentColor !== issuerData.color) {
       form.setValue('color', issuerData.color, { shouldDirty: false });
     }
@@ -149,7 +140,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
     const cardData = {
       ...values,
-      brand: values.type === 'voucher' ? values.issuer : values.brand, // Garante que a brand seja o issuer para vouchers
+      brand: values.type === 'voucher' ? values.issuer : values.brand,
       totalLimit: values.type === 'voucher' ? 0 : Number(values.totalLimit),
       closingDay: values.type === 'voucher' ? 0 : Number(values.closingDay),
     };
@@ -243,6 +234,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
+          />
         )}
         
         {cardType !== 'voucher' && (
@@ -319,5 +311,3 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     </Form>
   );
 }
-
-    
