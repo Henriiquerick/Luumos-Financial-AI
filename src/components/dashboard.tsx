@@ -5,7 +5,6 @@ import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
-import { InstallmentTunnelChart } from '@/components/installment-tunnel-chart';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
 import type { Transaction, AIPersonality, CreditCard, UserProfile, AIKnowledgeLevel } from '@/lib/types';
@@ -26,6 +25,15 @@ import { useTranslation } from '@/contexts/language-context';
 import { isSameMonth, startOfToday } from 'date-fns';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
 import { useToast } from '@/hooks/use-toast';
+import dynamic from 'next/dynamic';
+
+const InstallmentTunnelChart = dynamic(
+  () => import('@/components/installment-tunnel-chart').then(mod => mod.InstallmentTunnelChart),
+  { 
+    ssr: false,
+    loading: () => <Skeleton className="h-[322px] w-full" /> 
+  }
+);
 
 
 export default function Dashboard() {
