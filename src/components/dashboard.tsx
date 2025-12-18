@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -121,16 +122,22 @@ export default function Dashboard() {
     setEditingCard(card);
     setIsCardDialogOpen(true);
   };
-  
+
   const handleCardDialogFinished = (updatedCard?: CreditCard) => {
-    console.log("Cartão atualizado para UI otimista:", updatedCard);
-     if (updatedCard) {
-      // Optimistic UI update
-      setLocalCreditCards(prevCards => 
-        prevCards.map(c => c.id === updatedCard.id ? updatedCard : c)
+    // If a card was fully saved/updated, the hook `useCollection` will fetch the latest data.
+    // We just need to reset the editing state.
+    // If only the color was changed, we've already updated the local state optimistically.
+    setEditingCard(null);
+  };
+
+  const handleColorChange = (newColor: string) => {
+    if (editingCard) {
+      setLocalCreditCards(prevCards =>
+        prevCards.map(c =>
+          c.id === editingCard.id ? { ...c, color: newColor } : c
+        )
       );
     }
-    setEditingCard(null);
   };
   
   const handleAddTransaction = () => {
@@ -262,6 +269,7 @@ export default function Dashboard() {
                 setIsOpen={setIsCardDialogOpen}
                 cardToEdit={editingCard}
                 onFinished={handleCardDialogFinished}
+                onColorChange={handleColorChange}
               />
             </div>
         )}

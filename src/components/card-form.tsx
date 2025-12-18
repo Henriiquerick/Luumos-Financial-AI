@@ -16,13 +16,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES, getIssuer } from '@/lib/card-data';
+import { CARD_TYPES, getIssuer, CARD_ISSUERS, CARD_BRANDS } from '@/lib/card-data';
 import type { CardType } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
   issuer: z.string({ required_error: "Selecione o emissor" }).min(1, 'Issuer is required.'),
-  brand: z.string({ required_error: "Selecione a bandeira" }).min(1, 'Card brand is required.'),
+  brand: z.string().min(1, 'Card brand is required.').optional(),
   type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v as string), {
     message: "Selecione o tipo do cartão",
   }),
@@ -36,9 +36,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface CardFormProps {
   onSave: (updatedCard?: CreditCard) => void;
   cardToEdit?: CreditCard | null;
+  onColorChange: (color: string) => void;
 }
 
-export function CardForm({ onSave, cardToEdit }: CardFormProps) {
+export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { t } = useTranslation();
@@ -58,6 +59,14 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
 
   const cardType = form.watch('type');
   const issuerValue = form.watch('issuer');
+  const colorValue = form.watch('color');
+
+  // Propagate color changes to parent component for real-time chart updates
+  useEffect(() => {
+    if (colorValue && cardToEdit) { // Only when editing
+      onColorChange(colorValue);
+    }
+  }, [colorValue, onColorChange, cardToEdit]);
 
   // Lógica de filtragem dos emissores e bandeiras
   const availableIssuers = useMemo(() => {
@@ -73,7 +82,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
 
   // Lógica de auto-preenchimento de cor e bandeira
   useEffect(() => {
-    // Auto-preenche bandeira para vouchers
+    // Auto-preenche bandeira para vouchers e remove o campo da UI
     if (cardType === 'voucher') {
       form.setValue('brand', issuerValue);
     }
@@ -115,6 +124,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
 
     const cardData = {
       ...values,
+      brand: values.type === 'voucher' ? values.issuer : values.brand, // Garante que a brand seja o issuer para vouchers
       totalLimit: values.type === 'voucher' ? 0 : Number(values.totalLimit),
       closingDay: values.type === 'voucher' ? 0 : Number(values.closingDay),
     };
@@ -122,7 +132,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     if (cardToEdit) {
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
       const updatedCard = { ...cardToEdit, ...cardData };
-      updateDocumentNonBlocking(cardRef, cardData);
+      updateDocumentNonBlocking(cardRef, cardData as any);
       onSave(updatedCard);
     } else {
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
@@ -199,7 +209,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
                 <FormLabel>Bandeira do Cartão</FormLabel>
                 <Combobox
                   options={availableBrands}
-                  value={field.value}
+                  value={field.value || ''}
                   onChange={field.onChange}
                   placeholder="Selecione a bandeira"
                   searchPlaceholder="Procurar bandeira..."
@@ -208,7 +218,6 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
-          />
         )}
         
         {cardType !== 'voucher' && (

@@ -17,9 +17,10 @@ interface AddCardDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   cardToEdit?: CreditCard | null;
   onFinished: (updatedCard?: CreditCard) => void;
+  onColorChange: (color: string) => void;
 }
 
-export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: AddCardDialogProps) {
+export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished, onColorChange }: AddCardDialogProps) {
   const { t } = useTranslation();
 
   const handleOpenChange = (open: boolean) => {
@@ -44,6 +45,7 @@ export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished }: Add
             onFinished(updatedCard); // Pass the updated card data up
           }} 
           cardToEdit={cardToEdit} 
+          onColorChange={onColorChange}
         />
       </DialogContent>
     </Dialog>
