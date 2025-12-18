@@ -143,11 +143,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
               </SelectTrigger>
               <SelectContent>
                 {KNOWLEDGE_LEVELS.map(k => 
-                  <SelectItem key={k.id} value={k.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{k.name}</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -160,11 +156,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
               </SelectTrigger>
               <SelectContent>
                 {PERSONALITIES.map(p => 
-                  <SelectItem key={p.id} value={p.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{p.name}</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 )}
               </SelectContent>
             </Select>
