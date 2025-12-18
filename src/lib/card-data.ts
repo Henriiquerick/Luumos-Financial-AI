@@ -68,3 +68,14 @@ export const CARD_BRANDS: CardEntity[] = [
   // Voucher brands can mirror issuers
   ...CARD_ISSUERS.filter(issuer => issuer.types.includes('voucher'))
 ];
+
+// Funções auxiliares essenciais
+export const getBrand = (value: string | undefined | null) => {
+  if (!value) return undefined;
+  return CARD_BRANDS.find(b => b.value === value);
+}
+
+export const getIssuer = (value: string | undefined | null) => {
+  if (!value) return undefined;
+  return CARD_ISSUERS.find(i => i.value === value);
+}

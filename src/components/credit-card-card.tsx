@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency } from '@/lib/i18n-utils';
-import { CARD_BRANDS, CARD_ISSUERS } from '@/lib/card-data';
+import { getBrand, getIssuer } from '@/lib/card-data';
 import { BrandIcon } from './ui/brand-icon';
 
 interface CreditCardCardProps {
@@ -56,10 +56,11 @@ export function CreditCardCard({
   const { t, language } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
-  const theme = getBankTheme(card.name);
+  const theme = getBankTheme(card.issuer);
   
-  const brand = CARD_BRANDS.find(b => b.value === card.brand);
-  const issuer = CARD_ISSUERS.find(i => i.value === card.issuer);
+  const brandData = getBrand(card.brand);
+  const issuerData = getIssuer(card.issuer);
+
 
   const handleDeleteCard = async () => {
     if (!user) return;
@@ -129,15 +130,15 @@ export function CreditCardCard({
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
 
-        {issuer && (
-            <div className="absolute top-4 left-4 h-8 w-auto">
-                <BrandIcon icon={issuer.icon} className="h-full w-full brightness-0 invert opacity-60" />
+        {issuerData && issuerData.icon && (
+            <div className="absolute top-4 left-4 h-8 w-12">
+                <BrandIcon icon={issuerData.icon} className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
             </div>
         )}
 
-        {brand && (
+        {brandData && brandData.icon && (
             <div className="absolute top-4 right-4 h-8 w-12">
-                <BrandIcon icon={brand.icon} className="h-full w-full" />
+                <BrandIcon icon={brandData.icon} className="h-full w-full" />
             </div>
         )}
         

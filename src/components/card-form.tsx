@@ -22,9 +22,9 @@ import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES } from '@/lib/card-data';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
-  issuer: z.string().min(1, 'Issuer is required.'),
-  brand: z.string().min(1, 'Card brand is required.'),
-  type: z.custom<CardType>(),
+  issuer: z.string({ required_error: "Selecione o emissor" }).min(1, 'Issuer is required.'),
+  brand: z.string({ required_error: "Selecione a bandeira" }).min(1, 'Card brand is required.'),
+  type: z.enum(["credit", "debit", "voucher"], { required_error: "Selecione o tipo do cartão" }),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
   closingDay: z.string().min(1, "Please select a closing day."),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
