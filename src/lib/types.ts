@@ -27,9 +27,9 @@ export type Transaction = {
 export type AIPersonality = {
   id: string;
   name: string;
-  icon: string;
-  catchphrase: string;
-  systemInstruction: string;
+  instruction: string;
+  tagline: string;
+  style: string;
 };
 
 export type AIKnowledgeLevel = {
@@ -37,6 +37,7 @@ export type AIKnowledgeLevel = {
   name: string;
   description: string;
   instruction: string;
+  icon: string;
 }
 
 export type CardType = 'credit' | 'debit' | 'voucher';

@@ -31,7 +31,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center h-full animate-fade-in py-8">
+    <div className="w-full max-w-4xl mx-auto flex flex-col items-center justify-center h-full animate-fade-in py-8 pb-24">
       {step === 1 && (
         <>
           <div className="flex items-center gap-3 mb-4">
@@ -41,7 +41,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
           <p className="text-muted-foreground mb-8 text-center max-w-2xl">Selecione o nível de suporte que mais se encaixa com seu momento financeiro. Isso define o que a IA vai te ensinar.</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-8">
-            {KNOWLEDGE_LEVELS.slice(0, 3).map(level => (
+            {KNOWLEDGE_LEVELS.map(level => (
               <Card
                 key={level.id}
                 onClick={() => setSelectedKnowledge(level)}
@@ -52,7 +52,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
               >
                 <CardContent className="p-6 flex flex-col items-center text-center flex-grow">
                   <div className="text-6xl mb-4">
-                    {level.id === 'lumos-one' ? '🎓' : level.id === 'lumos-two' ? '📊' : '🚀'}
+                    {level.icon}
                   </div>
                   <h2 className="text-xl font-bold mb-2">{level.name}</h2>
                   <p className="text-muted-foreground text-sm flex-grow">{level.description}</p>
@@ -76,7 +76,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
           <p className="text-muted-foreground mb-8 text-center">A personalidade define o "tom de voz" do seu assistente. Escolha a que mais combina com você.</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-8">
-            {PERSONALITIES.slice(0,3).map(persona => (
+            {PERSONALITIES.map(persona => (
               <Card
                 key={persona.id}
                 onClick={() => setSelectedPersonality(persona)}
@@ -87,9 +87,9 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
               >
                 <CardContent className="p-6 flex flex-col text-center flex-grow">
                   <h2 className="text-xl font-bold mb-2">{persona.name}</h2>
-                  <p className="text-muted-foreground text-sm mb-4">{persona.id === 'biris' ? 'Calmo, empático e direto' : persona.id === 'jorgin' ? 'Engraçado, usa gírias, deboche carinhoso' : 'Sério, focado em lucro, sem desculpas'}</p>
+                  <p className="text-muted-foreground text-sm mb-4">{persona.style}</p>
                   <div className="bg-muted/50 p-3 rounded-lg flex-grow">
-                    <p className="text-sm italic text-foreground/80">"{persona.id === 'biris' ? 'Vamos analisar seus números com calma.' : persona.id === 'jorgin' ? 'Mona, esse gasto aqui tá uó! Bora economizar pro lanche.' : 'Lucro é a única métrica que importa. Corte isso agora.'}"</p>
+                    <p className="text-sm italic text-foreground/80">"{persona.tagline}"</p>
                   </div>
                 </CardContent>
               </Card>
