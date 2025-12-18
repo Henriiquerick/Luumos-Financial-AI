@@ -121,6 +121,11 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     }
   };
 
+  // Effect to clear messages when personality or knowledge level changes from props
+  useEffect(() => {
+    setMessages([]);
+  }, [personality.id, knowledge.id]);
+
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col h-[70vh] max-h-[800px] relative overflow-hidden">
@@ -210,7 +215,3 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
-
-    
-
-    
