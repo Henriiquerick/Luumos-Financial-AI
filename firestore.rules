@@ -2,16 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Aplicamos a regra de forma recursiva para o usuário e TUDO que estiver dentro dele
-    match /users/{userId}/{allPaths=**} {
+    // Garante que apenas o proprietário do documento pode acessá-lo.
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regras para a coleção de usuários
+    match /users/{userId} {
+      // O perfil do usuário só pode ser lido e atualizado pelo próprio usuário.
+      // A criação é tratada implicitamente pela primeira transação ou configuração.
+      allow read, update: if isOwner(userId);
       
-      // Permite ler e escrever se o UID do token for igual ao ID do documento
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Regra específica de criação para garantir que o serverTimestamp passe
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+      // Regras para subcoleções do usuário (transações, cartões, etc.)
+      match /{collection}/{docId} {
+        
+        // Permite Leitura, Atualização e Exclusão para o proprietário.
+        allow read, update, delete: if isOwner(userId);
+        
+        // Permite a Criação se o usuário for o proprietário e os timestamps estiverem corretos.
+        allow create: if isOwner(userId)
+                      && request.resource.data.createdAt == request.time
+                      && request.resource.data.updatedAt == request.time;
+      }
     }
   }
 }
