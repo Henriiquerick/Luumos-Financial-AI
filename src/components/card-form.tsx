@@ -30,9 +30,12 @@ import { useEffect } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme, BANK_THEMES } from '@/lib/bank-colors';
+import { Combobox } from './ui/combobox';
+import { CARD_BRANDS } from '@/lib/card-brands';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
+  brand: z.string().min(1, 'Card brand is required.'),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
   closingDay: z.string().min(1, "Please select a closing day."),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
@@ -59,6 +62,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      brand: '',
       totalLimit: 1000,
       closingDay: '', 
       color: '#333333',
@@ -78,6 +82,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     if (cardToEdit) {
       form.reset({
         name: cardToEdit.name,
+        brand: cardToEdit.brand,
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
         closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
@@ -85,6 +90,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     } else {
       form.reset({
         name: '',
+        brand: '',
         totalLimit: 1000,
         color: '#333333',
         closingDay: '',
@@ -129,6 +135,26 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="brand"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Bandeira do Cartão</FormLabel>
+              <Combobox
+                options={CARD_BRANDS}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecione a bandeira"
+                searchPlaceholder="Procurar bandeira..."
+                notfoundText='Nenhuma bandeira encontrada.'
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}

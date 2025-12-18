@@ -42,6 +42,7 @@ export type AIKnowledgeLevel = {
 export type CreditCard = {
   id: string;
   name: string;
+  brand: string;
   totalLimit: number;
   color: string;
   closingDay: number;

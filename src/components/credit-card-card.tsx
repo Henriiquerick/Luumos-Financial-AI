@@ -6,7 +6,7 @@ import type { CreditCard, Transaction } from '@/lib/types';
 import { getCardUsage } from '@/lib/finance-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Landmark, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   AlertDialog,
@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency } from '@/lib/i18n-utils';
+import { CARD_BRANDS } from '@/lib/card-brands';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -55,6 +56,7 @@ export function CreditCardCard({
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
   const theme = getBankTheme(card.name);
+  const brand = CARD_BRANDS.find(b => b.value === card.brand);
 
   const handleDeleteCard = async () => {
     if (!user) return;
@@ -169,7 +171,7 @@ export function CreditCardCard({
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-center justify-between">
             <span>{card.name}</span>
-            <Landmark className="w-6 h-6 opacity-50" />
+            {brand?.icon && <div className="w-10 h-auto" dangerouslySetInnerHTML={{ __html: brand.icon }} />}
           </CardTitle>
         </CardHeader>
         <CardContent className="relative z-10 space-y-2">
