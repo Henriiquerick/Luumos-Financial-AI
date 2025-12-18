@@ -123,7 +123,7 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 min-h-[190px]"
+        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 min-h-[190px] flex flex-col justify-between"
         style={{
           backgroundColor: theme.bg,
           color: theme.text,
@@ -210,13 +210,13 @@ export function CreditCardCard({
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 mt-4">
-              {card.type === 'credit' && (
+            <CardContent className="space-y-2">
+              {card.type === 'credit' ? (
                 <>
                   <div>
                     <Progress
                       value={usage.usagePercentage}
-                      className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+                      className={cn('h-4', theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
                       indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
                     />
                   </div>
@@ -226,18 +226,23 @@ export function CreditCardCard({
                     </p>
                   </div>
                 </>
+              ) : (
+                <>
+                  {/* Spacer to align content when there is no progress bar */}
+                  <div className='h-4'></div>
+                  {card.type === 'voucher' && (
+                      <div className="text-sm font-medium">
+                         <p>Saldo: {formattedAvailable}</p>
+                      </div>
+                  )}
+                   {card.type === 'debit' && (
+                      <div className="text-sm font-medium">
+                         <p>Gasto no mês: {formattedSpent}</p>
+                         <p className='text-xs opacity-70'>{getIssuer(card.issuer)?.label}</p>
+                      </div>
+                   )}
+                </>
               )}
-              {card.type === 'voucher' && (
-                  <div className="text-sm font-medium">
-                     <p>Saldo: {formattedAvailable}</p>
-                  </div>
-              )}
-               {card.type === 'debit' && (
-                  <div className="text-sm font-medium">
-                     <p>Gasto no mês: {formattedSpent}</p>
-                     <p className='text-xs opacity-70'>{getIssuer(card.issuer)?.label}</p>
-                  </div>
-               )}
             </CardContent>
         </div>
       </Card>
