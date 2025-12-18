@@ -25,12 +25,14 @@ export const CARD_BRANDS: CardBrand[] = [
   { 
     value: 'elo', 
     label: 'Elo', 
-    icon: 'https://raw.githubusercontent.com/alvarotrigo/social-share-urls/master/public/img/elo.svg' 
+    // CORRIGIDO: Usando a versão PNG gerada pela Wikimedia (mais estável e visível)
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Elo_Logo.svg/200px-Elo_Logo.svg.png' 
   },
   { 
     value: 'hipercard', 
     label: 'Hipercard', 
-    icon: 'https://raw.githubusercontent.com/aaronfischer/payment-icons/main/assets/hipercard.svg' 
+    // CORRIGIDO: Versão oficial da Wikimedia (PNG Thumb para garantir carregamento)
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Hipercard_logo.svg/200px-Hipercard_logo.svg.png' 
   },
   { 
     value: 'diners', 
@@ -50,7 +52,8 @@ export const CARD_BRANDS: CardBrand[] = [
   { 
     value: 'aura', 
     label: 'Aura', 
-    icon: 'https://seeklogo.com/images/C/Cartao_Aura-logo-1563B3D9DE-seeklogo.com.png' 
+    // CORRIGIDO: Repositório Brasileiro estável (Diego Mier) - PNG transparente
+    icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/aura.png' 
   },
   {
     value: 'nubank',
