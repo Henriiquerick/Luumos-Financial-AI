@@ -22,7 +22,7 @@ import type { CardType } from '@/lib/types';
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
   issuer: z.string({ required_error: "Selecione o emissor" }).min(1, 'Issuer is required.'),
-  brand: z.string().min(1, 'Card brand is required.').optional(),
+  brand: z.string().optional(),
   type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v as string), {
     message: "Selecione o tipo do cartão",
   }),
@@ -243,7 +243,6 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
-          />
         )}
         
         {cardType !== 'voucher' && (
