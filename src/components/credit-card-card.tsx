@@ -129,95 +129,104 @@ export function CreditCardCard({
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
+        {issuerData?.icon && (
+            <img 
+                src={issuerData.icon} 
+                alt="" 
+                className="absolute -bottom-10 -right-10 w-56 h-56 object-contain opacity-[0.07] rotate-12 brightness-0 invert pointer-events-none z-0" 
+            />
+        )}
         <div 
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
 
-        {issuerData?.icon && (
-          <div className="absolute top-4 left-4 h-8 w-12">
-            <BrandIcon 
-              icon={issuerData.icon} 
-              className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
-            />
-          </div>
-        )}
-
-        {brandData?.icon && (
-            <div className="absolute top-4 right-4 h-8 w-12">
-                <BrandIcon icon={brandData.icon} className="h-full w-full" />
-            </div>
-        )}
-        
-        <div
-          className="absolute top-2 right-2 z-20"
-          style={{ pointerEvents: 'auto' }}
-        >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsMenuOpen(!isMenuOpen);
-            }}
-            className={cn(
-              "p-2 rounded-full transition-colors cursor-pointer",
-              theme.text === '#FFFFFF' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/10 text-black'
-            )}
-          >
-            <MoreVertical className="w-5 h-5 opacity-60 hover:opacity-100 transition-opacity" />
-          </button>
-
-          {isMenuOpen && (
-            <div 
-              className="absolute right-0 mt-2 w-48 bg-background/80 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl z-30 overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ul className="p-1">
-                <li>
-                  <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted/50 focus:outline-none focus:bg-muted/50">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    <span>{t.card.menu.edit}</span>
-                  </button>
-                </li>
-                <li>
-                   <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>{t.card.menu.delete}</span>
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
-
-        <CardHeader className="relative z-10">
-          <CardTitle className="flex items-start justify-between">
-            <span>{card.name}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10 space-y-2 mt-8">
-          {card.type !== 'voucher' && (
-            <>
-              <div>
-                <Progress
-                  value={usage.usagePercentage}
-                  className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
-                  indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
+        <div className="relative z-10">
+            {issuerData?.icon && (
+              <div className="absolute top-4 left-4 h-8 w-12">
+                <BrandIcon 
+                  icon={issuerData.icon} 
+                  className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
                 />
               </div>
-              <div className="text-sm font-medium">
-                <p>
-                  {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
-                </p>
-              </div>
-            </>
-          )}
-           {card.type === 'voucher' && (
-              <div className="text-sm font-medium">
-                 <p>{getIssuer(card.issuer)?.label}</p>
-              </div>
-           )}
-        </CardContent>
+            )}
+
+            {brandData?.icon && (
+                <div className="absolute top-4 right-4 h-8 w-12">
+                    <BrandIcon icon={brandData.icon} className="h-full w-full" />
+                </div>
+            )}
+            
+            <div
+              className="absolute top-2 right-2 z-20"
+              style={{ pointerEvents: 'auto' }}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsMenuOpen(!isMenuOpen);
+                }}
+                className={cn(
+                  "p-2 rounded-full transition-colors cursor-pointer",
+                  theme.text === '#FFFFFF' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/10 text-black'
+                )}
+              >
+                <MoreVertical className="w-5 h-5 opacity-60 hover:opacity-100 transition-opacity" />
+              </button>
+
+              {isMenuOpen && (
+                <div 
+                  className="absolute right-0 mt-2 w-48 bg-background/80 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl z-30 overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ul className="p-1">
+                    <li>
+                      <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted/50 focus:outline-none focus:bg-muted/50">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>{t.card.menu.edit}</span>
+                      </button>
+                    </li>
+                    <li>
+                       <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>{t.card.menu.delete}</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <CardHeader>
+              <CardTitle className="flex items-start justify-between">
+                <span>{card.name}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 mt-8">
+              {card.type !== 'voucher' && (
+                <>
+                  <div>
+                    <Progress
+                      value={usage.usagePercentage}
+                      className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+                      indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
+                    />
+                  </div>
+                  <div className="text-sm font-medium">
+                    <p>
+                      {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
+                    </p>
+                  </div>
+                </>
+              )}
+               {card.type === 'voucher' && (
+                  <div className="text-sm font-medium">
+                     <p>{getIssuer(card.issuer)?.label}</p>
+                  </div>
+               )}
+            </CardContent>
+        </div>
       </Card>
 
       <AlertDialog
