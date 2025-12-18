@@ -73,7 +73,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         hasNotifiedInitialColor.current = true;
       }
     }
-  }, [colorValue]);
+  }, [colorValue, cardToEdit, onColorChange]);
 
   const availableIssuers = useMemo(() => {
     return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes(cardType));
@@ -113,7 +113,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       });
     }
     setTimeout(() => { isInitialLoad.current = false; }, 100);
-  }, [cardToEdit?.id]);
+  }, [cardToEdit, form]);
 
   // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
   useEffect(() => {
@@ -133,7 +133,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     if (issuerData?.color && !isDirty && currentColor !== issuerData.color) {
       form.setValue('color', issuerData.color, { shouldDirty: false });
     }
-  }, [cardType, issuerValue]);
+  }, [cardType, issuerValue, form]);
 
   // Limpa os erros de validação quando o tipo de cartão é alterado, ocultando os campos
   useEffect(() => {
@@ -324,5 +324,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     </Form>
   );
 }
+
+    
 
     
