@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
         hostname: 'seeklogo.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.vectorlogo.zone',
+        port: '',
+        pathname: '/**',
       }
     ],
   },

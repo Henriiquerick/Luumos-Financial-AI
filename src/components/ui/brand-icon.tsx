@@ -12,17 +12,16 @@ export const BrandIcon = ({ icon, className }: BrandIconProps) => {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={icon}
-      alt="Brand Logo"
+      alt="Bandeira"
       className={cn(
-        // "object-contain" garante que a imagem nunca fique esticada ou cortada
-        "object-contain",
-        // Tamanho padrão (pode ser sobrescrito pelo pai)
-        "h-8 w-auto", 
-        // Sombra leve para garantir leitura em fundos da mesma cor
-        "drop-shadow-md",
+        "object-contain drop-shadow-sm", // Sombra leve só pra destacar
         className
       )}
       loading="lazy"
+      onError={(e) => {
+        // Fallback ninja: Se a imagem quebrar, esconde ela pra não mostrar o ícone de erro feio
+        e.currentTarget.style.display = 'none';
+      }}
     />
   );
 };
