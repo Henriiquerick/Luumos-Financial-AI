@@ -19,6 +19,15 @@ export function initializeFirebase() {
     return getSdks(existingApp);
   }
 
+  // Log de Diagnóstico para verificar as variáveis de ambiente
+  console.log("🔥 Diagnóstico Firebase:", {
+    apiKeyPresent: !!firebaseConfig.apiKey,
+    apiKeyPreview: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + "..." : "MISSING",
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId
+  });
+
+
   // Validação Crítica: Verifica se as variáveis de ambiente essenciais estão presentes.
   // Isso só executa no lado do cliente, onde process.env.NEXT_PUBLIC_* está disponível.
   if (!firebaseConfig.apiKey) {
