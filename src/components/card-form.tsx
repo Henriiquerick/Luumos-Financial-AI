@@ -8,7 +8,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import type { CreditCard } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { Combobox } from './ui/combobox';
@@ -43,6 +43,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { t } = useTranslation();
+  // Ref para rastrear se já notificamos a mudança de cor inicial
+  const hasNotifiedInitialColor = useRef(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,12 +63,17 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const issuerValue = form.watch('issuer');
   const colorValue = form.watch('color');
 
-  // Propagate color changes to parent component for real-time chart updates
+  // Propagate color changes to parent - CORRIGIDO
   useEffect(() => {
-    if (colorValue && cardToEdit) { // Only when editing
-      onColorChange(colorValue);
+    if (cardToEdit && colorValue) {
+      // Só notifica após a primeira renderização (evita notificar a cor inicial)
+      if (hasNotifiedInitialColor.current) {
+        onColorChange(colorValue);
+      } else {
+        hasNotifiedInitialColor.current = true;
+      }
     }
-  }, [colorValue, onColorChange, cardToEdit]);
+  }, [colorValue]); // IMPORTANTE: Removido onColorChange e cardToEdit das dependências
 
   // Lógica de filtragem dos emissores e bandeiras
   const availableIssuers = useMemo(() => {
@@ -80,31 +87,32 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     return CARD_BRANDS.filter(brand => brand.supportedTypes.includes(cardType));
   }, [cardType]);
 
-  // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
-useEffect(() => {
-  // 1. Trava para Vouchers: Só atualiza a brand se for diferente do issuer
-  if (cardType === 'voucher') {
-    const currentBrand = form.getValues('brand');
-    if (currentBrand !== issuerValue) {
-      form.setValue('brand', issuerValue);
-    }
-  }
-
-  // 2. Trava para Cores: Só atualiza se o usuário não mexeu manualmente E se a cor for diferente
-  const issuerData = getIssuer(issuerValue);
-  if (issuerData?.color) {
-    const currentColor = form.getValues('color');
-    const isColorDirty = form.getFieldState('color').isDirty;
-
-    if (!isColorDirty && currentColor !== issuerData.color) {
-      form.setValue('color', issuerData.color);
-    }
-  }
-  // Removemos 'form' das dependências para evitar re-execuções desnecessárias
-}, [cardType, issuerValue, form]);
-
-
+  // Lógica de auto-preenchimento de cor e bandeira - CORRIGIDO
   useEffect(() => {
+    // 1. Trava para Vouchers: Só atualiza a brand se for diferente do issuer
+    if (cardType === 'voucher') {
+      const currentBrand = form.getValues('brand');
+      if (currentBrand !== issuerValue) {
+        form.setValue('brand', issuerValue, { shouldDirty: false });
+      }
+    }
+  
+    // 2. Trava para Cores: Só atualiza se o usuário não mexeu manualmente E se a cor for diferente
+    const issuerData = getIssuer(issuerValue);
+    if (issuerData?.color) {
+      const currentColor = form.getValues('color');
+      const isColorDirty = form.getFieldState('color').isDirty;
+  
+      if (!isColorDirty && currentColor !== issuerData.color) {
+        form.setValue('color', issuerData.color, { shouldDirty: false });
+      }
+    }
+  }, [cardType, issuerValue]); // IMPORTANTE: Removido 'form' das dependências
+
+  // Efeito para resetar o formulário quando o cartão muda
+  useEffect(() => {
+    hasNotifiedInitialColor.current = false;
+    
     if (cardToEdit) {
       form.reset({
         name: cardToEdit.name,
@@ -126,7 +134,7 @@ useEffect(() => {
         closingDay: '',
       });
     }
-  }, [cardToEdit, form]);
+  }, [cardToEdit?.id]); // IMPORTANTE: Só depende do ID do cartão
 
   const onSubmit = (values: FormValues) => {
     if (!user || !firestore) return;
