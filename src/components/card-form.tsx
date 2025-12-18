@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
-import type { CreditCard, CardType, CardEntity } from '@/lib/types';
+import type { CreditCard } from '@/lib/types';
 import { useEffect, useMemo } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
@@ -17,12 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES, getIssuer } from '@/lib/card-data';
+import type { CardType } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
   issuer: z.string({ required_error: "Selecione o emissor" }).min(1, 'Issuer is required.'),
   brand: z.string({ required_error: "Selecione a bandeira" }).min(1, 'Card brand is required.'),
-  type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v), {
+  type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v as string), {
     message: "Selecione o tipo do cartão",
   }),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.').optional(),
@@ -207,6 +208,7 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
+          />
         )}
         
         {cardType !== 'voucher' && (
