@@ -27,7 +27,7 @@ const formSchema = z.object({
     message: "Selecione o tipo do cartão",
   }),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.').optional(),
-  closingDay: z.string().min(1, "Please select a closing day.").optional(),
+  closingDay: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 });
 
@@ -144,7 +144,6 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
 
   const onSubmit = (values: FormValues) => {
-    console.log("Dados submetidos no formulário:", values);
     if (!user || !firestore) return;
 
     const cardData = {
@@ -249,7 +248,6 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
-          />
         )}
         
         {cardType !== 'voucher' && (
