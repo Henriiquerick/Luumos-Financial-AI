@@ -169,12 +169,13 @@ export function CreditCardCard({
         </div>
 
         <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-start justify-between">
             <span>{card.name}</span>
-            {brand?.icon && (
-              <div className="flex items-center justify-center w-12 h-7 bg-white rounded-md p-1 shadow-sm">
-                <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: brand.icon }} />
-              </div>
+             {brand?.icon && (
+              <div 
+                className="w-14 h-auto drop-shadow-lg"
+                dangerouslySetInnerHTML={{ __html: brand.icon }} 
+              />
             )}
           </CardTitle>
         </CardHeader>
