@@ -51,10 +51,5 @@ export const CARD_BRANDS: CardBrand[] = [
     value: 'aura', 
     label: 'Aura', 
     icon: 'https://img.icons8.com/color/48/aura.png' 
-  },
-  {
-    value: 'nubank',
-    label: 'Nubank',
-    icon: 'https://www.vectorlogo.zone/logos/nubank/nubank-icon.svg'
   }
 ];
