@@ -172,9 +172,9 @@ export function CreditCardCard({
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-start justify-between">
             <span>{card.name}</span>
-             {brand?.position && (
+             {brand?.icon && (
               <div className="absolute top-4 right-4">
-                <BrandIcon position={brand.position} className="w-12 h-8" />
+                 <BrandIcon icon={brand.icon} className="h-8 w-auto brightness-0 invert opacity-60" />
               </div>
             )}
           </CardTitle>

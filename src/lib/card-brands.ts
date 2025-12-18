@@ -3,58 +3,53 @@
 export interface CardBrand {
   value: string;
   label: string;
-  position: string; // A coordenada mágica no sprite
+  icon: string; // Voltamos a usar 'icon' como URL
 }
 
 export const CARD_BRANDS: CardBrand[] = [
-  // --- LINHA 1 (Topo) ---
   { 
     value: 'visa', 
     label: 'Visa', 
-    position: '0% 0%' // Canto Superior Esquerdo
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg' 
   },
   { 
     value: 'mastercard', 
     label: 'Mastercard', 
-    position: '50% 0%' // Meio Topo
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg' 
   },
   { 
     value: 'amex', 
     label: 'American Express', 
-    position: '100% 0%' // Canto Superior Direito
-  },
-
-  // --- LINHA 2 (Meio) ---
-  { 
-    value: 'discover', 
-    label: 'Discover', 
-    position: '0% 50%' // Meio Esquerda
-  },
-  { 
-    value: 'diners', 
-    label: 'Diners Club', 
-    position: '50% 50%' // Centro Absoluto
-  },
-  { 
-    value: 'jcb', 
-    label: 'JCB', 
-    position: '100% 50%' // Meio Direita
-  },
-
-  // --- LINHA 3 (Baixo) ---
-  { 
-    value: 'hipercard', 
-    label: 'Hipercard', 
-    position: '0% 100%' // Baixo Esquerda
-  },
-  { 
-    value: 'aura', 
-    label: 'Aura', 
-    position: '50% 100%' // Baixo Meio
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo.svg' 
   },
   { 
     value: 'elo', 
     label: 'Elo', 
-    position: '100% 100%' // Baixo Direita
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Elo_Logo.svg' 
   },
+  { 
+    value: 'hipercard', 
+    label: 'Hipercard', 
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Hipercard_logo.svg' 
+  },
+  { 
+    value: 'diners', 
+    label: 'Diners Club', 
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Diners_Club_Logo3.svg' 
+  },
+  { 
+    value: 'discover', 
+    label: 'Discover', 
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/5/57/Discover_Card_logo.svg' 
+  },
+  { 
+    value: 'jcb', 
+    label: 'JCB', 
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/4/40/JCB_logo.svg' 
+  },
+  {
+    value: 'nubank',
+    label: 'Nubank',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/f/f7/Nubank_logo_2021.svg'
+  }
 ];

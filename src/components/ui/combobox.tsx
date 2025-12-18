@@ -20,15 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { BrandIcon } from "./brand-icon"
+import type { CardBrand } from "@/lib/card-brands"
 
-interface ComboboxOption {
-    value: string;
-    label: string;
-    position?: string;
-}
 
 interface ComboboxProps {
-    options: ComboboxOption[];
+    options: CardBrand[];
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
@@ -58,8 +54,8 @@ export function Combobox({
           className="w-full justify-between"
         >
           <div className="flex items-center gap-2">
-            {selectedOption?.position && (
-                <BrandIcon position={selectedOption.position} className="w-8 h-5" />
+            {selectedOption?.icon && (
+                <BrandIcon icon={selectedOption.icon} className="h-5 w-8 object-contain" />
             )}
             {selectedOption ? selectedOption.label : placeholder}
           </div>
@@ -88,8 +84,8 @@ export function Combobox({
                     )}
                   />
                    <div className="flex items-center gap-2">
-                    {option.position && (
-                       <BrandIcon position={option.position} className="mr-2 w-8 h-5" />
+                    {option.icon && (
+                       <BrandIcon icon={option.icon} className="mr-2 h-5 w-8 object-contain" />
                     )}
                     {option.label}
                   </div>
