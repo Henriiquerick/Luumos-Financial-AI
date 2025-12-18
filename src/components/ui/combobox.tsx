@@ -20,16 +20,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { BrandIcon } from "./brand-icon"
-import type { CardBrand } from "@/lib/card-brands"
+import type { CardEntity } from "@/lib/card-data"
 
 
 interface ComboboxProps {
-    options: CardBrand[];
+    options: CardEntity[];
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
     searchPlaceholder?: string;
     notfoundText?: string;
+    disabled?: boolean;
 }
 
 export function Combobox({ 
@@ -38,7 +39,8 @@ export function Combobox({
     onChange, 
     placeholder = "Select option...",
     searchPlaceholder = "Search...",
-    notfoundText = "No option found."
+    notfoundText = "No option found.",
+    disabled = false
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -52,8 +54,9 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 truncate">
             {selectedOption?.icon && (
                 <BrandIcon icon={selectedOption.icon} className="h-5 w-8 object-contain" />
             )}
@@ -83,11 +86,11 @@ export function Combobox({
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                   <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-3">
                     {option.icon && (
                        <BrandIcon icon={option.icon} className="mr-2 h-6 w-10" />
                     )}
-                    {option.label}
+                    <span className="truncate">{option.label}</span>
                   </div>
                 </CommandItem>
               ))}

@@ -1,3 +1,4 @@
+
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -8,7 +9,14 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'www.vectorlogo.zone' },
+      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+      { protocol: 'https', hostname: 'upload.wikimedia.org' },
+      { protocol: 'https', hostname: 'img.icons8.com' },
+    ],
+  },
   /* --- Correção para Firebase Auth (Popup Closed by User) --- */
   async headers() {
     return [

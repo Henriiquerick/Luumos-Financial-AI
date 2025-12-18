@@ -39,10 +39,22 @@ export type AIKnowledgeLevel = {
   instruction: string;
 }
 
+export type CardType = 'credit' | 'debit' | 'voucher';
+
+export interface CardEntity {
+  value: string;
+  label: string;
+  icon: string;
+  types: CardType[];
+}
+
+
 export type CreditCard = {
   id: string;
   name: string;
-  brand: string;
+  issuer: string; // ex: 'nubank', 'itau'
+  brand: string;  // ex: 'visa', 'mastercard'
+  type: CardType; // ex: 'credit', 'voucher'
   totalLimit: number;
   color: string;
   closingDay: number;

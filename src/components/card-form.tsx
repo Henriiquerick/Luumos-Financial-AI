@@ -1,41 +1,30 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { CreditCard } from '@/lib/types';
-import { useEffect } from 'react';
+import type { CreditCard, CardType } from '@/lib/types';
+import { useEffect, useMemo } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankTheme, BANK_THEMES } from '@/lib/bank-colors';
+import { getBankTheme } from '@/lib/bank-colors';
 import { Combobox } from './ui/combobox';
-import { CARD_BRANDS } from '@/lib/card-brands';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES } from '@/lib/card-data';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
+  issuer: z.string().min(1, 'Issuer is required.'),
   brand: z.string().min(1, 'Card brand is required.'),
+  type: z.custom<CardType>(),
   totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
   closingDay: z.string().min(1, "Please select a closing day."),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
@@ -48,11 +37,6 @@ interface CardFormProps {
   cardToEdit?: CreditCard | null;
 }
 
-// Criar um conjunto de valores de cores únicos para evitar duplicatas
-const uniqueColors = Array.from(new Set(Object.values(BANK_THEMES).map(theme => theme.bg)));
-const PREDEFINED_COLORS = uniqueColors.map(color => ({ name: '', value: color }));
-
-
 export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -62,7 +46,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
+      issuer: '',
       brand: '',
+      type: 'credit',
       totalLimit: 1000,
       closingDay: '', 
       color: '#333333',
@@ -70,10 +56,23 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
   });
 
   const cardName = form.watch('name');
+  const cardType = form.watch('type');
+
+  const availableIssuers = useMemo(() => {
+      return CARD_ISSUERS.filter(issuer => issuer.types.includes(cardType));
+  }, [cardType]);
+
+  const availableBrands = useMemo(() => {
+      if (cardType === 'voucher') {
+          return CARD_ISSUERS.filter(issuer => issuer.types.includes('voucher'));
+      }
+      return CARD_BRANDS.filter(brand => brand.types.includes(cardType));
+  }, [cardType]);
+
 
   useEffect(() => {
     const theme = getBankTheme(cardName);
-    if(theme.bg !== '#242424') { // Don't auto-set the fallback color
+    if(theme.bg !== '#242424') {
         form.setValue('color', theme.bg);
     }
   }, [cardName, form]);
@@ -82,7 +81,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     if (cardToEdit) {
       form.reset({
         name: cardToEdit.name,
+        issuer: cardToEdit.issuer,
         brand: cardToEdit.brand,
+        type: cardToEdit.type,
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
         closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
@@ -90,7 +91,9 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     } else {
       form.reset({
         name: '',
+        issuer: '',
         brand: '',
+        type: 'credit',
         totalLimit: 1000,
         color: '#333333',
         closingDay: '',
@@ -111,11 +114,11 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
       const updatedCard = { ...cardToEdit, ...cardData };
       updateDocumentNonBlocking(cardRef, cardData);
-      onSave(updatedCard); // Pass updated card for optimistic UI
+      onSave(updatedCard);
     } else {
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
       addDocumentNonBlocking(cardsRef, cardData);
-      onSave(); // No card to pass for new card
+      onSave();
     }
   };
 
@@ -127,15 +130,57 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t.modals.card.fields.name}</FormLabel>
+              <FormLabel>Apelido do Cartão</FormLabel>
               <FormControl>
-                <Input placeholder={t.modals.card.fields.namePlaceholder} {...field} />
+                <Input placeholder="ex: Cartão da Viagem" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Tipo do Cartão</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    {CARD_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
 
+        <FormField
+          control={form.control}
+          name="issuer"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Banco / Emissor</FormLabel>
+              <Combobox
+                options={availableIssuers}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecione o emissor"
+                searchPlaceholder="Procurar emissor..."
+                notfoundText="Nenhum emissor encontrado."
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="brand"
@@ -143,92 +188,65 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             <FormItem className="flex flex-col">
               <FormLabel>Bandeira do Cartão</FormLabel>
               <Combobox
-                options={CARD_BRANDS}
+                options={availableBrands}
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecione a bandeira"
                 searchPlaceholder="Procurar bandeira..."
-                notfoundText='Nenhuma bandeira encontrada.'
+                notfoundText="Nenhuma bandeira encontrada."
+                disabled={cardType === 'voucher'}
               />
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="totalLimit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t.modals.card.fields.limit}</FormLabel>
-                <FormControl>
-                  <Input type="number" step="100" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="closingDay"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t.modals.card.fields.closingDay}</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  value={field.value} 
-                  key={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                      <SelectItem key={day} value={String(day)}>
-                        {day}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        {cardType !== 'voucher' && (
+            <div className="grid grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="totalLimit"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>{t.modals.card.fields.limit}</FormLabel>
+                    <FormControl>
+                    <Input type="number" step="100" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="closingDay"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>{t.modals.card.fields.closingDay}</FormLabel>
+                    <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value} 
+                    key={field.value}
+                    >
+                    <FormControl>
+                        <SelectTrigger>
+                        <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={String(day)}>
+                            {day}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            </div>
+        )}
 
-        <FormField
-          control={form.control}
-          name="color"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t.modals.card.fields.color}</FormLabel>
-              <FormControl>
-                <div className="flex flex-wrap gap-2">
-                  {PREDEFINED_COLORS.map((color) => (
-                    <button
-                      type="button"
-                      key={color.value}
-                      onClick={() => field.onChange(color.value)}
-                      className={cn(
-                        'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
-                        field.value === color.value
-                          ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
-                          : 'border-transparent'
-                      )}
-                      style={{ backgroundColor: color.value }}
-                      aria-label={`Select ${color.name}`}
-                    />
-                  ))}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
         <Button
           type="submit"
           className="w-full"

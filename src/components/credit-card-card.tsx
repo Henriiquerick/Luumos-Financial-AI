@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency } from '@/lib/i18n-utils';
-import { CARD_BRANDS } from '@/lib/card-brands';
+import { CARD_BRANDS, CARD_ISSUERS } from '@/lib/card-data';
 import { BrandIcon } from './ui/brand-icon';
 
 interface CreditCardCardProps {
@@ -57,7 +57,9 @@ export function CreditCardCard({
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
   const theme = getBankTheme(card.name);
+  
   const brand = CARD_BRANDS.find(b => b.value === card.brand);
+  const issuer = CARD_ISSUERS.find(i => i.value === card.issuer);
 
   const handleDeleteCard = async () => {
     if (!user) return;
@@ -118,7 +120,7 @@ export function CreditCardCard({
       <Card
         className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
         style={{
-          backgroundColor: theme.bg,
+          backgroundColor: card.color || theme.bg,
           color: theme.text,
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
@@ -126,6 +128,18 @@ export function CreditCardCard({
         <div 
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
+
+        {issuer && (
+            <div className="absolute top-4 left-4 h-8 w-auto">
+                <BrandIcon icon={issuer.icon} className="h-full w-full brightness-0 invert opacity-60" />
+            </div>
+        )}
+
+        {brand && (
+            <div className="absolute top-4 right-4 h-8 w-12">
+                <BrandIcon icon={brand.icon} className="h-full w-full" />
+            </div>
+        )}
         
         <div
           className="absolute top-2 right-2 z-20"
@@ -172,14 +186,9 @@ export function CreditCardCard({
         <CardHeader className="relative z-10">
           <CardTitle className="flex items-start justify-between">
             <span>{card.name}</span>
-             {brand?.icon && (
-              <div className="absolute top-4 right-4 h-8 w-12">
-                 <BrandIcon icon={brand.icon} className="h-full w-full" />
-              </div>
-            )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="relative z-10 space-y-2">
+        <CardContent className="relative z-10 space-y-2 mt-8">
           <div>
             <Progress
               value={usage.usagePercentage}
