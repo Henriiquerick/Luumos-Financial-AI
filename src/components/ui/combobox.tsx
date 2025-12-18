@@ -58,7 +58,7 @@ export function Combobox({
         >
           <div className="flex items-center gap-2">
             {selectedOption?.icon && (
-                <div className="flex items-center justify-center w-6 h-4 bg-white/10 rounded-sm p-0.5">
+                <div className="flex items-center justify-center w-10 h-6 bg-white rounded-sm p-1 shadow-sm">
                     <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: selectedOption.icon }} />
                 </div>
             )}
@@ -90,7 +90,7 @@ export function Combobox({
                   />
                    <div className="flex items-center gap-2">
                     {option.icon && (
-                        <div className="flex items-center justify-center w-6 h-4 bg-white/10 rounded-sm p-0.5">
+                        <div className="flex items-center justify-center w-10 h-6 bg-white rounded-sm p-1 shadow-sm">
                             <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: option.icon }} />
                         </div>
                     )}
