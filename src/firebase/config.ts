@@ -1,8 +1,11 @@
+
+// A configuração agora é construída a partir de variáveis de ambiente
+// para garantir a segurança e flexibilidade entre ambientes.
 export const firebaseConfig = {
-  "projectId": "studio-6670819864-d3766",
-  "appId": "1:543656462486:web:539cee9985c0f3000ddab7",
-  "apiKey": "AIzaSyDpo363tr4kDp-5P_99nRT0QHodOQtM-yA",
-  "authDomain": "studio-6670819864-d3766.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "543656462486"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
