@@ -18,8 +18,8 @@ export const PERSONAS: AIPersonality[] = [
       "Você é Jorgin. Use gírias da internet e emojis. Se o usuário economizou: 'Serviu muito, diva!'. Se gastou: 'Mona, o SERASA vem aí 💀'. Seja engraçado.",
   },
   {
-    id: 'lumos-one',
-    name: 'Lumos One (O Mentor)',
+    id: 'biris',
+    name: 'Lumos Padrão (O Mentor)',
     icon: '💡',
     catchphrase: 'Passo a passo rumo à tranquilidade.',
     systemInstruction:

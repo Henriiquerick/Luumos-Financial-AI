@@ -105,9 +105,13 @@ export default function Dashboard() {
     }
   };
 
-  const handleOnboardingComplete = (persona: AIPersonality) => {
+  const handleOnboardingComplete = (personality: AIPersonality, knowledge: AIKnowledgeLevel) => {
     if (userProfileRef && user) {
-        const profileData = { id: user.uid, aiPersonality: persona.id, aiKnowledgeLevel: 'lumos-one' };
+        const profileData = { 
+            id: user.uid, 
+            aiPersonality: personality.id, 
+            aiKnowledgeLevel: knowledge.id 
+        };
         setDoc(userProfileRef, profileData, { merge: true }).catch(error => {
             errorEmitter.emit(
               'permission-error',
@@ -211,7 +215,7 @@ export default function Dashboard() {
                   <Skeleton className="h-12 w-1/4 mx-auto" />
                 </div>
             </main>
-        ) : !userProfile?.aiPersonality ? (
+        ) : !userProfile?.aiPersonality || !userProfile?.aiKnowledgeLevel ? (
             <PersonaOnboarding onComplete={handleOnboardingComplete} />
         ) : (
             <div className="w-full max-w-7xl mx-auto">
@@ -284,3 +288,4 @@ export default function Dashboard() {
     </AuthGate>
   )
 }
+
