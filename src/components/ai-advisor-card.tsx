@@ -37,31 +37,6 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const { user } = useUser();
   const { t, language } = useTranslation();
   
-  // Local state for selects to avoid infinite loops
-  const [localKnowledge, setLocalKnowledge] = useState<AIKnowledgeLevel>(knowledge);
-  const [localPersonality, setLocalPersonality] = useState<AIPersonality>(personality);
-
-  // Sync parent state when local state changes
-  useEffect(() => {
-    onKnowledgeChange(localKnowledge);
-    setMessages([]);
-  }, [localKnowledge, onKnowledgeChange]);
-
-  useEffect(() => {
-    onPersonalityChange(localPersonality);
-    setMessages([]);
-  }, [localPersonality, onPersonalityChange]);
-
-  // Sync local state when props change from parent
-  useEffect(() => {
-    setLocalKnowledge(knowledge);
-  }, [knowledge]);
-
-  useEffect(() => {
-    setLocalPersonality(personality);
-  }, [personality]);
-
-
   // Get the specific welcome message for the current personality
   const welcomeMessage = t.chat.welcomeMessages[personality.id] || t.chat.welcome;
 
@@ -79,8 +54,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         balance: balance,
         transactions: transactions.slice(-5),
         cards: cards,
-        knowledgeId: localKnowledge.id, // Use local state
-        personalityId: localPersonality.id, // Use local state
+        knowledgeId: knowledge.id,
+        personalityId: personality.id,
         language: language,
       };
 
@@ -125,15 +100,17 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONALITIES.find(p => p.id === id);
-    if (newPersonality) {
-      setLocalPersonality(newPersonality);
+    if (newPersonality && newPersonality.id !== personality.id) {
+      onPersonalityChange(newPersonality);
+      setMessages([]);
     }
   }
   
   const handleKnowledgeChange = (id: string) => {
     const newKnowledge = KNOWLEDGE_LEVELS.find(k => k.id === id);
-    if (newKnowledge) {
-      setLocalKnowledge(newKnowledge);
+    if (newKnowledge && newKnowledge.id !== knowledge.id) {
+      onKnowledgeChange(newKnowledge);
+      setMessages([]);
     }
   }
 
@@ -153,14 +130,14 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
           <span>{t.chat.agent_title}</span>
         </CardTitle>
         <CardDescription>
-          {t.chat.acting_as} <span className="font-semibold text-foreground">{localPersonality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{localKnowledge.name}</span>
+          {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium">{t.chat.support_level}</label>
-            <Select value={localKnowledge.id} onValueChange={handleKnowledgeChange}>
+            <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
               <SelectTrigger className="w-full mt-1 text-xs">
                 <SelectValue placeholder="Select a level" />
               </SelectTrigger>
@@ -173,7 +150,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
           </div>
           <div>
             <label className="text-sm font-medium">{t.chat.personality}</label>
-            <Select value={localPersonality.id} onValueChange={handlePersonalityChange}>
+            <Select value={personality.id} onValueChange={handlePersonalityChange}>
               <SelectTrigger className="w-full mt-1 text-xs">
                 <SelectValue placeholder="Select a personality" />
               </SelectTrigger>
@@ -190,7 +167,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
            <div className="space-y-4">
             {messages.length === 0 && (
                  <div className="flex items-start gap-3 justify-start">
-                   <span className="text-2xl mt-1">{localPersonality.icon}</span>
+                   <span className="text-2xl mt-1">{personality.icon}</span>
                    <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
                       <p>{welcomeMessage}</p>
                    </div>
@@ -198,7 +175,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             )}
             {messages.map((msg, index) => (
               <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                {msg.role === 'model' && <span className="text-2xl mt-1">{localPersonality.icon}</span>}
+                {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
                 <div className={cn("p-3 rounded-lg max-w-sm whitespace-pre-wrap font-code text-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50')}>
                   {msg.content}
                 </div>
@@ -206,7 +183,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             ))}
              {isLoading && (
                 <div className="flex items-start gap-3 justify-start">
-                   <span className="text-2xl mt-1">{localPersonality.icon}</span>
+                   <span className="text-2xl mt-1">{personality.icon}</span>
                    <div className="p-3 rounded-lg bg-muted/50">
                     <Loader2 className="h-5 w-5 animate-spin" />
                    </div>
@@ -218,7 +195,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         <div className="relative">
           <Textarea
             id="user-question"
-            placeholder={t.chat.placeholder.replace('{personalityName}', localPersonality.name)}
+            placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -233,5 +210,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
+
+    
 
     
