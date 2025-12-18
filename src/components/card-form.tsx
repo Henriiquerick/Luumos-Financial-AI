@@ -136,6 +136,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   }, [cardType, issuerValue]);
 
   const onSubmit = (values: FormValues) => {
+    console.log("Dados submetidos no formulário:", values);
     if (!user || !firestore) return;
 
     const cardData = {
@@ -159,7 +160,13 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form 
+        onSubmit={form.handleSubmit(
+          onSubmit, 
+          (errors) => console.error("ERROS DE VALIDAÇÃO DO FORMULÁRIO:", errors)
+        )} 
+        className="space-y-4"
+      >
         <FormField
           control={form.control}
           name="name"
