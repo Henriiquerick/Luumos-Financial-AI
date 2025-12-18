@@ -1,3 +1,4 @@
+
 export const TRANSLATIONS = {
   en: {
     dashboard: {
@@ -131,19 +132,21 @@ export const TRANSLATIONS = {
       },
       card: {
           add: {
-              title: 'Add New Credit Card',
+              title: 'Add New Card',
               subtitle: 'Enter the details for your new card.'
           },
           edit: {
-              title: 'Edit Credit Card',
+              title: 'Edit Card',
               subtitle: 'Update the details for your card.'
           },
           fields: {
               name: 'Card Name',
               limit: 'Total Limit',
+              balance: 'Available Balance',
               closingDay: 'Closing Day',
+              expiryDate: 'Expiry Date',
               color: 'Card Color',
-              namePlaceholder: 'e.g., Nubank',
+              namePlaceholder: 'e.g., Main Card',
               dayPlaceholder: 'Select Day'
           },
           save: 'Save Card',
@@ -292,19 +295,21 @@ export const TRANSLATIONS = {
       },
       card: {
           add: {
-              title: 'Adicionar Novo Cartão de Crédito',
+              title: 'Adicionar Novo Cartão',
               subtitle: 'Insira os detalhes do seu novo cartão.'
           },
           edit: {
-              title: 'Editar Cartão de Crédito',
+              title: 'Editar Cartão',
               subtitle: 'Atualize os detalhes do seu cartão.'
           },
           fields: {
-              name: 'Nome do Cartão',
+              name: 'Apelido do Cartão',
               limit: 'Limite Total',
+              balance: 'Saldo Disponível',
               closingDay: 'Dia de Fechamento',
+              expiryDate: 'Data de Validade',
               color: 'Cor do Cartão',
-              namePlaceholder: 'ex: Nubank',
+              namePlaceholder: 'ex: Cartão Principal',
               dayPlaceholder: 'Selecione o Dia'
           },
           save: 'Salvar Cartão',
@@ -463,9 +468,11 @@ ai: {
           fields: {
               name: 'Nombre de la Tarjeta',
               limit: 'Límite Total',
+              balance: 'Saldo Disponible',
               closingDay: 'Día de Cierre',
+              expiryDate: 'Fecha de Caducidad',
               color: 'Color de la Tarjeta',
-              namePlaceholder: 'ej: Nubank',
+              namePlaceholder: 'ej: Tarjeta Principal',
               dayPlaceholder: 'Seleccione el Día'
           },
           save: 'Guardar Tarjeta',

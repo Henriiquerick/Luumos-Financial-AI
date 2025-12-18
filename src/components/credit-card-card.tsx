@@ -202,9 +202,15 @@ export function CreditCardCard({
             <CardHeader>
               <CardTitle className="flex items-start justify-between">
                 <span>{card.name}</span>
+                 {card.expiryDate && (
+                    <div className="text-right">
+                        <span className="text-xs font-mono opacity-70 tracking-wider">VALID THRU</span>
+                        <p className="text-sm font-semibold">{card.expiryDate}</p>
+                    </div>
+                )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 mt-8">
+            <CardContent className="space-y-2 mt-4">
               {card.type === 'credit' && (
                 <>
                   <div>

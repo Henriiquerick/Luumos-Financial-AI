@@ -28,6 +28,7 @@ const formSchema = z.object({
   }),
   totalLimit: z.coerce.number().optional(),
   closingDay: z.string().optional(),
+  expiryDate: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 }).refine(data => {
     if (data.type === 'credit' && (!data.closingDay || Number(data.closingDay) <= 0)) {
@@ -45,6 +46,17 @@ const formSchema = z.object({
 }, {
     message: 'Limit is required for Credit or Voucher cards.',
     path: ['totalLimit'],
+}).refine(data => {
+    if ((data.type === 'credit' || data.type === 'debit') && !data.expiryDate) {
+        return false;
+    }
+    if (data.expiryDate && !/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(data.expiryDate)) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'A valid expiry date (MM/YY) is required.',
+    path: ['expiryDate'],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,6 +83,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       type: 'credit',
       totalLimit: 1000,
       closingDay: '', 
+      expiryDate: '',
       color: '#333333',
     },
   });
@@ -79,10 +92,9 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const issuerValue = form.watch('issuer');
   const colorValue = form.watch('color');
 
-  // Propagate color changes to parent - CORRIGIDO
+  // Propagate color changes to parent
   useEffect(() => {
     if (cardToEdit && colorValue) {
-      // Só notifica após a primeira renderização (evita notificar a cor inicial)
       if (hasNotifiedInitialColor.current) {
         onColorChange(colorValue);
       } else {
@@ -116,6 +128,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
         closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
+        expiryDate: cardToEdit.expiryDate || '',
       });
     } else {
       form.reset({
@@ -126,12 +139,13 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         totalLimit: 1000,
         color: '#333333',
         closingDay: '',
+        expiryDate: '',
       });
     }
     setTimeout(() => { isInitialLoad.current = false; }, 100);
   }, [cardToEdit, form]);
 
-  // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
+  // Lógica de auto-preenchimento de cor e bandeira
   useEffect(() => {
     if (isInitialLoad.current) return;
   
@@ -151,10 +165,13 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     }
   }, [cardType, issuerValue, form]);
 
-  // Limpa os erros de validação quando o tipo de cartão é alterado, ocultando os campos
+  // Limpa os erros de validação quando o tipo de cartão é alterado
   useEffect(() => {
     if (cardType === 'voucher' || cardType === 'debit') {
-      form.clearErrors(['closingDay', 'totalLimit', 'brand']);
+      form.clearErrors(['closingDay', 'totalLimit', 'brand', 'expiryDate']);
+    }
+     if (cardType === 'voucher') {
+      form.clearErrors(['expiryDate']);
     }
   }, [cardType, form]);
 
@@ -167,6 +184,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       brand: values.type === 'voucher' ? values.issuer : values.brand,
       totalLimit: (values.type === 'voucher' || values.type === 'credit') ? Number(values.totalLimit) : 0,
       closingDay: values.type === 'credit' ? Number(values.closingDay) : 0,
+      expiryDate: (values.type === 'credit' || values.type === 'debit') ? values.expiryDate! : '',
     };
     
     if (cardToEdit) {
@@ -180,6 +198,15 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       onSave();
     }
   };
+  
+  const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length > 2) {
+      value = value.slice(0, 2) + '/' + value.slice(2, 4);
+    }
+    form.setValue('expiryDate', value, { shouldValidate: true });
+  };
+
 
   return (
     <Form {...form}>
@@ -195,9 +222,9 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Apelido do Cartão</FormLabel>
+              <FormLabel>{t.modals.card.fields.name}</FormLabel>
               <FormControl>
-                <Input placeholder="ex: Cartão da Viagem" {...field} />
+                <Input placeholder={t.modals.card.fields.namePlaceholder} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -273,7 +300,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 name="totalLimit"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{cardType === 'voucher' ? 'Saldo Disponível' : t.modals.card.fields.limit}</FormLabel>
+                    <FormLabel>{cardType === 'voucher' ? t.modals.card.fields.balance : t.modals.card.fields.limit}</FormLabel>
                     <FormControl>
                     <Input type="number" step="100" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -282,44 +309,67 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 )}
             />
         )}
+        
+        <div className="grid grid-cols-2 gap-4">
+            {cardType === 'credit' && (
+                <FormField
+                    control={form.control}
+                    name="closingDay"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{t.modals.card.fields.closingDay}</FormLabel>
+                        <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value} 
+                        key={field.value}
+                        >
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={String(day)}>
+                                {day}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            )}
 
-        {cardType === 'credit' && (
-            <FormField
-                control={form.control}
-                name="closingDay"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>{t.modals.card.fields.closingDay}</FormLabel>
-                    <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value} 
-                    key={field.value}
-                    >
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                        <SelectItem key={day} value={String(day)}>
-                            {day}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-        )}
+            {(cardType === 'credit' || cardType === 'debit') && (
+                <FormField
+                    control={form.control}
+                    name="expiryDate"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{t.modals.card.fields.expiryDate}</FormLabel>
+                        <FormControl>
+                        <Input
+                            placeholder="MM/AA"
+                            {...field}
+                            onChange={handleExpiryDateChange}
+                            maxLength={5}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            )}
+        </div>
         
          <FormField
           control={form.control}
           name="color"
           render={({ field }) => (
             <FormItem>
-                <FormLabel>Cor do Cartão</FormLabel>
+                <FormLabel>{t.modals.card.fields.color}</FormLabel>
                 <FormControl>
                     <Input type="color" {...field} className="h-12"/>
                 </FormControl>

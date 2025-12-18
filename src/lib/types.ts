@@ -59,6 +59,7 @@ export type CreditCard = {
   totalLimit: number;
   color: string;
   closingDay: number;
+  expiryDate: string;
 };
 
 export type UserProfile = {
