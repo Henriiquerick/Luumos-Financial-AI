@@ -1,32 +1,32 @@
 
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { CreditCard, CardType } from '@/lib/types';
+import type { CreditCard, CardType, CardEntity } from '@/lib/types';
 import { useEffect, useMemo } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankTheme } from '@/lib/bank-colors';
 import { Combobox } from './ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES } from '@/lib/card-data';
+import { CARD_BRANDS, CARD_ISSUERS, CARD_TYPES, getIssuer } from '@/lib/card-data';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
   issuer: z.string({ required_error: "Selecione o emissor" }).min(1, 'Issuer is required.'),
   brand: z.string({ required_error: "Selecione a bandeira" }).min(1, 'Card brand is required.'),
-  type: z.enum(["credit", "debit", "voucher"], { required_error: "Selecione o tipo do cartão" }),
-  totalLimit: z.coerce.number().positive('Limit must be a positive number.'),
-  closingDay: z.string().min(1, "Please select a closing day."),
+  type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v), {
+    message: "Selecione o tipo do cartão",
+  }),
+  totalLimit: z.coerce.number().positive('Limit must be a positive number.').optional(),
+  closingDay: z.string().min(1, "Please select a closing day.").optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 });
 
@@ -55,27 +55,35 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
     },
   });
 
-  const cardName = form.watch('name');
   const cardType = form.watch('type');
+  const issuerValue = form.watch('issuer');
 
+  // Lógica de filtragem dos emissores e bandeiras
   const availableIssuers = useMemo(() => {
-      return CARD_ISSUERS.filter(issuer => issuer.types.includes(cardType));
+    return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes(cardType));
   }, [cardType]);
 
   const availableBrands = useMemo(() => {
-      if (cardType === 'voucher') {
-          return CARD_ISSUERS.filter(issuer => issuer.types.includes('voucher'));
-      }
-      return CARD_BRANDS.filter(brand => brand.types.includes(cardType));
+    if (cardType === 'voucher') {
+      return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes('voucher'));
+    }
+    return CARD_BRANDS.filter(brand => brand.supportedTypes.includes(cardType));
   }, [cardType]);
 
-
+  // Lógica de auto-preenchimento de cor e bandeira
   useEffect(() => {
-    const theme = getBankTheme(cardName);
-    if(theme.bg !== '#242424') {
-        form.setValue('color', theme.bg);
+    // Auto-preenche bandeira para vouchers
+    if (cardType === 'voucher') {
+      form.setValue('brand', issuerValue);
     }
-  }, [cardName, form]);
+
+    // Auto-preenche a cor baseada no emissor
+    const issuerData = getIssuer(issuerValue);
+    if (issuerData?.color) {
+      form.setValue('color', issuerData.color);
+    }
+  }, [cardType, issuerValue, form]);
+
 
   useEffect(() => {
     if (cardToEdit) {
@@ -106,8 +114,8 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
 
     const cardData = {
       ...values,
-      totalLimit: Number(values.totalLimit),
-      closingDay: Number(values.closingDay),
+      totalLimit: values.type === 'voucher' ? 0 : Number(values.totalLimit),
+      closingDay: values.type === 'voucher' ? 0 : Number(values.closingDay),
     };
     
     if (cardToEdit) {
@@ -181,25 +189,25 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="brand"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Bandeira do Cartão</FormLabel>
-              <Combobox
-                options={availableBrands}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Selecione a bandeira"
-                searchPlaceholder="Procurar bandeira..."
-                notfoundText="Nenhuma bandeira encontrada."
-                disabled={cardType === 'voucher'}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {cardType !== 'voucher' && (
+          <FormField
+            control={form.control}
+            name="brand"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Bandeira do Cartão</FormLabel>
+                <Combobox
+                  options={availableBrands}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Selecione a bandeira"
+                  searchPlaceholder="Procurar bandeira..."
+                  notfoundText="Nenhuma bandeira encontrada."
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+        )}
         
         {cardType !== 'voucher' && (
             <div className="grid grid-cols-2 gap-4">
@@ -246,6 +254,20 @@ export function CardForm({ onSave, cardToEdit }: CardFormProps) {
             />
             </div>
         )}
+         <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+                <FormLabel>Cor do Cartão</FormLabel>
+                <FormControl>
+                    <Input type="color" {...field} className="h-12"/>
+                </FormControl>
+                 <FormMessage />
+            </FormItem>
+          )}
+        />
+
 
         <Button
           type="submit"

@@ -45,7 +45,8 @@ export interface CardEntity {
   value: string;
   label: string;
   icon: string;
-  types: CardType[];
+  supportedTypes: CardType[];
+  color?: string; // Cor oficial da marca
 }
 
 

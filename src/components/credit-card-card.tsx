@@ -30,7 +30,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
-import { getBankTheme } from '@/lib/bank-colors';
 import { formatCurrency } from '@/lib/i18n-utils';
 import { getBrand, getIssuer } from '@/lib/card-data';
 import { BrandIcon } from './ui/brand-icon';
@@ -56,10 +55,14 @@ export function CreditCardCard({
   const { t, language } = useTranslation();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
-  const theme = getBankTheme(card.issuer);
   
   const brandData = getBrand(card.brand);
   const issuerData = getIssuer(card.issuer);
+
+  const theme = {
+    bg: card.color || '#242424',
+    text: '#FFFFFF', // Assuming dark backgrounds always use white text
+  };
 
 
   const handleDeleteCard = async () => {
@@ -121,7 +124,7 @@ export function CreditCardCard({
       <Card
         className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
         style={{
-          backgroundColor: card.color || theme.bg,
+          backgroundColor: theme.bg,
           color: theme.text,
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
@@ -130,13 +133,16 @@ export function CreditCardCard({
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
 
-        {issuerData && issuerData.icon && (
-            <div className="absolute top-4 left-4 h-8 w-12">
-                <BrandIcon icon={issuerData.icon} className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]" />
-            </div>
+        {issuerData?.icon && (
+          <div className="absolute top-4 left-4 h-8 w-12">
+            <BrandIcon 
+              icon={issuerData.icon} 
+              className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
+            />
+          </div>
         )}
 
-        {brandData && brandData.icon && (
+        {brandData?.icon && (
             <div className="absolute top-4 right-4 h-8 w-12">
                 <BrandIcon icon={brandData.icon} className="h-full w-full" />
             </div>
@@ -190,18 +196,27 @@ export function CreditCardCard({
           </CardTitle>
         </CardHeader>
         <CardContent className="relative z-10 space-y-2 mt-8">
-          <div>
-            <Progress
-              value={usage.usagePercentage}
-              className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
-              indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
-            />
-          </div>
-          <div className="text-sm font-medium">
-            <p>
-              {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
-            </p>
-          </div>
+          {card.type !== 'voucher' && (
+            <>
+              <div>
+                <Progress
+                  value={usage.usagePercentage}
+                  className={cn(theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+                  indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
+                />
+              </div>
+              <div className="text-sm font-medium">
+                <p>
+                  {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
+                </p>
+              </div>
+            </>
+          )}
+           {card.type === 'voucher' && (
+              <div className="text-sm font-medium">
+                 <p>{getIssuer(card.issuer)?.label}</p>
+              </div>
+           )}
         </CardContent>
       </Card>
 
