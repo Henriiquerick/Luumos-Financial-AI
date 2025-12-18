@@ -81,27 +81,27 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   }, [cardType]);
 
   // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
-  useEffect(() => {
-    // 1. Trava para Vouchers: Só atualiza a brand se for diferente do issuer
-    if (cardType === 'voucher') {
-      const currentBrand = form.getValues('brand');
-      if (currentBrand !== issuerValue) {
-        form.setValue('brand', issuerValue);
-      }
+useEffect(() => {
+  // 1. Trava para Vouchers: Só atualiza a brand se for diferente do issuer
+  if (cardType === 'voucher') {
+    const currentBrand = form.getValues('brand');
+    if (currentBrand !== issuerValue) {
+      form.setValue('brand', issuerValue);
     }
-  
-    // 2. Trava para Cores: Só atualiza se o usuário não mexeu manualmente E se a cor for diferente
-    const issuerData = getIssuer(issuerValue);
-    if (issuerData?.color) {
-      const currentColor = form.getValues('color');
-      const isColorDirty = form.getFieldState('color').isDirty;
-  
-      if (!isColorDirty && currentColor !== issuerData.color) {
-        form.setValue('color', issuerData.color);
-      }
+  }
+
+  // 2. Trava para Cores: Só atualiza se o usuário não mexeu manualmente E se a cor for diferente
+  const issuerData = getIssuer(issuerValue);
+  if (issuerData?.color) {
+    const currentColor = form.getValues('color');
+    const isColorDirty = form.getFieldState('color').isDirty;
+
+    if (!isColorDirty && currentColor !== issuerData.color) {
+      form.setValue('color', issuerData.color);
     }
-    // Removemos 'form' das dependências para evitar re-execuções desnecessárias
-  }, [cardType, issuerValue, form]);
+  }
+  // Removemos 'form' das dependências para evitar re-execuções desnecessárias
+}, [cardType, issuerValue, form]);
 
 
   useEffect(() => {
