@@ -3,46 +3,46 @@ export const CARD_BRANDS = [
   {
     value: 'visa',
     label: 'Visa',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12.2c0-5.5 2.8-6.2 6.2-6.2h1.6v pembayaran-1.2H5.6c-4.4 0-4.4 3.6-4.4 3.6V12.2zm19-4.6c0-1.8-1-2.6-2.8-2.6H11v11.2h2.8V9.6h3.2c2 0 3-1 3-2.8zM22.2 12c0-1.8-1-2.8-3-2.8H16v5.6h3.2c2 0 3-1 3-2.8z"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6.102 6.953c-3.313 0-4.572 1.54-4.572 4.394v.054c0 2.14.912 3.42 2.764 4.045.24.08.48.134.717.188l.24.053-.027-.133c-.107-.563-.267-1.125-.455-1.66l-.268-.746-.267-.027c-.295-.026-.508-.053-.643-.08-.616-.134-1.07-.455-1.07-1.15 0-.59.482-.99 1.15-1.07.214-.027.48-.027.776-.027h.537v-1.123H6.102zM12.93 6.953h-2.51v7.41h2.51c2.43 0 3.937-1.31 3.937-3.704s-1.507-3.706-3.937-3.706zm1.738 3.706c0 1.124-.615 1.765-1.738 1.765h-.59v-3.53h.59c1.123 0 1.738.643 1.738 1.765zM22.427 11.23c0-2.17-1.31-3.623-3.785-3.623h-2.82v7.41h2.82c2.474 0 3.785-1.453 3.785-3.786zm-1.818-.027c0 1.07-.643 1.684-1.967 1.684h-.591V9.546h.59c1.325 0 1.968.617 1.968 1.657z" fill="#142688"/></svg>`
   },
   {
     value: 'mastercard',
     label: 'Mastercard',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#EA001B"/><circle cx="12" cy="12" r="10" fill="#F79E1B" fill-opacity="0.8"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="8.5" cy="12" r="5.5" fill="#EA001B"/><circle cx="15.5" cy="12" r="5.5" fill="#F79E1B"/><path d="M12 8.5a5.5 5.5 0 0 0-3.5 1.458 5.5 5.5 0 0 1 0 4.084A5.5 5.5 0 0 0 12 15.5a5.5 5.5 0 0 0 3.5-1.458 5.5 5.5 0 0 1 0-4.084A5.5 5.5 0 0 0 12 8.5z" fill="#FF5F00"/></svg>`
   },
   {
     value: 'elo',
     label: 'Elo',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="12" r="3" fill="#FFC700"/><circle cx="12" cy="12" r="3" fill="#000000"/><circle cx="17" cy="12" r="3" fill="#E4A025"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="12" r="4.5" fill="#f9b000"/><path d="M12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" fill="#231f20"/><path d="M14.727 7.5a4.5 4.5 0 1 1 0 9" fill="#e8530e"/></svg>`
   },
   {
     value: 'amex',
     label: 'American Express',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#006FCF" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><path d="M7 12h2l1-2 1 2h2m-5 3v-6"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.46.2H1.539C.823.2.2.822.2 1.54v20.92c0 .717.622 1.339 1.339 1.339H22.46c.718 0 1.34-.622 1.34-1.34V1.54c0-.718-.622-1.34-1.34-1.34z" fill="#006FCF"/><path d="M12 12.355h2.366l2.367 4.099H19.5L15.903 10.3l3.6-6.23h-2.766L14.37 8.17l-2.37-4.099H9.231l3.6 6.23-3.6 6.23h2.769l2.366-4.099L12 12.355zm-7.645-.259h3.718v.538H4.355v-.538zm.538 2.693h2.645v.538H4.893v-.538zm-.538-5.385h3.718v.538H4.355V9.404zm.538-2.692h2.645v.538H4.893V6.712z" fill="#fff"/></svg>`
   },
   {
     value: 'hipercard',
     label: 'Hipercard',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#D81C1C" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l-10 10 10 10 10-10-10-10z"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11.95 24l-.195-.002-9.37-8.156L2.31 4.053 11.83.187l9.734 11.72-9.615 12.092zm-.203-1.442L20.08 11.84 11.93 2.11 3.597 12.01l8.15 6.545z" fill="#D81C1C"/><path d="M12 12.007a.64.64 0 0 1-.64-.64V7.57a.64.64 0 1 1 1.28 0v3.796a.64.64 0 0 1-.64.64zm-.008 3.865a.86.86 0 0 1-.86-.86.86.86 0 0 1 .86-.86.86.86 0 0 1 .86.86.86.86 0 0 1-.86.86z" fill="#D81C1C"/></svg>`
   },
   {
     value: 'diners',
     label: 'Diners Club',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#0055A0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v20"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M1.334 12C1.334 6.104 6.103 1.333 12 1.333s10.667 4.771 10.667 10.667-4.771 10.667-10.667 10.667S1.334 17.896 1.334 12Z" fill="#0055A0"/><path d="M12 3a9 9 0 0 0-6.924 14.774A9.003 9.003 0 0 0 12 21a9 9 0 0 0 6.924-14.774A8.997 8.997 0 0 0 12 3Z" fill="#fff"/></svg>`
   },
   {
     value: 'discover',
     label: 'Discover',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FF6000" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6a6 6 0 100 12"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#FF6000"/><path d="M12 20a8 8 0 0 1-3.33-15.35A8 8 0 0 0 12 4a8 8 0 0 1 8 8 8 8 0 0 1-8 8Z" fill="#fff"/></svg>`
   },
   {
     value: 'jcb',
     label: 'JCB',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" fill="#0055A0"/><rect x="4" y="8" width="6" height="8" fill="#D81C1C"/><rect x="14" y="8" width="6" height="8" fill="#36A100"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3.204 19.467h17.592c.621 0 1.14-.384 1.373-.96l1.79-4.508c.192-.48.192-1.02 0-1.5L23.59 7.99c-.23-.576-.752-.96-1.372-.96H3.204c-1.152 0-2.074.96-2.074 2.112v8.208c0 1.152.922 2.112 2.074 2.112z" fill="#0055A0"/><path d="M7.44 14.84V9.16H4.212v5.68h3.228z" fill="#D81C1C"/><path d="M15.42 14.84V9.16h-3.228v5.68H15.42z" fill="#36A100"/><path d="M11.334 14.84l-2.04-2.832c-.096-.132-.216-.216-.36-.216h-1.68v3.048H4.22V9.16h3.42c1.356 0 2.22.84 2.22 2.028 0 .828-.48 1.488-1.224 1.836l2.7 3.816h-3.024zm-3.786-3.816h1.284c.54 0 .864-.3.864-.78 0-.468-.324-.768-.864-.768H7.548v1.548zm12.018 3.816l-2.04-2.832c-.096-.132-.216-.216-.36-.216h-1.68v3.048h-3.036V9.16h3.42c1.356 0 2.22.84 2.22 2.028 0 .828-.48 1.488-1.224 1.836l2.7 3.816H19.77zM15.966 11.024h1.284c.54 0 .864-.3.864-.78 0-.468-.324-.768-.864-.768h-1.284v1.548z" fill="#fff"/></svg>`
   },
   {
     value: 'aura',
     label: 'Aura',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FF8C00" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66-5.66 5.66-5.66-5.66L12 2.69z"/></svg>`
+    icon: `<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m18.42 22.8-6.41-6.42-6.42 6.42L.78 18.01l6.42-6.42L.78 5.18 5.58.39l6.42 6.41L18.42.39l4.79 4.79-6.41 6.42 6.41 6.41-4.8 4.79Z" fill="#FF8C00"/></svg>`
   },
 ];

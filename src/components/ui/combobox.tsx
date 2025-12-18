@@ -56,8 +56,12 @@ export function Combobox({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          <div className="flex items-center">
-            {selectedOption?.icon && <div className="mr-2 h-4 w-4" dangerouslySetInnerHTML={{ __html: selectedOption.icon }} />}
+          <div className="flex items-center gap-2">
+            {selectedOption?.icon && (
+                <div className="flex items-center justify-center w-6 h-4 bg-white/10 rounded-sm p-0.5">
+                    <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: selectedOption.icon }} />
+                </div>
+            )}
             {selectedOption ? selectedOption.label : placeholder}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -84,8 +88,12 @@ export function Combobox({
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                   <div className="flex items-center">
-                    {option.icon && <div className="mr-2 h-4 w-4" dangerouslySetInnerHTML={{ __html: option.icon }} />}
+                   <div className="flex items-center gap-2">
+                    {option.icon && (
+                        <div className="flex items-center justify-center w-6 h-4 bg-white/10 rounded-sm p-0.5">
+                            <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: option.icon }} />
+                        </div>
+                    )}
                     {option.label}
                   </div>
                 </CommandItem>
