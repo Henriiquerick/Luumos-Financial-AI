@@ -11,7 +11,10 @@ import { z } from 'genkit';
 
 const GetDailyInsightInputSchema = z.object({
   analysis: z.string().describe('A brief text analysis of the user\'s current financial situation.'),
-  systemInstruction: z.string().describe('The system instruction that defines the AI personality.'),
+  systemInstruction: z.string()
+    .optional()
+    .default('You are a helpful, witty, and concise financial assistant named Jorgin.')
+    .describe('The system instruction that defines the AI personality.'),
 });
 export type GetDailyInsightInput = z.infer<typeof GetDailyInsightInputSchema>;
 
