@@ -135,6 +135,14 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     }
   }, [cardType, issuerValue]);
 
+  // Limpa os erros de validação quando o tipo de cartão é alterado, ocultando os campos
+  useEffect(() => {
+    if (cardType === 'voucher') {
+      form.clearErrors(['closingDay', 'totalLimit', 'brand']);
+    }
+  }, [cardType, form]);
+
+
   const onSubmit = (values: FormValues) => {
     console.log("Dados submetidos no formulário:", values);
     if (!user || !firestore) return;
@@ -318,3 +326,5 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     </Form>
   );
 }
+
+    
