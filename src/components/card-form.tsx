@@ -45,6 +45,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const { t } = useTranslation();
   // Ref para rastrear se já notificamos a mudança de cor inicial
   const hasNotifiedInitialColor = useRef(false);
+  const isInitialLoad = useRef(true);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -87,30 +88,9 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     return CARD_BRANDS.filter(brand => brand.supportedTypes.includes(cardType));
   }, [cardType]);
 
-  // Lógica de auto-preenchimento de cor e bandeira - CORRIGIDO
-  useEffect(() => {
-    // 1. Trava para Vouchers: Só atualiza a brand se for diferente do issuer
-    if (cardType === 'voucher') {
-      const currentBrand = form.getValues('brand');
-      if (currentBrand !== issuerValue) {
-        form.setValue('brand', issuerValue, { shouldDirty: false });
-      }
-    }
-  
-    // 2. Trava para Cores: Só atualiza se o usuário não mexeu manualmente E se a cor for diferente
-    const issuerData = getIssuer(issuerValue);
-    if (issuerData?.color) {
-      const currentColor = form.getValues('color');
-      const isColorDirty = form.getFieldState('color').isDirty;
-  
-      if (!isColorDirty && currentColor !== issuerData.color) {
-        form.setValue('color', issuerData.color, { shouldDirty: false });
-      }
-    }
-  }, [cardType, issuerValue]); // IMPORTANTE: Removido 'form' das dependências
-
   // Efeito para resetar o formulário quando o cartão muda
   useEffect(() => {
+    isInitialLoad.current = true;
     hasNotifiedInitialColor.current = false;
     
     if (cardToEdit) {
@@ -134,7 +114,35 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         closingDay: '',
       });
     }
+    setTimeout(() => { isInitialLoad.current = false; }, 100);
   }, [cardToEdit?.id]); // IMPORTANTE: Só depende do ID do cartão
+
+  // Lógica de auto-preenchimento de cor e bandeira com TRAVA DE SEGURANÇA
+  useEffect(() => {
+    // 1. Bloqueia se o formulário está carregando ou resetando
+    if (isInitialLoad.current) return;
+  
+    // 2. Lógica para Vouchers: Só atualiza a brand se for diferente do issuer
+    if (cardType === 'voucher') {
+      const currentBrand = form.getValues('brand');
+      if (currentBrand !== issuerValue) {
+        form.setValue('brand', issuerValue, { shouldDirty: false });
+      }
+    }
+  
+    // 3. Lógica para Cores: Auto-Theme
+    const issuerData = getIssuer(issuerValue);
+    const { isDirty } = form.getFieldState('color');
+    const currentColor = form.getValues('color');
+  
+    // Só aplica a cor padrão do banco se:
+    // - O usuário não mexeu manualmente na cor (isDirty é falso)
+    // - A cor atual é diferente da sugerida
+    // - Não estamos em um carregamento inicial de edição
+    if (issuerData?.color && !isDirty && currentColor !== issuerData.color) {
+      form.setValue('color', issuerData.color, { shouldDirty: false });
+    }
+  }, [cardType, issuerValue]);
 
   const onSubmit = (values: FormValues) => {
     if (!user || !firestore) return;
