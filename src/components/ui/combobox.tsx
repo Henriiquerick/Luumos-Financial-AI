@@ -85,7 +85,7 @@ export function Combobox({
                   />
                    <div className="flex items-center gap-2">
                     {option.icon && (
-                       <BrandIcon icon={option.icon} className="mr-2 h-5 w-8 object-contain" />
+                       <BrandIcon icon={option.icon} className="mr-2 h-6 w-10" />
                     )}
                     {option.label}
                   </div>
