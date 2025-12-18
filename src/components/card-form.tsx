@@ -248,6 +248,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 <FormMessage />
               </FormItem>
             )}
+          />
         )}
         
         {cardType !== 'voucher' && (
@@ -324,7 +325,3 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     </Form>
   );
 }
-
-    
-
-    
