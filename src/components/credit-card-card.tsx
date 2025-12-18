@@ -118,11 +118,12 @@ export function CreditCardCard({
 
   const formattedAvailable = formatCurrency(language, usage.availableLimit);
   const formattedTotal = formatCurrency(language, usage.totalLimit);
+  const formattedSpent = formatCurrency(language, usage.spent);
 
   return (
     <>
       <Card
-        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20"
+        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 min-h-[190px]"
         style={{
           backgroundColor: theme.bg,
           color: theme.text,
@@ -204,7 +205,7 @@ export function CreditCardCard({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 mt-8">
-              {card.type !== 'voucher' && (
+              {card.type === 'credit' && (
                 <>
                   <div>
                     <Progress
@@ -220,9 +221,15 @@ export function CreditCardCard({
                   </div>
                 </>
               )}
-               {card.type === 'voucher' && (
+              {card.type === 'voucher' && (
                   <div className="text-sm font-medium">
-                     <p>{getIssuer(card.issuer)?.label}</p>
+                     <p>Saldo: {formattedAvailable}</p>
+                  </div>
+              )}
+               {card.type === 'debit' && (
+                  <div className="text-sm font-medium">
+                     <p>Gasto no mês: {formattedSpent}</p>
+                     <p className='text-xs opacity-70'>{getIssuer(card.issuer)?.label}</p>
                   </div>
                )}
             </CardContent>

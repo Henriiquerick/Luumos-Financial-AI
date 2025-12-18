@@ -26,9 +26,25 @@ const formSchema = z.object({
   type: z.custom<CardType>(v => ['credit', 'debit', 'voucher'].includes(v as string), {
     message: "Selecione o tipo do cartão",
   }),
-  totalLimit: z.coerce.number().positive('Limit must be a positive number.').optional(),
+  totalLimit: z.coerce.number().optional(),
   closingDay: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
+}).refine(data => {
+    if (data.type === 'credit' && (!data.closingDay || Number(data.closingDay) <= 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Closing day is required for Credit Cards.',
+    path: ['closingDay'],
+}).refine(data => {
+    if ((data.type === 'credit' || data.type === 'voucher') && (!data.totalLimit || data.totalLimit <= 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Limit is required for Credit or Voucher cards.',
+    path: ['totalLimit'],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -137,7 +153,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
   // Limpa os erros de validação quando o tipo de cartão é alterado, ocultando os campos
   useEffect(() => {
-    if (cardType === 'voucher') {
+    if (cardType === 'voucher' || cardType === 'debit') {
       form.clearErrors(['closingDay', 'totalLimit', 'brand']);
     }
   }, [cardType, form]);
@@ -149,8 +165,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
     const cardData = {
       ...values,
       brand: values.type === 'voucher' ? values.issuer : values.brand,
-      totalLimit: values.type === 'voucher' ? 0 : Number(values.totalLimit),
-      closingDay: values.type === 'voucher' ? 0 : Number(values.closingDay),
+      totalLimit: (values.type === 'voucher' || values.type === 'credit') ? Number(values.totalLimit) : 0,
+      closingDay: values.type === 'credit' ? Number(values.closingDay) : 0,
     };
     
     if (cardToEdit) {
@@ -230,7 +246,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
           )}
         />
         
-        {cardType !== 'voucher' && (
+        {cardType === 'credit' && (
           <FormField
             control={form.control}
             name="brand"
@@ -251,21 +267,23 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
           />
         )}
         
-        {cardType !== 'voucher' && (
-            <div className="grid grid-cols-2 gap-4">
+        {(cardType === 'credit' || cardType === 'voucher') && (
             <FormField
                 control={form.control}
                 name="totalLimit"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{t.modals.card.fields.limit}</FormLabel>
+                    <FormLabel>{cardType === 'voucher' ? 'Saldo Disponível' : t.modals.card.fields.limit}</FormLabel>
                     <FormControl>
-                    <Input type="number" step="100" {...field} />
+                    <Input type="number" step="100" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
                 )}
             />
+        )}
+
+        {cardType === 'credit' && (
             <FormField
                 control={form.control}
                 name="closingDay"
@@ -294,8 +312,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                 </FormItem>
                 )}
             />
-            </div>
         )}
+        
          <FormField
           control={form.control}
           name="color"
