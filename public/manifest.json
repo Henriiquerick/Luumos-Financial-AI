@@ -1,18 +1,20 @@
+
 {
   "name": "Lucent AI",
-  "short_name": "Lucent",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#00FF88",
+  "short_name": "Lucent AI",
   "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#39FF14",
+  "description": "Your personal AI-powered finance assistant.",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
