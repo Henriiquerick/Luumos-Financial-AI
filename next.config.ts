@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https,',
         hostname: 'seeklogo.com',
         port: '',
         pathname: '/**',
@@ -49,6 +49,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.vectorlogo.zone',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.icons8.com',
         port: '',
         pathname: '/**',
       }
