@@ -21,6 +21,7 @@ import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { parseCurrency } from '@/lib/i18n-utils';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from '@/contexts/language-context';
 
 const formSchema = z.object({
   amount: z.coerce.number().positive('O valor deve ser positivo.'),
@@ -39,6 +40,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { language } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,7 +97,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
                       inputMode="decimal"
                       placeholder="R$ 0,00"
                       value={value || ''}
-                      onChange={e => onChange(parseCurrency(e.target.value))}
+                      onChange={e => onChange(parseCurrency(e.target.value, language))}
                       {...rest}
                     />
                   </FormControl>

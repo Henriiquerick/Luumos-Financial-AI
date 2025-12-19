@@ -78,28 +78,40 @@ export function formatMonth(language: Language, monthKey: string): string {
 }
 
 /**
- * Parses a currency input string (like "1.500,50" or "1500.50") into a number.
+ * Parses a currency input string (like "1,500.50" or "1.500,50") into a number.
  * @param value The string value from a currency input.
+ * @param lang The current language to determine decimal separators.
  * @returns A numeric representation of the currency value.
  */
-export function parseCurrency(value: string | number): number {
+export function parseCurrency(value: string | number, lang: Language): number {
   if (typeof value === 'number') {
     return value;
   }
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' || value.trim() === '') {
     return 0;
   }
 
-  // Remove all characters except digits, comma, and period
+  // Remove currency symbols and non-numeric characters except for comma and period
   const cleanedValue = value.replace(/[^0-9,.]/g, '');
 
-  // If the string contains a comma, assume it's the decimal separator
-  if (cleanedValue.includes(',')) {
-    // Remove periods (as thousand separators) and replace comma with a period
-    const normalizedValue = cleanedValue.replace(/\./g, '').replace(',', '.');
-    return parseFloat(normalizedValue) || 0;
+  let decimalSeparator: string;
+  let thousandSeparator: string;
+
+  // Determine separators based on language
+  if (lang === 'pt' || lang === 'es') {
+      decimalSeparator = ',';
+      thousandSeparator = '.';
+  } else { // 'en' and default
+      decimalSeparator = '.';
+      thousandSeparator = ',';
   }
+
+  // Remove thousand separators
+  const withoutThousands = cleanedValue.replace(new RegExp(`\\${thousandSeparator}`, 'g'), '');
   
-  // If no comma, assume the period is the decimal separator (standard format)
-  return parseFloat(cleanedValue) || 0;
+  // Replace decimal separator with a period for parseFloat
+  const normalizedValue = withoutThousands.replace(decimalSeparator, '.');
+
+  const parsed = parseFloat(normalizedValue);
+  return isNaN(parsed) ? 0 : parsed;
 }

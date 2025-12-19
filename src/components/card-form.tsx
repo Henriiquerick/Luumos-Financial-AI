@@ -80,7 +80,7 @@ interface CardFormProps {
 export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const isInitialLoad = useRef(true);
   const hasNotifiedInitialColor = useRef(false);
 
@@ -320,7 +320,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                         type="text"
                         inputMode="decimal"
                         value={value ?? ''}
-                        onChange={e => onChange(parseCurrency(e.target.value))}
+                        onChange={e => onChange(parseCurrency(e.target.value, language))}
                         {...rest}
                       />
                     </FormControl>

@@ -323,7 +323,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     inputMode="decimal"
                     value={value || ''}
                     {...rest}
-                    onChange={e => onChange(parseCurrency(e.target.value))}
+                    onChange={e => onChange(parseCurrency(e.target.value, language))}
                   />
                 </FormControl>
                 <FormMessage />
