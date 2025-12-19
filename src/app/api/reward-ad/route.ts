@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse } from 'next/server';
 import { getFirestore, doc, Timestamp, increment, runTransaction, type Transaction as FirestoreTransaction } from 'firebase-admin/firestore';
 import { initAdmin } from '@/firebase/admin';
@@ -69,7 +71,7 @@ export async function POST(req: Request) {
     const { newCreditBalance, adsWatchedNow } = await runTransaction(db, async (transaction) => {
         const [userDoc, subscriptionDoc] = await transaction.getAll(userRef, subscriptionRef);
 
-        if (!userDoc.exists) {
+        if (!userDoc.exists()) {
             throw new Error("User profile not found");
         }
 
@@ -128,7 +130,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: 'An internal server error occurred.' }, 
+      { error: error.message || 'An internal server error occurred.' }, 
       { status: 500 }
     );
   }
