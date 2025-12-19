@@ -152,7 +152,7 @@ export function CreditCardCard({
             )}
 
             {brandData?.icon && (
-                <div className="absolute top-4 right-6 h-8 w-12">
+                <div className="absolute top-4 right-14 h-8 w-12">
                     <BrandIcon icon={brandData.icon} className="h-full w-full" />
                 </div>
             )}
