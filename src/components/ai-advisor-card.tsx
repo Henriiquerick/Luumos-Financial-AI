@@ -6,14 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star } from 'lucide-react';
+import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star, AlertCircle } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel, ChatMessage, ChatSession } from '@/lib/types';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useTranslation } from '@/contexts/language-context';
-import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc } from 'firebase/firestore';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface AiAdvisorCardProps {
@@ -31,6 +31,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
+
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
@@ -52,6 +54,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     } else {
       setMessages([]);
     }
+     setChatError(null);
   }, [activeSessionId, chatSessions]);
 
   const handleSendMessage = async () => {
@@ -61,6 +64,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setIsLoading(true);
+    setChatError(null);
+
 
     let currentSessionId = activeSessionId;
 
@@ -97,15 +102,27 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
+          userId: user.uid, // Passar o userId para a API
           messages: [...messages, userMessage],
           data: contextData,
         }),
       });
-
-      if (!response.ok) throw new Error('Failed to get a response from the AI.');
       
       const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 403 && result.code === '403_INSUFFICIENT_CREDITS') {
+            setChatError("Você atingiu seu limite diário de mensagens. Faça upgrade para PRO para continuar.");
+        } else {
+            throw new Error(result.error || 'Failed to get a response from the AI.');
+        }
+        setIsLoading(false);
+        // Remove a última mensagem do usuário da UI se a chamada falhar
+        setMessages(prev => prev.slice(0, -1));
+        return;
+      }
+      
       const modelMessage: ChatMessage = { role: 'model', content: result.text, timestamp: Timestamp.now() };
 
       // 3. Save AI response
@@ -129,11 +146,12 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, chatError]);
 
   const handleStartNewSession = () => {
     setActiveSessionId(null);
     setMessages([]);
+    setChatError(null);
   };
   
   const handlePersonalityChange = (id: string) => {
@@ -282,6 +300,12 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                      </div>
                   </div>
               )}
+              {chatError && (
+                 <div className="flex items-center gap-3 justify-center p-3 bg-destructive/20 text-destructive border border-destructive/50 rounded-lg">
+                    <AlertCircle className="h-5 w-5"/>
+                    <p className="text-sm font-medium">{chatError}</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
 
@@ -304,7 +328,3 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </div>
   );
 }
-
-    
-
-    

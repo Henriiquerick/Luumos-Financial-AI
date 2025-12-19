@@ -133,6 +133,15 @@
         },
         "company": {
             "type": "string"
+        },
+        "dailyCredits": {
+            "type": "number",
+            "description": "Number of daily AI interactions remaining."
+        },
+        "lastCreditReset": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the last daily credit reset."
         }
       },
       "required": [
@@ -260,7 +269,7 @@
         "properties": {
             "plan": {
                 "type": "string",
-                "enum": ["free", "pro"],
+                "enum": ["free", "pro", "gold"],
                 "description": "The current subscription plan of the user."
             },
             "isActive": {

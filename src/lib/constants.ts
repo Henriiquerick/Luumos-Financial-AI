@@ -2,6 +2,12 @@
 import type { TransactionCategory } from '@/lib/types';
 import type { Language } from './translations';
 
+export const PLAN_LIMITS: Record<string, number> = {
+    free: 15,
+    pro: 45,
+    gold: 45, // Adicionando o plano gold conforme solicitado
+};
+
 export const CATEGORIES_OLD: TransactionCategory[] = [
   'Groceries',
   'Dining',

@@ -76,6 +76,8 @@ export type UserProfile = {
   city?: string;
   jobTitle?: string;
   company?: string;
+  dailyCredits: number;
+  lastCreditReset: Date | Timestamp;
 };
 
 export type CustomCategory = {
@@ -112,7 +114,7 @@ export interface ChatSession {
 
 export interface Subscription {
     id: string;
-    plan: 'free' | 'pro';
+    plan: 'free' | 'pro' | 'gold';
     isActive: boolean;
     validUntil: Timestamp | null;
 }
