@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useUser, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useUser, deleteDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import type { CustomCategory } from '@/lib/types';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { CategoryForm } from './category-form';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
@@ -28,7 +28,7 @@ export function ManageCategoriesDialog({ isOpen, setIsOpen }: ManageCategoriesDi
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const categoriesRef = collection(firestore, 'users', user?.uid || 'null', 'custom_categories');
+  const categoriesRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'custom_categories') : null, [firestore, user]);
   const { data: categories, isLoading } = useCollection<CustomCategory>(categoriesRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
