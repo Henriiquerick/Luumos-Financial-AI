@@ -12,7 +12,7 @@ import { PlusCircle, History } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
@@ -26,6 +26,7 @@ import { getDateFromTimestamp } from '@/lib/finance-utils';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { ToastAction } from '@/components/ui/toast';
 
 const InstallmentTunnelChart = dynamic(
   () => import('@/components/installment-tunnel-chart').then(mod => mod.InstallmentTunnelChart),
@@ -162,6 +163,23 @@ export default function Dashboard() {
     setIsTransactionDialogOpen(true);
   };
   
+    const handleUndoDelete = (deletedTransactions: Transaction[]) => {
+        if (!user || !firestore) return;
+        const batch = writeBatch(firestore);
+        deletedTransactions.forEach(t => {
+            const docRef = doc(firestore, 'users', user.uid, 'transactions', t.id);
+            // We need to convert date back to Timestamp for Firestore
+            const firestoreTransaction = { ...t, date: new Date(t.date) }; 
+            batch.set(docRef, firestoreTransaction);
+        });
+        batch.commit().then(() => {
+            toast({ title: "Restaurado!", description: "A transação foi restaurada." });
+        }).catch(err => {
+            console.error("Error undoing delete:", err);
+            toast({ title: "Erro", description: "Não foi possível restaurar a transação.", variant: "destructive" });
+        });
+    };
+
   const handleDeleteTransaction = async (transactionToDelete: Transaction) => {
     if (!user || !firestore) return;
   
@@ -172,8 +190,9 @@ export default function Dashboard() {
   
     if (window.confirm(confirmationMessage)) {
       try {
+        const transactionsToDelete: Transaction[] = [];
+
         if (isInstallment && transactionToDelete.installmentId) {
-          // Lógica para excluir todas as parcelas futuras
           const batch = writeBatch(firestore);
           const installmentsQuery = query(
             collection(firestore, 'users', user.uid, 'transactions'),
@@ -183,15 +202,24 @@ export default function Dashboard() {
   
           const querySnapshot = await getDocs(installmentsQuery);
           querySnapshot.forEach(doc => {
+            transactionsToDelete.push({ id: doc.id, ...doc.data() } as Transaction);
             batch.delete(doc.ref);
           });
   
           await batch.commit();
-          toast({ title: "Parcelas Excluídas", description: "A transação e suas parcelas futuras foram removidas." });
+          toast({ 
+              title: "Parcelas Excluídas", 
+              description: "A transação e suas parcelas futuras foram removidas.",
+              action: <ToastAction altText="Desfazer" onClick={() => handleUndoDelete(transactionsToDelete)}>Desfazer</ToastAction>
+          });
         } else {
-          // Lógica para excluir uma única transação
+          transactionsToDelete.push(transactionToDelete);
           await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionToDelete.id));
-          toast({ title: t.toasts.transaction_deleted.title, description: t.toasts.transaction_deleted.description });
+          toast({ 
+              title: t.toasts.transaction_deleted.title, 
+              description: t.toasts.transaction_deleted.description,
+              action: <ToastAction altText="Desfazer" onClick={() => handleUndoDelete(transactionsToDelete)}>Desfazer</ToastAction>
+          });
         }
       } catch (error) {
         console.error("Error deleting transaction(s): ", error);
