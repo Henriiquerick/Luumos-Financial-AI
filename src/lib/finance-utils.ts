@@ -1,3 +1,4 @@
+
 import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, getDate, subMonths, endOfMonth, format } from 'date-fns';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -95,35 +96,41 @@ export function calculateCardBillProjection(
     if (!t.cardId || t.type !== 'expense') return; // Only card expenses
     
     const card = cards.find(c => c.id === t.cardId);
-    // If card is not found or has no closing day, we can't process it.
     if (!card || !card.closingDay) return;
 
     const transactionDate = getDateFromTimestamp(t.date);
     const transactionDay = getDate(transactionDate);
 
-    // 3. Determine the correct bill month based on closing day
-    let billDate;
+    // 3. Determine the correct bill month for the transaction based on closing day
+    let firstBillDate;
     if (transactionDay > card.closingDay) {
-      // If purchase is after closing day, it falls into next month's bill
-      billDate = addMonths(transactionDate, 1);
+      // If purchase is after closing day, it falls into the next month's bill
+      firstBillDate = addMonths(transactionDate, 1);
     } else {
       // Otherwise, it's in the current month's bill
-      billDate = transactionDate;
+      firstBillDate = transactionDate;
     }
     
-    // For installment purchases, project each installment
-    const installmentCount = t.installments || 1;
-    const installmentAmount = t.amount / installmentCount;
+    // For single purchases, just add the amount to the correct bill month.
+    const isInstallment = t.installments && t.installments > 1;
+    
+    if (!isInstallment) {
+      const monthKey = format(startOfMonth(firstBillDate), 'yyyy-MM');
+      if (monthKey in monthlyBills) {
+        monthlyBills[monthKey][card.name] += t.amount;
+      }
+    } else {
+      // For installment purchases, the amount is already the value of ONE installment.
+      const installmentAmount = t.amount; // The amount is already the monthly value
+      const totalInstallments = t.installments || 1;
 
-    for (let i = 0; i < installmentCount; i++) {
-        // The bill for each installment is shifted by i months from the first bill date
-        const installmentBillDate = addMonths(billDate, i);
-        const monthKey = format(startOfMonth(installmentBillDate), 'yyyy-MM');
-
-        // Add to the bill only if the month is within our projection window
-        if (monthKey in monthlyBills) {
-            monthlyBills[monthKey][card.name] += installmentAmount;
-        }
+      // This logic assumes that when a user creates 'N' installments,
+      // 'N' separate transaction documents are created in Firestore, each representing one month.
+      // So, we just need to place this single transaction's amount in the correct bill.
+      const monthKey = format(startOfMonth(firstBillDate), 'yyyy-MM');
+      if (monthKey in monthlyBills) {
+          monthlyBills[monthKey][card.name] += installmentAmount;
+      }
     }
   });
 

@@ -18,7 +18,7 @@ import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, Timestamp, doc } from 'firebase/firestore';
+import { collection, Timestamp, doc, writeBatch } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { DatePicker } from './ui/date-picker';
@@ -164,7 +164,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
   }, [transactionType, setValue]);
 
 
-  function onSubmit(values: FormValues) {
+  async function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
     
     const formattedAmount = formatCurrency(language, values.amount);
@@ -183,7 +183,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
       if (values.type === 'expense' && values.paymentMethod === 'card') {
         dataToUpdate.cardId = values.cardId;
       } else {
-        dataToUpdate.cardId = undefined; // Explicitly remove for non-card expenses/incomes
+        delete dataToUpdate.cardId;
       }
       
       updateDocumentNonBlocking(transactionRef, dataToUpdate);
@@ -195,11 +195,13 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
       const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
 
       if (values.isInstallment && isCardPayment && values.installments) {
+        const batch = writeBatch(firestore);
         const installmentId = crypto.randomUUID();
         const installmentAmount = values.amount / values.installments;
 
         for (let i = 0; i < values.installments; i++) {
-          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp } = {
+          const newDocRef = doc(transactionsRef); // Generate a new doc ref for each installment
+          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any } = {
             description: `${values.description} (${i + 1}/${values.installments})`,
             amount: installmentAmount,
             category: values.category,
@@ -208,9 +210,12 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
             installments: values.installments,
             installmentId: installmentId,
             cardId: values.cardId,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
           };
-          addDocumentNonBlocking(transactionsRef, transactionData);
+          batch.set(newDocRef, transactionData);
         }
+        await batch.commit();
         toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
       } else { 
         const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string } = {
@@ -288,16 +293,16 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
           <FormField
             control={control}
             name="amount"
-            render={({ field: { onChange, ...rest } }) => (
+            render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
                 <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
                   <Input 
                     type="text" 
                     inputMode="decimal"
+                    value={value || ''}
                     {...rest}
                     onChange={e => onChange(parseCurrency(e.target.value))}
-                    readOnly={isInstallment} 
                   />
                 </FormControl>
                 <FormMessage />
@@ -354,7 +359,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment || !!transactionToEdit}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
@@ -376,7 +381,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment || !!transactionToEdit}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
