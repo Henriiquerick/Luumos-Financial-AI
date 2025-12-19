@@ -68,7 +68,9 @@ export function formatMonth(language: Language, monthKey: string): string {
     const locale = locales[language] || enUS;
     try {
         const date = parse(monthKey, 'yyyy-MM', new Date());
-        return fnsFormat(date, 'MMM/yy', { locale });
+        // Use MMM/yy for consistency, avoids full month name
+        const formatString = language === 'pt' ? 'MMM/yy' : 'MMM/yy';
+        return fnsFormat(date, formatString, { locale });
     } catch (e) {
         console.error("Error formatting month:", e);
         return monthKey;

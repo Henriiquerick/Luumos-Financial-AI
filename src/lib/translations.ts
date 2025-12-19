@@ -16,6 +16,11 @@ export const TRANSLATIONS = {
       daily_insight: 'Daily Insight',
       insight_error: '({personalityName}): The market is volatile, but I am watching. Try again later.',
     },
+    theme: {
+        light: 'Light',
+        dark: 'Dark',
+        system: 'System',
+    },
     transaction: {
       header: 'Transaction',
       date: 'Date',
@@ -179,6 +184,11 @@ export const TRANSLATIONS = {
       daily_insight: 'Insight Diário',
       insight_error: '({personalityName}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.',
     },
+    theme: {
+        light: 'Claro',
+        dark: 'Escuro',
+        system: 'Sistema',
+    },
     transaction: {
       header: 'Transação',
       date: 'Data',
@@ -341,6 +351,11 @@ export const TRANSLATIONS = {
       installment_subtitle: 'Las facturas de tu tarjeta de crédito proyectadas para los próximos 6 meses.',
       daily_insight: 'Insight Diario',
       insight_error: '({personalityName}): El mercado está volátil, pero estoy atento. Inténtalo de nuevo más tarde.',
+    },
+    theme: {
+        light: 'Claro',
+        dark: 'Oscuro',
+        system: 'Sistema',
     },
     transaction: {
       header: 'Transacción',
