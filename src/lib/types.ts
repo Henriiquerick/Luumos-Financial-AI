@@ -60,6 +60,7 @@ export type CreditCard = {
   totalLimit: number;
   color: string;
   closingDay: number;
+  dueDay: number; // Dia do vencimento
   expiryDate: string;
 };
 

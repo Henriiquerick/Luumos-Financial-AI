@@ -29,6 +29,7 @@ const formSchema = z.object({
   }),
   totalLimit: z.coerce.number().optional(),
   closingDay: z.string().optional(),
+  dueDay: z.string().optional(),
   expiryDate: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color.'),
 }).refine(data => {
@@ -39,6 +40,14 @@ const formSchema = z.object({
 }, {
     message: 'Closing day is required for Credit Cards.',
     path: ['closingDay'],
+}).refine(data => {
+    if (data.type === 'credit' && (!data.dueDay || Number(data.dueDay) <= 0)) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Due day is required for Credit Cards.',
+    path: ['dueDay'],
 }).refine(data => {
     if ((data.type === 'credit' || data.type === 'voucher') && (!data.totalLimit || data.totalLimit <= 0)) {
         return false;
@@ -84,6 +93,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       type: 'credit',
       totalLimit: 1000,
       closingDay: '', 
+      dueDay: '',
       expiryDate: '',
       color: '#333333',
     },
@@ -128,7 +138,8 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         type: cardToEdit.type,
         totalLimit: Number(cardToEdit.totalLimit),
         color: cardToEdit.color,
-        closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '', 
+        closingDay: cardToEdit.closingDay ? String(cardToEdit.closingDay) : '',
+        dueDay: cardToEdit.dueDay ? String(cardToEdit.dueDay) : '',
         expiryDate: cardToEdit.expiryDate || '',
       });
     } else {
@@ -140,6 +151,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         totalLimit: 1000,
         color: '#333333',
         closingDay: '',
+        dueDay: '',
         expiryDate: '',
       });
     }
@@ -169,7 +181,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   // Limpa os erros de validação quando o tipo de cartão é alterado
   useEffect(() => {
     if (cardType === 'voucher' || cardType === 'debit') {
-      form.clearErrors(['closingDay', 'totalLimit', 'brand', 'expiryDate']);
+      form.clearErrors(['closingDay', 'dueDay', 'totalLimit', 'brand', 'expiryDate']);
     }
      if (cardType === 'voucher') {
       form.clearErrors(['expiryDate']);
@@ -185,6 +197,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       brand: values.type === 'voucher' ? values.issuer : values.brand,
       totalLimit: (values.type === 'voucher' || values.type === 'credit') ? Number(values.totalLimit) : 0,
       closingDay: values.type === 'credit' ? Number(values.closingDay) : 0,
+      dueDay: values.type === 'credit' ? Number(values.dueDay) : 0,
       expiryDate: (values.type === 'credit' || values.type === 'debit') ? values.expiryDate! : '',
     };
     
@@ -192,7 +205,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
       const cardRef = doc(firestore, 'users', user.uid, 'cards', cardToEdit.id);
       const updatedCard = { ...cardToEdit, ...cardData };
       updateDocumentNonBlocking(cardRef, cardData as any);
-      onSave(updatedCard);
+      onSave(updatedCard as CreditCard);
     } else {
       const cardsRef = collection(firestore, 'users', user.uid, 'cards');
       addDocumentNonBlocking(cardsRef, cardData);
@@ -319,6 +332,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         
         <div className="grid grid-cols-2 gap-4">
             {cardType === 'credit' && (
+              <>
                 <FormField
                     control={form.control}
                     name="closingDay"
@@ -347,6 +361,35 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                     </FormItem>
                     )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="dueDay"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{t.modals.card.fields.dueDay}</FormLabel>
+                        <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value} 
+                        key={field.value}
+                        >
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder={t.modals.card.fields.dayPlaceholder} />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <SelectItem key={day} value={String(day)}>
+                                {day}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </>
             )}
 
             {(cardType === 'credit' || cardType === 'debit') && (

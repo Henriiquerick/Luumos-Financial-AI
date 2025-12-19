@@ -81,14 +81,20 @@
           "type": "string"
         },
         "closingDay": {
-          "type": "number"
+          "type": "number",
+          "description": "The closing day of the card's billing cycle."
+        },
+        "dueDay": {
+          "type": "number",
+          "description": "The due day of the card's bill payment."
         }
       },
       "required": [
         "name",
         "totalLimit",
         "color",
-        "closingDay"
+        "closingDay",
+        "dueDay"
       ]
     },
     "UserProfile": {

@@ -80,7 +80,7 @@ export function calculateCardBillProjection(
   const today = startOfToday();
   const monthlyBills: { [monthKey: string]: { [cardName: string]: number } } = {};
 
-  // Initialize months and card totals for each month
+  // 1. Initialize months and card totals for each month
   for (let i = 0; i < projectionMonths; i++) {
     const month = startOfMonth(addMonths(today, i));
     const monthKey = format(month, 'yyyy-MM'); // Use a sortable format
@@ -90,24 +90,44 @@ export function calculateCardBillProjection(
     });
   }
 
-  // Process each transaction
+  // 2. Process each transaction
   transactions.forEach(t => {
-    // We only care about card expenses
-    if (!t.cardId || t.type !== 'expense') return;
+    if (!t.cardId || t.type !== 'expense') return; // Only card expenses
     
     const card = cards.find(c => c.id === t.cardId);
-    if (!card) return;
+    // If card is not found or has no closing day, we can't process it.
+    if (!card || !card.closingDay) return;
 
-    const billMonth = startOfMonth(getDateFromTimestamp(t.date));
-    const monthKey = format(billMonth, 'yyyy-MM');
+    const transactionDate = getDateFromTimestamp(t.date);
+    const transactionDay = getDate(transactionDate);
 
-    // Add to the bill only if the month is within our projection window
-    if (monthKey in monthlyBills) {
-        monthlyBills[monthKey][card.name] += t.amount;
+    // 3. Determine the correct bill month based on closing day
+    let billDate;
+    if (transactionDay > card.closingDay) {
+      // If purchase is after closing day, it falls into next month's bill
+      billDate = addMonths(transactionDate, 1);
+    } else {
+      // Otherwise, it's in the current month's bill
+      billDate = transactionDate;
+    }
+    
+    // For installment purchases, project each installment
+    const installmentCount = t.installments || 1;
+    const installmentAmount = t.amount / installmentCount;
+
+    for (let i = 0; i < installmentCount; i++) {
+        // The bill for each installment is shifted by i months from the first bill date
+        const installmentBillDate = addMonths(billDate, i);
+        const monthKey = format(startOfMonth(installmentBillDate), 'yyyy-MM');
+
+        // Add to the bill only if the month is within our projection window
+        if (monthKey in monthlyBills) {
+            monthlyBills[monthKey][card.name] += installmentAmount;
+        }
     }
   });
 
-  // Convert the aggregated data into the format required by the chart
+  // 4. Convert the aggregated data into the format required by the chart
   return Object.entries(monthlyBills).map(([name, bills]) => {
     const monthData: { [key: string]: string | number } = { name };
     let totalOfMonth = 0;
