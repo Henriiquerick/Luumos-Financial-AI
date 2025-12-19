@@ -1,38 +1,39 @@
 
-import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { credential } from 'firebase-admin';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 
-// IMPORTANT: Do not enable this in a production environment.
-// This is a security risk and should only be used for local development.
-// process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";
-
-let serviceAccount: any = null;
-
-if (process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-    try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_PRIVATE_KEY);
-    } catch (error) {
-        console.error("Error parsing FIREBASE_ADMIN_PRIVATE_KEY:", error);
-        // Set serviceAccount to null if parsing fails to prevent further errors
-        serviceAccount = null; 
-    }
-}
-
-
+// Função Singleton para garantir que só inicializamos uma vez
 export function initAdmin(): App {
+  // Se já tiver uma instância rodando, devolve ela (evita erro de duplicidade)
   if (getApps().length > 0) {
     return getApps()[0];
   }
 
-  // This check now happens at runtime when initAdmin is called, not at build time.
-  if (!serviceAccount) {
-    // Log a more informative message for developers
-    console.error("Firebase Admin SDK is not initialized. The service account key is missing or invalid. Check your FIREBASE_ADMIN_PRIVATE_KEY environment variable.");
-    throw new Error('Firebase Admin initialization failed.');
+  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+  if (!serviceAccountKey) {
+    console.error("FATAL: Variável FIREBASE_SERVICE_ACCOUNT_KEY não encontrada no .env");
+    throw new Error('A configuração do servidor Firebase está ausente.');
   }
 
-  return initializeApp({
-    credential: credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id,
-  });
+  try {
+    // 1. Parseia o JSON (se vier como string do .env)
+    const serviceAccount = JSON.parse(serviceAccountKey);
+
+    // 2. CORREÇÃO CRÍTICA DE QUEBRA DE LINHA
+    // Transforma os "\\n" literais em quebras de linha reais que o Node entende
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
+    // 3. Inicializa
+    return initializeApp({
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.project_id,
+    });
+    
+  } catch (error: any) {
+    console.error('Erro CRÍTICO ao inicializar Firebase Admin:', error.message);
+    // Relança o erro para a API pegar, mas com uma mensagem mais amigável
+    throw new Error(`Falha na inicialização do serviço de backend: ${error.message}`);
+  }
 }
