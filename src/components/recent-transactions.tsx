@@ -13,7 +13,7 @@ import { formatDate, formatCurrency } from '@/lib/i18n-utils';
 interface RecentTransactionsProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
-  onDelete: (transactionId: string) => void;
+  onDelete: (transaction: Transaction) => void;
 }
 
 export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTransactionsProps) {
@@ -68,7 +68,7 @@ export function RecentTransactions({ transactions, onEdit, onDelete }: RecentTra
                     <Button variant="ghost" size="icon" onClick={() => onEdit(t)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDelete(t.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(t)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TableCell>

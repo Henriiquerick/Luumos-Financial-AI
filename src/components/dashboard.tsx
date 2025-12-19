@@ -13,7 +13,7 @@ import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
@@ -162,14 +162,39 @@ export default function Dashboard() {
     setIsTransactionDialogOpen(true);
   };
   
-  const handleDeleteTransaction = async (transactionId: string) => {
+  const handleDeleteTransaction = async (transactionToDelete: Transaction) => {
     if (!user || !firestore) return;
-    if (window.confirm(t.modals.delete_transaction.confirmation)) {
+  
+    const isInstallment = transactionToDelete.installments && transactionToDelete.installments > 1;
+    const confirmationMessage = isInstallment
+      ? "Esta é uma compra parcelada. Deseja excluir esta e todas as parcelas futuras?"
+      : t.modals.delete_transaction.confirmation;
+  
+    if (window.confirm(confirmationMessage)) {
       try {
-        await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionId));
-        toast({ title: t.toasts.transaction_deleted.title, description: t.toasts.transaction_deleted.description });
+        if (isInstallment && transactionToDelete.installmentId) {
+          // Lógica para excluir todas as parcelas futuras
+          const batch = writeBatch(firestore);
+          const installmentsQuery = query(
+            collection(firestore, 'users', user.uid, 'transactions'),
+            where('installmentId', '==', transactionToDelete.installmentId),
+            where('date', '>=', transactionToDelete.date)
+          );
+  
+          const querySnapshot = await getDocs(installmentsQuery);
+          querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+  
+          await batch.commit();
+          toast({ title: "Parcelas Excluídas", description: "A transação e suas parcelas futuras foram removidas." });
+        } else {
+          // Lógica para excluir uma única transação
+          await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionToDelete.id));
+          toast({ title: t.toasts.transaction_deleted.title, description: t.toasts.transaction_deleted.description });
+        }
       } catch (error) {
-        console.error("Error deleting transaction: ", error);
+        console.error("Error deleting transaction(s): ", error);
         toast({ title: t.toasts.error.title, description: t.toasts.error.description, variant: 'destructive' });
       }
     }
