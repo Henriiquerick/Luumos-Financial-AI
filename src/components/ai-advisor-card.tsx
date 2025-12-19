@@ -221,7 +221,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             <div>
               <label className="text-sm font-medium">{t.chat.support_level}</label>
               <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
-                <SelectTrigger className="w-full mt-1 text-xs">
+                <SelectTrigger className="w-full mt-1 text-xs h-10">
                   <SelectValue placeholder="Select a level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,7 +234,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             <div>
               <label className="text-sm font-medium">{t.chat.personality}</label>
               <Select value={personality.id} onValueChange={handlePersonalityChange}>
-                <SelectTrigger className="w-full mt-1 text-xs">
+                <SelectTrigger className="w-full mt-1 text-xs h-10">
                   <SelectValue placeholder="Select a personality" />
                 </SelectTrigger>
                 <SelectContent>
