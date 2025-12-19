@@ -82,7 +82,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         isInstallment: (transactionToEdit.installments || 1) > 1,
         installments: transactionToEdit.installments,
         paymentMethod: isCard ? 'card' : 'cash',
-        cardId: transactionToEdit.cardId,
+        cardId: transactionToEdit.cardId || undefined,
       });
     } else {
       reset({
@@ -93,11 +93,11 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         category: 'Other',
         isInstallment: false,
         installments: 2,
-        paymentMethod: 'cash',
-        cardId: undefined
+        paymentMethod: creditCards.length > 0 ? 'card' : 'cash',
+        cardId: creditCards.length > 0 ? creditCards[0].id : undefined
       });
     }
-  }, [transactionToEdit, reset]);
+  }, [transactionToEdit, reset, creditCards]);
 
 
   const isInstallment = watch('isInstallment');
@@ -184,7 +184,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       if (values.type === 'expense' && values.paymentMethod === 'card') {
         dataToUpdate.cardId = values.cardId;
       } else {
-        delete dataToUpdate.cardId;
+        dataToUpdate.cardId = undefined;
       }
       
       updateDocumentNonBlocking(transactionRef, dataToUpdate);
@@ -402,7 +402,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment || !!transactionToEdit}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment || !!transactionToEdit}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
@@ -470,3 +470,5 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
+
+    
