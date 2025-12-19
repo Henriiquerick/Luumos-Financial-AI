@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -88,7 +88,7 @@ export function AdSimulatorModal({ isOpen, onClose, onReward, isLoading, showCon
 }
 
 // Customization to DialogContent to allow hiding the close button
-const OriginalDialogContent = DialogContent;
+const OriginalDialogContent = Dialog.Content;
 const NewDialogContent = React.forwardRef<
   React.ElementRef<typeof OriginalDialogContent>,
   React.ComponentPropsWithoutRef<typeof OriginalDialogContent> & { hideCloseButton?: boolean }
@@ -116,4 +116,5 @@ NewDialogContent.displayName = "DialogContent";
 
 // Replace DialogContent with our new version
 (Dialog as any).Content = NewDialogContent;
+
 
