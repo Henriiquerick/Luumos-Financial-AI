@@ -120,13 +120,15 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
           <FormField
             control={form.control}
             name="currentAmount"
-            render={({ field: { onChange, ...rest } }) => (
+            render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
                 <FormLabel>Valor Atual</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     inputMode="decimal"
+                    placeholder="R$ 0,00"
+                    value={value ?? ''}
                     onChange={e => onChange(parseCurrency(e.target.value))}
                     {...rest}
                   />
@@ -138,13 +140,15 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
           <FormField
             control={form.control}
             name="targetAmount"
-            render={({ field: { onChange, ...rest } }) => (
+            render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
                 <FormLabel>Valor Alvo</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     inputMode="decimal"
+                    placeholder="R$ 1.000,00"
+                    value={value ?? ''}
                     onChange={e => onChange(parseCurrency(e.target.value))}
                     {...rest}
                   />

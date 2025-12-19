@@ -23,7 +23,7 @@ import { parseCurrency } from '@/lib/i18n-utils';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  amount: z.coerce.number().positive('Amount must be positive.'),
+  amount: z.coerce.number().positive('O valor deve ser positivo.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,7 +86,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
             <FormField
               control={form.control}
               name="amount"
-              render={({ field: { onChange, ...rest } }) => (
+              render={({ field: { onChange, value, ...rest } }) => (
                 <FormItem>
                   <FormLabel>Valor a Adicionar</FormLabel>
                   <FormControl>
@@ -94,6 +94,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
                       type="text"
                       inputMode="decimal"
                       placeholder="R$ 0,00"
+                      value={value || ''}
                       onChange={e => onChange(parseCurrency(e.target.value))}
                       {...rest}
                     />
