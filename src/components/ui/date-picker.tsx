@@ -71,21 +71,20 @@ export function DatePicker({ value, onChange, className, placeholder = "DD/MM/AA
   };
 
   return (
-    <div className={cn("relative w-full", className)}>
-        <Input
-            type="text"
-            placeholder={placeholder}
-            value={inputValue}
-            onChange={handleInputChange}
-            className="pr-10" // Adiciona espaço para o ícone
-        />
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <div className={cn("relative flex items-center w-full", className)}>
+            <Input
+                type="text"
+                placeholder={placeholder}
+                value={inputValue}
+                onChange={handleInputChange}
+                className="pr-10 rounded-r-none" 
+            />
             <PopoverTrigger asChild>
                 <Button
-                    variant={"ghost"}
-                    size="icon"
+                    variant={"outline"}
                     className={cn(
-                        "absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground",
+                        "w-auto rounded-l-none border-l-0",
                         !value && "text-muted-foreground"
                     )}
                     aria-label="Abrir calendário"
@@ -93,18 +92,18 @@ export function DatePicker({ value, onChange, className, placeholder = "DD/MM/AA
                     <CalendarIcon className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    selected={value}
-                    onSelect={handleCalendarSelect}
-                    initialFocus
-                    captionLayout="dropdown-buttons"
-                    fromYear={1900}
-                    toYear={currentYear}
-                />
-            </PopoverContent>
-        </Popover>
-    </div>
+        </div>
+        <PopoverContent className="w-auto p-0">
+            <Calendar
+                mode="single"
+                selected={value}
+                onSelect={handleCalendarSelect}
+                initialFocus
+                captionLayout="dropdown-buttons"
+                fromYear={1900}
+                toYear={currentYear}
+            />
+        </PopoverContent>
+    </Popover>
   );
 }
