@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -13,13 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
 import { MoneyInput } from './ui/money-input';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
   amount: z.coerce.number().positive('O valor deve ser positivo.'),
@@ -91,6 +91,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
                   <FormLabel>Valor a Adicionar</FormLabel>
                   <FormControl>
                      <MoneyInput
+                        placeholder="R$ 0,00"
                         value={value}
                         onValueChange={(value) => onChange(value)}
                         {...rest}

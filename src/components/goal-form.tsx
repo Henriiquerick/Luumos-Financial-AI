@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -125,6 +124,7 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
                 <FormLabel>Valor Atual</FormLabel>
                 <FormControl>
                   <MoneyInput
+                    placeholder="R$ 0,00"
                     value={value}
                     onValueChange={(value) => onChange(value)}
                     {...rest}
@@ -142,6 +142,7 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
                 <FormLabel>Valor Alvo</FormLabel>
                 <FormControl>
                   <MoneyInput
+                    placeholder="R$ 1.000,00"
                     value={value}
                     onValueChange={(value) => onChange(value)}
                     {...rest}
