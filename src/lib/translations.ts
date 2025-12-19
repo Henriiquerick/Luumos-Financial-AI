@@ -15,6 +15,19 @@ export const TRANSLATIONS = {
       installment_subtitle: 'Your projected credit card bills for the next 6 months.',
       daily_insight: 'Daily Insight',
       insight_error: '({personalityName}): The market is volatile, but I am watching. Try again later.',
+      view_full_history: 'View Full History',
+    },
+    history: {
+      title: 'Transaction History',
+      subtitle: 'View, search, and filter your full transaction history.',
+      filters: {
+        period: 'Period',
+        this_month: 'This Month',
+        last_3_months: 'Last 3 Months',
+        this_year: 'This Year',
+        all_time: 'All Time',
+      },
+      load_more: 'Load More',
     },
     theme: {
         light: 'Light',
@@ -183,6 +196,19 @@ export const TRANSLATIONS = {
       installment_subtitle: 'Suas faturas de cartão de crédito projetadas para os próximos 6 meses.',
       daily_insight: 'Insight Diário',
       insight_error: '({personalityName}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.',
+      view_full_history: 'Ver Histórico Completo',
+    },
+    history: {
+      title: 'Histórico de Transações',
+      subtitle: 'Veja, pesquise e filtre todo o seu histórico de transações.',
+      filters: {
+        period: 'Período',
+        this_month: 'Este Mês',
+        last_3_months: 'Últimos 3 Meses',
+        this_year: 'Este Ano',
+        all_time: 'Desde o início',
+      },
+      load_more: 'Carregar Mais',
     },
     theme: {
         light: 'Claro',
@@ -351,6 +377,19 @@ export const TRANSLATIONS = {
       installment_subtitle: 'Las facturas de tu tarjeta de crédito proyectadas para los próximos 6 meses.',
       daily_insight: 'Insight Diario',
       insight_error: '({personalityName}): El mercado está volátil, pero estoy atento. Inténtalo de nuevo más tarde.',
+      view_full_history: 'Ver Historial Completo',
+    },
+    history: {
+      title: 'Historial de Transacciones',
+      subtitle: 'Vea, busque y filtre su historial de transacciones completo.',
+      filters: {
+        period: 'Período',
+        this_month: 'Este Mes',
+        last_3_months: 'Últimos 3 Meses',
+        this_year: 'Este Año',
+        all_time: 'Desde el principio',
+      },
+      load_more: 'Cargar Más',
     },
     theme: {
         light: 'Claro',

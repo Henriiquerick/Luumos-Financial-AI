@@ -8,7 +8,7 @@ import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
 import type { Transaction, AIPersonality, CreditCard, UserProfile, AIKnowledgeLevel } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, History } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
@@ -25,6 +25,7 @@ import { isSameMonth, startOfToday } from 'date-fns';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const InstallmentTunnelChart = dynamic(
   () => import('@/components/installment-tunnel-chart').then(mod => mod.InstallmentTunnelChart),
@@ -249,6 +250,14 @@ export default function Dashboard() {
                     onEdit={handleEditTransaction}
                     onDelete={handleDeleteTransaction}
                   />
+                   <div className="text-center pt-4">
+                      <Button asChild variant="outline">
+                        <Link href="/dashboard/history">
+                          <History className="mr-2 h-4 w-4" />
+                          {t.dashboard.view_full_history}
+                        </Link>
+                      </Button>
+                    </div>
                 </div>
                 <div className="space-y-6">
                   <div className="block lg:hidden">
