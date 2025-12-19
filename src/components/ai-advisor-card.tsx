@@ -306,3 +306,5 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 }
 
     
+
+    
