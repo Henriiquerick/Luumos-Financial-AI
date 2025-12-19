@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { ManageCategoriesDialog } from './manage-categories-dialog';
 import { EnergyCreditsDisplay } from './energy-credits-display';
 import { useSubscription } from '@/hooks/useSubscription';
+import { CurrencySwitcher } from './currency-switcher';
 
 interface HeaderProps {
   userProfile: UserProfile | null;
@@ -59,6 +60,7 @@ export default function Header({ userProfile }: HeaderProps) {
           <UserProfileDialog />
           <ModeToggle />
           <LanguageSwitcher />
+          <CurrencySwitcher />
           <Button variant="ghost" onClick={handleSignOut}>
             <LogOut className="mr-2" />
             {t.header.sign_out}

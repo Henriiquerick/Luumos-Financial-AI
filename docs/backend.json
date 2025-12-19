@@ -115,6 +115,10 @@
             "type": "string",
             "description": "The selected AI knowledge level for the user."
         },
+        "currency": {
+            "type": "string",
+            "description": "The user's preferred currency (e.g., 'BRL', 'USD')."
+        },
         "firstName": {
             "type": "string"
         },

@@ -21,8 +21,8 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, Timestamp, doc, writeBatch } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
+import { useCurrency } from '@/contexts/currency-context';
 import { DatePicker } from './ui/date-picker';
-import { formatCurrency, parseCurrency } from '@/lib/i18n-utils';
 
 
 const formSchema = z.object({
@@ -53,6 +53,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   const firestore = useFirestore();
   const { user } = useUser();
   const { t, language } = useTranslation();
+  const { formatMoney, parseMoney } = useCurrency();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -168,7 +169,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   async function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
     
-    const formattedAmount = formatCurrency(language, values.amount);
+    const formattedAmount = formatMoney(values.amount);
     
     if (transactionToEdit) {
       // UPDATE LOGIC
@@ -323,7 +324,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     inputMode="decimal"
                     value={value || ''}
                     {...rest}
-                    onChange={e => onChange(parseCurrency(e.target.value, language))}
+                    onChange={e => onChange(parseMoney(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -414,7 +415,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     </Select>
                     {cardUsage && (
                        <FormMessage className={cn(isLimitExceeded && "text-destructive")}>
-                        {t.modals.transaction.fields.available}: {formatCurrency(language, cardUsage.availableLimit)}
+                        {t.modals.transaction.fields.available}: {formatMoney(cardUsage.availableLimit)}
                        </FormMessage>
                     )}
                   </FormItem>
@@ -470,5 +471,3 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
-
-    

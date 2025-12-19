@@ -14,9 +14,8 @@ import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
-import { parseCurrency } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
-import { useTranslation } from '@/contexts/language-context';
 
 const formSchema = z.object({
   title: z.string().min(2, 'O título é obrigatório.'),
@@ -37,7 +36,7 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { language } = useTranslation();
+  const { parseMoney } = useCurrency();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -131,7 +130,7 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
                     inputMode="decimal"
                     placeholder="R$ 0,00"
                     value={value ?? ''}
-                    onChange={e => onChange(parseCurrency(e.target.value, language))}
+                    onChange={e => onChange(parseMoney(e.target.value))}
                     {...rest}
                   />
                 </FormControl>
@@ -151,7 +150,7 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
                     inputMode="decimal"
                     placeholder="R$ 1.000,00"
                     value={value ?? ''}
-                    onChange={e => onChange(parseCurrency(e.target.value, language))}
+                    onChange={e => onChange(parseMoney(e.target.value))}
                     {...rest}
                   />
                 </FormControl>

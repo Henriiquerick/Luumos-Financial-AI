@@ -8,7 +8,8 @@ import { CategoryIcon } from './category-icon';
 import { useTranslation } from '@/contexts/language-context';
 import { Button } from './ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
-import { formatDate, formatCurrency } from '@/lib/i18n-utils';
+import { formatDate } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { TRANSLATED_CATEGORIES } from '@/lib/constants';
 import type { Language } from '@/lib/translations';
 
@@ -21,6 +22,7 @@ interface RecentTransactionsProps {
 
 export function RecentTransactions({ transactions, categories, onEdit, onDelete }: RecentTransactionsProps) {
   const { t, language } = useTranslation();
+  const { formatMoney } = useCurrency();
   const recent = transactions
     .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
     .slice(0, 5);
@@ -75,7 +77,7 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
                     <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
                     <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
                       {t.type === 'income' ? '+' : '-'}
-                      {formatCurrency(language, t.amount)}
+                      {formatMoney(t.amount)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => onEdit(t)}>

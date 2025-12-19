@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
@@ -6,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { calculateCardBillProjection } from '@/lib/finance-utils';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
-import { formatCurrency, formatMonth } from '@/lib/i18n-utils';
+import { formatMonth } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { Skeleton } from './ui/skeleton';
 
 interface InstallmentTunnelChartProps {
@@ -16,6 +18,7 @@ interface InstallmentTunnelChartProps {
 
 export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunnelChartProps) {
   const { t, language } = useTranslation();
+  const { formatMoney } = useCurrency();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -36,11 +39,11 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
           <p className="label font-bold">{label}</p>
           {payload.map((entry: any) => (
              <p key={entry.name} style={{ color: entry.color }}>
-                {`${entry.name}: ${formatCurrency(language, entry.value)}`}
+                {`${entry.name}: ${formatMoney(entry.value)}`}
             </p>
           ))}
            <p className="mt-2 font-bold border-t border-border pt-1">
-            Total: {formatCurrency(language, total)}
+            Total: {formatMoney(total)}
           </p>
         </div>
       );
@@ -90,7 +93,7 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => formatCurrency(language, Number(value), { minimumFractionDigits: 0 })}
+              tickFormatter={(value) => formatMoney(Number(value), { minimumFractionDigits: 0 })}
             />
             <Tooltip
               cursor={{ fill: 'hsla(var(--muted), 0.5)' }}

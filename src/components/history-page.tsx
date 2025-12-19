@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -22,7 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CategoryIcon } from './category-icon';
-import { formatDate, formatCurrency } from '@/lib/i18n-utils';
+import { formatDate } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { Loader2 } from 'lucide-react';
 import { startOfMonth, startOfYear, subMonths } from 'date-fns';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
@@ -40,6 +42,7 @@ export function HistoryPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { t, language } = useTranslation();
+  const { formatMoney } = useCurrency();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -175,7 +178,7 @@ export function HistoryPage() {
                   <TableCell className="hidden md:table-cell">{formatDate(language, getDateFromTimestamp(t.date))}</TableCell>
                   <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
                     {t.type === 'income' ? '+' : '-'}
-                    {formatCurrency(language, t.amount)}
+                    {formatMoney(t.amount)}
                   </TableCell>
                 </TableRow>
               )})}

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/contexts/language-context';
+import { CurrencyProvider } from '@/contexts/currency-context';
 
 export const metadata: Metadata = {
   title: 'Lucent AI',
@@ -35,10 +36,12 @@ export default function RootLayout({
         >
           <LanguageProvider>
             <FirebaseClientProvider>
-              <div className="p-4 md:p-8">
-                {children}
-              </div>
-              <Toaster />
+              <CurrencyProvider>
+                <div className="p-4 md:p-8">
+                  {children}
+                </div>
+                <Toaster />
+              </CurrencyProvider>
             </FirebaseClientProvider>
           </LanguageProvider>
         </ThemeProvider>

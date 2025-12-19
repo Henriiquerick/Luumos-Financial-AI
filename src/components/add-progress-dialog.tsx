@@ -19,7 +19,7 @@ import { useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { parseCurrency } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
 
@@ -41,6 +41,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
   const { user } = useUser();
   const { toast } = useToast();
   const { language } = useTranslation();
+  const { parseMoney } = useCurrency();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -97,7 +98,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
                       inputMode="decimal"
                       placeholder="R$ 0,00"
                       value={value || ''}
-                      onChange={e => onChange(parseCurrency(e.target.value, language))}
+                      onChange={e => onChange(parseMoney(e.target.value))}
                       {...rest}
                     />
                   </FormControl>

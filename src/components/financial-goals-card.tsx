@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Target, Edit, PlusCircle } from 'lucide-react';
 import type { FinancialGoal } from '@/lib/types';
 import { Progress } from './ui/progress';
-import { formatCurrency } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { useTranslation } from '@/contexts/language-context';
 
 interface FinancialGoalsCardProps {
@@ -17,7 +17,7 @@ interface FinancialGoalsCardProps {
 }
 
 export function FinancialGoalsCard({ goals, onAddGoal, onEditGoal, onAddProgress }: FinancialGoalsCardProps) {
-  const { language } = useTranslation();
+  const { formatMoney } = useCurrency();
 
   return (
     <Card className="bg-card/50 border-primary/20">
@@ -50,7 +50,7 @@ export function FinancialGoalsCard({ goals, onAddGoal, onEditGoal, onAddProgress
                   <div>
                     <h4 className="font-semibold">{goal.title}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(language, goal.currentAmount)} de {formatCurrency(language, goal.targetAmount)}
+                      {formatMoney(goal.currentAmount)} de {formatMoney(goal.targetAmount)}
                     </p>
                   </div>
                 </div>

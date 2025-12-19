@@ -1,5 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
+import type { CurrencyCode } from './currencies';
 
 export type TransactionCategory =
   | 'Groceries'
@@ -70,6 +71,7 @@ export type UserProfile = {
   id: string;
   aiPersonality: string;
   aiKnowledgeLevel?: string;
+  currency?: CurrencyCode;
   firstName?: string;
   lastName?: string;
   birthDate?: string;

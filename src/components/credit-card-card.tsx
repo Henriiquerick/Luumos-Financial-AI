@@ -30,7 +30,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
-import { formatCurrency } from '@/lib/i18n-utils';
+import { useCurrency } from '@/contexts/currency-context';
 import { getBrand, getIssuer } from '@/lib/card-data';
 import { BrandIcon } from './ui/brand-icon';
 
@@ -52,7 +52,8 @@ export function CreditCardCard({
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
+  const { formatMoney } = useCurrency();
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
   
@@ -116,9 +117,9 @@ export function CreditCardCard({
     setIsMenuOpen(false);
   };
 
-  const formattedAvailable = formatCurrency(language, usage.availableLimit);
-  const formattedTotal = formatCurrency(language, usage.totalLimit);
-  const formattedSpent = formatCurrency(language, usage.spent);
+  const formattedAvailable = formatMoney(usage.availableLimit);
+  const formattedTotal = formatMoney(usage.totalLimit);
+  const formattedSpent = formatMoney(usage.spent);
 
   return (
     <>
