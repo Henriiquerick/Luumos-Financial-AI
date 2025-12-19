@@ -8,6 +8,15 @@ export const PLAN_LIMITS: Record<string, number> = {
     gold: 45, // Adicionando o plano gold conforme solicitado
 };
 
+export const ADS_WATCH_LIMITS: Record<string, number> = {
+    free: 5,
+    bronze: 8,
+    silver: 12,
+    gold: 20,
+    pro: 20, // Pro plan gets same as gold
+};
+
+
 export const CATEGORIES_OLD: TransactionCategory[] = [
   'Groceries',
   'Dining',

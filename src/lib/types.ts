@@ -78,6 +78,7 @@ export type UserProfile = {
   company?: string;
   dailyCredits: number;
   lastCreditReset: Date | Timestamp;
+  adsWatchedToday?: number;
 };
 
 export type CustomCategory = {
@@ -114,7 +115,7 @@ export interface ChatSession {
 
 export interface Subscription {
     id: string;
-    plan: 'free' | 'pro' | 'gold';
+    plan: 'free' | 'bronze' | 'silver' | 'gold' | 'pro';
     isActive: boolean;
     validUntil: Timestamp | null;
 }

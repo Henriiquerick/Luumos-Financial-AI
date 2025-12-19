@@ -142,6 +142,10 @@
             "type": "string",
             "format": "date-time",
             "description": "Timestamp of the last daily credit reset."
+        },
+        "adsWatchedToday": {
+            "type": "number",
+            "description": "Number of ads watched today for rewards."
         }
       },
       "required": [
@@ -269,7 +273,7 @@
         "properties": {
             "plan": {
                 "type": "string",
-                "enum": ["free", "pro", "gold"],
+                "enum": ["free", "bronze", "silver", "gold", "pro"],
                 "description": "The current subscription plan of the user."
             },
             "isActive": {
