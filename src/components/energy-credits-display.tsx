@@ -10,6 +10,7 @@ import { useUser } from '@/firebase';
 import { PLAN_LIMITS, ADS_WATCH_LIMITS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { AdSimulatorModal } from './ad-simulator-modal';
 
 interface EnergyCreditsDisplayProps {
   userProfile: UserProfile;
@@ -20,6 +21,9 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
   const { user } = useUser();
   const { toast } = useToast();
   const [isAdLoading, setIsAdLoading] = useState(false);
+  const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
 
   const userPlan = subscription?.plan || 'free';
   const dailyCreditsCap = PLAN_LIMITS[userPlan] ?? 0;
@@ -29,14 +33,11 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
 
   const canWatchAd = adsWatched < adWatchLimit;
 
-  const handleWatchAd = async () => {
-    if (!user || !canWatchAd) return;
+  const handleReward = async (callback: () => void) => {
+    if (!user) return;
 
     setIsAdLoading(true);
     try {
-      // Simulate ad watch time
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       const response = await fetch('/api/reward-ad', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -51,6 +52,9 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
           : 'Falha ao creditar recompensa.';
         throw new Error(errorMessage);
       }
+      
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000); // Stop confetti after 5 seconds
 
       toast({
         title: 'Recompensa Recebida!',
@@ -64,45 +68,55 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
       });
     } finally {
       setIsAdLoading(false);
+      callback(); // Close the modal
     }
   };
 
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-2 border bg-background/50 rounded-full p-1 pl-3 text-sm">
-        <span
-          className={cn(
-            'font-semibold tracking-wider',
-            (userProfile.dailyCredits || 0) <= 3 && 'text-red-500 animate-pulse'
-          )}
-        >
-          ⚡ {userProfile.dailyCredits || 0} / {maxCap}
-        </span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-7 w-7 rounded-full bg-amber-400/20 hover:bg-amber-400/40 border-amber-500/50"
-              onClick={handleWatchAd}
-              disabled={!canWatchAd || isAdLoading}
-            >
-              {isAdLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Gift className="h-4 w-4 text-amber-500" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {canWatchAd ? (
-              <p>Assista um anúncio para ganhar +1 crédito ({adsWatched}/{adWatchLimit})</p>
-            ) : (
-              <p>Limite diário de anúncios atingido ({adsWatched}/{adWatchLimit})</p>
+    <>
+      <TooltipProvider>
+        <div className="flex items-center gap-2 border bg-background/50 rounded-full p-1 pl-3 text-sm">
+          <span
+            className={cn(
+              'font-semibold tracking-wider',
+              (userProfile.dailyCredits || 0) <= 3 && 'text-red-500 animate-pulse'
             )}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+          >
+            ⚡ {userProfile.dailyCredits || 0} / {maxCap}
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-7 w-7 rounded-full bg-amber-400/20 hover:bg-amber-400/40 border-amber-500/50"
+                onClick={() => setIsAdModalOpen(true)}
+                disabled={!canWatchAd || isAdLoading}
+              >
+                {isAdLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Gift className="h-4 w-4 text-amber-500" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {canWatchAd ? (
+                <p>Assista um anúncio para ganhar +1 crédito ({adsWatched}/{adWatchLimit})</p>
+              ) : (
+                <p>Limite diário de anúncios atingido ({adsWatched}/{adWatchLimit})</p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+      <AdSimulatorModal
+        isOpen={isAdModalOpen}
+        onClose={() => setIsAdModalOpen(false)}
+        onReward={handleReward}
+        isLoading={isAdLoading}
+        showConfetti={showConfetti}
+      />
+    </>
   );
 }
