@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase-admin/firestore';
+import { getFirestore, doc, Timestamp, increment, runTransaction, type Transaction as FirestoreTransaction } from 'firebase-admin/firestore';
 import { initAdmin } from '@/firebase/admin';
 import { PLAN_LIMITS, ADS_WATCH_LIMITS } from '@/lib/constants';
 import type { UserProfile, Subscription } from '@/lib/types';
@@ -19,33 +19,39 @@ const getDateFromTimestamp = (date: any): Date | null => {
   return null;
 };
 
-async function checkAndResetCounters(userId: string, userProfile: UserProfile, subscription: Subscription): Promise<UserProfile> {
+// Esta função agora opera dentro de uma transação e retorna os dados atualizados
+const checkAndResetCountersInTransaction = (
+    transaction: FirestoreTransaction,
+    userRef: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>,
+    userProfile: UserProfile, 
+    subscription: Subscription
+): UserProfile => {
     const today = startOfToday();
     const lastResetDate = getDateFromTimestamp(userProfile.lastCreditReset);
     
     if (!lastResetDate || isBefore(lastResetDate, today)) {
         const userPlan = subscription?.plan || 'free';
-        const newCredits = PLAN_LIMITS[userPlan] || PLAN_LIMITS['free'];
+        const newCredits = PLAN_LIMITS[userPlan] ?? PLAN_LIMITS['free'];
         
-        const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, {
+        const updates = {
             dailyCredits: newCredits,
             adsWatchedToday: 0,
-            lastCreditReset: serverTimestamp() 
-        });
+            lastCreditReset: Timestamp.now() 
+        };
 
-        console.log(`Counters reset for user ${userId}. Plan: ${userPlan}, Credits: ${newCredits}`);
+        transaction.update(userRef, updates);
+        console.log(`Counters reset for user ${userProfile.id}. Plan: ${userPlan}, Credits: ${newCredits}`);
         
         return {
             ...userProfile,
-            dailyCredits: newCredits,
-            adsWatchedToday: 0,
-            lastCreditReset: new Date(),
+            ...updates,
+            lastCreditReset: new Date(), // Simula a data atual para a lógica subsequente
         };
     }
 
-    return userProfile;
-}
+    return userProfile; // Retorna o perfil sem alterações se os contadores já estiverem atualizados.
+};
+
 
 export async function POST(req: Request) {
   try {
@@ -59,25 +65,55 @@ export async function POST(req: Request) {
     const userRef = doc(db, 'users', userId);
     const subscriptionRef = doc(db, 'users', userId, 'subscription', 'status');
 
-    const [userDoc, subscriptionDoc] = await Promise.all([
-        getDoc(userRef),
-        getDoc(subscriptionRef)
-    ]);
-    
-    if (!userDoc.exists()) {
-        return NextResponse.json({ error: "User profile not found" }, { status: 404 });
-    }
+    // Use uma transação para garantir atomicidade
+    const { newCreditBalance, adsWatchedNow } = await runTransaction(db, async (transaction) => {
+        const [userDoc, subscriptionDoc] = await transaction.getAll(userRef, subscriptionRef);
 
-    let userProfile = userDoc.data() as UserProfile;
-    const subscription = (subscriptionDoc.exists() ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
+        if (!userDoc.exists) {
+            throw new Error("User profile not found");
+        }
 
-    userProfile = await checkAndResetCounters(userId, userProfile, subscription);
+        let userProfile = userDoc.data() as UserProfile;
+        userProfile.id = userDoc.id; // Adiciona o ID para logs
 
-    const userPlan = subscription?.plan || 'free';
-    const adLimit = ADS_WATCH_LIMITS[userPlan] ?? ADS_WATCH_LIMITS['free'];
-    const adsWatched = userProfile.adsWatchedToday || 0;
+        const subscription = (subscriptionDoc.exists() ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
 
-    if (adsWatched >= adLimit) {
+        // 1. Checa e reseta os contadores diários se necessário, dentro da transação
+        let updatedProfile = checkAndResetCountersInTransaction(transaction, userRef, userProfile, subscription);
+
+        // 2. Verifica o limite de anúncios
+        const userPlan = subscription?.plan || 'free';
+        const adLimit = ADS_WATCH_LIMITS[userPlan] ?? ADS_WATCH_LIMITS['free'];
+        const adsWatched = updatedProfile.adsWatchedToday || 0;
+
+        if (adsWatched >= adLimit) {
+            // Lança um erro para abortar a transação
+            throw new Error('AD_LIMIT_REACHED');
+        }
+        
+        // 3. Incrementa os créditos e o contador de anúncios
+        transaction.update(userRef, {
+            dailyCredits: increment(1),
+            adsWatchedToday: increment(1)
+        });
+        
+        const finalCreditBalance = (updatedProfile.dailyCredits || 0) + 1;
+        const finalAdsWatched = adsWatched + 1;
+
+        return { newCreditBalance: finalCreditBalance, adsWatched: finalAdsWatched };
+    });
+
+    return NextResponse.json({ 
+        success: true,
+        message: 'Ad reward credited successfully.',
+        newCreditBalance: newCreditBalance,
+        adsWatched: adsWatchedNow,
+    });
+
+  } catch (error: any) {
+    console.error("🔥 ERRO no endpoint reward-ad:", error);
+
+    if (error.message === 'AD_LIMIT_REACHED') {
         return NextResponse.json(
             { 
                 error: 'Daily ad watch limit reached.', 
@@ -86,23 +122,13 @@ export async function POST(req: Request) {
             { status: 403 }
         );
     }
-    
-    await updateDoc(userRef, {
-        dailyCredits: increment(1),
-        adsWatchedToday: increment(1)
-    });
 
-    const newCredits = (userProfile.dailyCredits || 0) + 1;
+     if (error.message === 'User profile not found') {
+        return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
 
-    return NextResponse.json({ 
-        message: 'Ad reward credited successfully.',
-        newCreditBalance: newCredits
-    });
-
-  } catch (error: any) {
-    console.error("🔥 ERRO no endpoint reward-ad:", error);
     return NextResponse.json(
-      { error: error.message || 'Erro interno no servidor' }, 
+      { error: 'An internal server error occurred.' }, 
       { status: 500 }
     );
   }
