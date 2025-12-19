@@ -77,13 +77,13 @@ export function DatePicker({ value, onChange, className, placeholder = "DD/MM/AA
                 placeholder={placeholder}
                 value={inputValue}
                 onChange={handleInputChange}
-                className="pr-10 rounded-r-none" 
+                className="pr-10 rounded-r-none h-12" 
             />
             <PopoverTrigger asChild>
                 <Button
                     variant={"outline"}
                     className={cn(
-                        "w-auto rounded-l-none border-l-0",
+                        "w-auto rounded-l-none border-l-0 h-12",
                         !value && "text-muted-foreground"
                     )}
                     aria-label="Abrir calendário"

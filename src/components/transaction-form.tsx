@@ -310,7 +310,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             {isCategorizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 items-end">
           <FormField
             control={control}
             name="amount"
