@@ -1,8 +1,9 @@
+
 'use server';
 
 import { contextualChatFlow } from '@/ai/flows/contextual-chat';
 import { NextResponse } from 'next/server';
-import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { initAdmin } from '@/firebase/admin';
 import { PLAN_LIMITS } from '@/lib/constants';
 import type { UserProfile, Subscription } from '@/lib/types';
@@ -40,9 +41,9 @@ async function checkAndResetCredits(userId: string, userProfile: UserProfile, su
         const newCredits = PLAN_LIMITS[userPlan];
         
         const userRef = db.collection('users').doc(userId);
-        await updateDoc(userRef, {
+        await userRef.update({
             dailyCredits: newCredits,
-            lastCreditReset: serverTimestamp() 
+            lastCreditReset: FieldValue.serverTimestamp() 
         });
 
         console.log(`Credits reset for user ${userId}. Plan: ${userPlan}, Credits: ${newCredits}`);
@@ -60,6 +61,9 @@ async function checkAndResetCredits(userId: string, userProfile: UserProfile, su
 
 export async function POST(req: Request) {
   try {
+    if (!app) {
+        return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
+    }
     const body = await req.json();
     
     const { userId, messages, data: contextData } = body;
@@ -85,16 +89,16 @@ export async function POST(req: Request) {
     const subscriptionRef = userRef.collection('subscription').doc('status');
 
     const [userDoc, subscriptionDoc] = await Promise.all([
-        getDoc(userRef),
-        getDoc(subscriptionRef)
+        userRef.get(),
+        subscriptionRef.get()
     ]);
     
-    if (!userDoc.exists()) {
+    if (!userDoc.exists) {
         return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
     let userProfile = userDoc.data() as UserProfile;
-    const subscription = (subscriptionDoc.exists() ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
+    const subscription = (subscriptionDoc.exists ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
 
     // 1. Checar e resetar créditos se for um novo dia
     userProfile = await checkAndResetCredits(userId, userProfile, subscription);
@@ -108,7 +112,7 @@ export async function POST(req: Request) {
     }
     
     // 3. Decrementar o crédito (operação otimista, mas confirmada antes de prosseguir)
-    await updateDoc(userRef, {
+    await userRef.update({
         dailyCredits: (userProfile.dailyCredits || 0) - 1
     });
 

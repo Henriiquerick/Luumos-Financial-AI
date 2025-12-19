@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextResponse } from 'next/server';
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
         let userProfile = userDoc.data() as UserProfile;
         userProfile.id = userDoc.id; // Adiciona o ID para logs
 
-        const subscription = (subscriptionDoc.exists() ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
+        const subscription = (subscriptionDoc.exists ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
 
         // 1. Checa e reseta os contadores diários se necessário, dentro da transação
         let updatedProfile = checkAndResetCountersInTransaction(transaction, userRef, userProfile, subscription);
