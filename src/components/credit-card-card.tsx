@@ -205,7 +205,7 @@ export function CreditCardCard({
                 </CardTitle>
                 {card.expiryDate && (
                     <CardDescription className="text-white/70">
-                        <span className="text-xs font-mono opacity-70 tracking-wider">VALID THRU: </span>
+                        <span className="text-xs font-mono opacity-70 tracking-wider">{t.card.valid_thru} </span>
                         <span className="text-sm font-semibold">{card.expiryDate}</span>
                     </CardDescription>
                 )}

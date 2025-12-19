@@ -69,6 +69,7 @@ export const TRANSLATIONS = {
         delete: 'Delete Card',
       },
       limit_info: '{available} available of {total}',
+      valid_thru: 'VALID:',
     },
     toasts: {
       profile: {
@@ -251,6 +252,7 @@ export const TRANSLATIONS = {
           delete: 'Excluir Cartão',
         },
         limit_info: '{available} disponíveis de {total}',
+        valid_thru: 'VAL:',
     },
     toasts: {
       profile: {
@@ -433,6 +435,7 @@ export const TRANSLATIONS = {
           delete: 'Eliminar Tarjeta',
         },
         limit_info: '{available} disponibles de {total}',
+        valid_thru: 'VÁL:',
     },
     toasts: {
       profile: {
