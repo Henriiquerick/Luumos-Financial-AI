@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Confetti from 'react-confetti';
@@ -60,6 +60,7 @@ export function AdSimulatorModal({ isOpen, onClose, onReward, isLoading, showCon
         className="w-screen h-screen max-w-none bg-black/90 backdrop-blur-sm border-none flex flex-col items-center justify-center text-white"
         hideCloseButton={!isFinished}
       >
+        <DialogTitle className="sr-only">Simulação de Anúncio</DialogTitle>
         {showConfetti && <Confetti recycle={false} numberOfPieces={400}/>}
         {!isFinished ? (
           <>
@@ -116,5 +117,6 @@ NewDialogContent.displayName = "DialogContent";
 
 // Replace DialogContent with our new version
 (Dialog as any).Content = NewDialogContent;
+
 
 
