@@ -118,7 +118,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
     } catch (error: any) {
       console.error('Failed to get advice:', error);
-      const errorMessage: ChatMessage = { role: 'model', content: t.chat.error };
+      const errorMessage: ChatMessage = { role: 'model', content: t.chat.error, timestamp: Timestamp.now() };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -166,7 +166,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   return (
     <div className="flex h-full max-h-[70vh] gap-4">
       {/* Sessions Sidebar */}
-      <Card className="w-1/3 bg-card/30 border-accent/10 hidden lg:flex flex-col">
+      <Card className="w-1/3 flex-shrink-0 bg-card/30 border-accent/10 hidden lg:flex flex-col">
           <CardHeader className='pb-2'>
               <CardTitle className='text-base flex items-center justify-between'>
                 Histórico
@@ -216,8 +216,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden p-6 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">{t.chat.support_level}</label>
               <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
@@ -295,7 +295,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
               className="pr-12"
               rows={2}
             />
-            <Button onClick={handleSendMessage} disabled={isLoading || !userInput} className="absolute right-2 bottom-2" size="icon" variant="ghost">
+            <Button onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
                <Send className="h-5 w-5 text-primary" />
             </Button>
           </div>
@@ -304,3 +304,5 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </div>
   );
 }
+
+    
