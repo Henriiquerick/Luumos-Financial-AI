@@ -2,7 +2,8 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { getFirestore, doc, Timestamp, increment, runTransaction, type Transaction as FirestoreTransaction } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, increment, FieldValue } from 'firebase-admin/firestore';
+import type { DocumentReference, Transaction as FirestoreTransaction } from 'firebase-admin/firestore';
 import { initAdmin } from '@/firebase/admin';
 import { PLAN_LIMITS, ADS_WATCH_LIMITS } from '@/lib/constants';
 import type { UserProfile, Subscription } from '@/lib/types';
@@ -24,7 +25,7 @@ const getDateFromTimestamp = (date: any): Date | null => {
 // Esta função agora opera dentro de uma transação e retorna os dados atualizados
 const checkAndResetCountersInTransaction = (
     transaction: FirestoreTransaction,
-    userRef: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>,
+    userRef: DocumentReference,
     userProfile: UserProfile, 
     subscription: Subscription
 ): UserProfile => {
@@ -38,7 +39,7 @@ const checkAndResetCountersInTransaction = (
         const updates = {
             dailyCredits: newCredits,
             adsWatchedToday: 0,
-            lastCreditReset: Timestamp.now() 
+            lastCreditReset: FieldValue.serverTimestamp()
         };
 
         transaction.update(userRef, updates);
@@ -56,6 +57,7 @@ const checkAndResetCountersInTransaction = (
 
 
 export async function POST(req: Request) {
+  console.log('Iniciando Reward Ad. Admin Apps:', app.name ? 'OK' : 'FALHOU');
   try {
     const body = await req.json();
     const { userId } = body;
@@ -64,14 +66,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    const userRef = doc(db, 'users', userId);
-    const subscriptionRef = doc(db, 'users', userId, 'subscription', 'status');
+    // Use a sintaxe do Admin SDK para referenciar documentos
+    const userRef = db.collection('users').doc(userId);
+    const subscriptionRef = userRef.collection('subscription').doc('status');
 
     // Use uma transação para garantir atomicidade
-    const { newCreditBalance, adsWatchedNow } = await runTransaction(db, async (transaction) => {
+    const { newCreditBalance, adsWatchedNow } = await db.runTransaction(async (transaction) => {
         const [userDoc, subscriptionDoc] = await transaction.getAll(userRef, subscriptionRef);
 
-        if (!userDoc.exists()) {
+        if (!userDoc.exists) {
             throw new Error("User profile not found");
         }
 
@@ -113,7 +116,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("🔥 ERRO no endpoint reward-ad:", error);
+    console.error("ERRO CRÍTICO NO REWARD:", error);
 
     if (error.message === 'AD_LIMIT_REACHED') {
         return NextResponse.json(
@@ -130,7 +133,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: error.message || 'An internal server error occurred.' }, 
+      { error: error.message, stack: error.stack }, 
       { status: 500 }
     );
   }
