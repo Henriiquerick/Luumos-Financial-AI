@@ -74,3 +74,30 @@ export function formatMonth(language: Language, monthKey: string): string {
         return monthKey;
     }
 }
+
+/**
+ * Parses a currency input string (like "1.500,50" or "1500.50") into a number.
+ * @param value The string value from a currency input.
+ * @returns A numeric representation of the currency value.
+ */
+export function parseCurrency(value: string | number): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return 0;
+  }
+
+  // Remove all characters except digits, comma, and period
+  const cleanedValue = value.replace(/[^0-9,.]/g, '');
+
+  // If the string contains a comma, assume it's the decimal separator
+  if (cleanedValue.includes(',')) {
+    // Remove periods (as thousand separators) and replace comma with a period
+    const normalizedValue = cleanedValue.replace(/\./g, '').replace(',', '.');
+    return parseFloat(normalizedValue) || 0;
+  }
+  
+  // If no comma, assume the period is the decimal separator (standard format)
+  return parseFloat(cleanedValue) || 0;
+}

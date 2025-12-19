@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CARD_TYPES, getIssuer, CARD_ISSUERS, CARD_BRANDS } from '@/lib/card-data';
 import type { CardType } from '@/lib/types';
+import { parseCurrency } from '@/lib/i18n-utils';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -298,14 +299,20 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
             <FormField
                 control={form.control}
                 name="totalLimit"
-                render={({ field }) => (
-                <FormItem>
+                render={({ field: { onChange, value, ...rest } }) => (
+                  <FormItem>
                     <FormLabel>{cardType === 'voucher' ? t.modals.card.fields.balance : t.modals.card.fields.limit}</FormLabel>
                     <FormControl>
-                    <Input type="number" step="100" {...field} value={field.value ?? ''} />
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={value ?? ''}
+                        onChange={e => onChange(parseCurrency(e.target.value))}
+                        {...rest}
+                      />
                     </FormControl>
                     <FormMessage />
-                </FormItem>
+                  </FormItem>
                 )}
             />
         )}

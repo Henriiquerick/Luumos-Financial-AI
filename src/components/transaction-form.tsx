@@ -22,7 +22,7 @@ import { collection, Timestamp, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { DatePicker } from './ui/date-picker';
-import { formatCurrency } from '@/lib/i18n-utils';
+import { formatCurrency, parseCurrency } from '@/lib/i18n-utils';
 
 
 const formSchema = z.object({
@@ -291,11 +291,17 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
           <FormField
             control={control}
             name="amount"
-            render={({ field }) => (
+            render={({ field: { onChange, ...rest } }) => (
               <FormItem>
                 <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} readOnly={isInstallment} />
+                  <Input 
+                    type="text" 
+                    inputMode="decimal"
+                    {...rest}
+                    onChange={e => onChange(parseCurrency(e.target.value))}
+                    readOnly={isInstallment} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
