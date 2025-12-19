@@ -6,7 +6,7 @@ import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
 import { AiAdvisorCard } from '@/components/ai-advisor-card';
 import { TransactionDialog } from '@/components/transaction-dialog';
-import type { Transaction, AIPersonality, CreditCard, UserProfile, AIKnowledgeLevel } from '@/lib/types';
+import type { Transaction, AIPersonality, CreditCard, UserProfile, AIKnowledgeLevel, CustomCategory, FinancialGoal } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, History } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
@@ -27,6 +27,9 @@ import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ToastAction } from '@/components/ui/toast';
+import { FinancialGoalsCard } from './financial-goals-card';
+import { GoalDialog } from './goal-dialog';
+import { AddProgressDialog } from './add-progress-dialog';
 
 const InstallmentTunnelChart = dynamic(
   () => import('@/components/installment-tunnel-chart').then(mod => mod.InstallmentTunnelChart),
@@ -42,8 +45,12 @@ export default function Dashboard() {
   const firestore = useFirestore();
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
+  const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
+  const [isAddProgressDialogOpen, setIsAddProgressDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
+  const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -51,11 +58,16 @@ export default function Dashboard() {
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const transactionsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'transactions') : null, [firestore, user]);
   const cardsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'cards') : null, [firestore, user]);
+  const categoriesRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'custom_categories') : null, [firestore, user]);
+  const goalsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'goals') : null, [firestore, user]);
+
 
   // Fetch data using hooks
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
   const { data: creditCardsFromHook, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
+  const { data: customCategories, isLoading: isCategoriesLoading } = useCollection<CustomCategory>(categoriesRef);
+  const { data: goals, isLoading: isGoalsLoading } = useCollection<FinancialGoal>(goalsRef);
   
   // Local state for optimistic UI updates
   const [localCreditCards, setLocalCreditCards] = useState<CreditCard[]>([]);
@@ -137,9 +149,6 @@ export default function Dashboard() {
   };
 
   const handleCardDialogFinished = (updatedCard?: CreditCard) => {
-    // If a card was fully saved/updated, the hook `useCollection` will fetch the latest data.
-    // We just need to reset the editing state.
-    // If only the color was changed, we've already updated the local state optimistically.
     setEditingCard(null);
   };
 
@@ -161,6 +170,21 @@ export default function Dashboard() {
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setIsTransactionDialogOpen(true);
+  };
+
+  const handleAddGoal = () => {
+    setEditingGoal(null);
+    setIsGoalDialogOpen(true);
+  };
+
+  const handleEditGoal = (goal: FinancialGoal) => {
+    setEditingGoal(goal);
+    setIsGoalDialogOpen(true);
+  };
+
+  const handleAddProgress = (goal: FinancialGoal) => {
+    setGoalToAddProgress(goal);
+    setIsAddProgressDialogOpen(true);
   };
   
     const handleUndoDelete = (deletedTransactions: Transaction[]) => {
@@ -249,7 +273,7 @@ export default function Dashboard() {
     };
   }, [typedTransactions]);
 
-  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading;
+  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading || isCategoriesLoading || isGoalsLoading;
 
   const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
   const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
@@ -297,9 +321,16 @@ export default function Dashboard() {
                     onAddCard={handleAddCard}
                     onEditCard={handleEditCard}
                   />
+                  <FinancialGoalsCard 
+                    goals={goals || []}
+                    onAddGoal={handleAddGoal}
+                    onEditGoal={handleEditGoal}
+                    onAddProgress={handleAddProgress}
+                  />
                   <InstallmentTunnelChart transactions={typedTransactions} cards={localCreditCards || []} />
                   <RecentTransactions 
                     transactions={typedTransactions}
+                    categories={customCategories || []}
                     onEdit={handleEditTransaction}
                     onDelete={handleDeleteTransaction}
                   />
@@ -334,6 +365,7 @@ export default function Dashboard() {
                 setIsOpen={setIsTransactionDialogOpen} 
                 transactions={typedTransactions}
                 creditCards={localCreditCards || []}
+                customCategories={customCategories || []}
                 transactionToEdit={editingTransaction}
                 onFinished={() => setEditingTransaction(null)}
               />
@@ -343,6 +375,18 @@ export default function Dashboard() {
                 cardToEdit={editingCard}
                 onFinished={handleCardDialogFinished}
                 onColorChange={handleColorChange}
+              />
+              <GoalDialog
+                isOpen={isGoalDialogOpen}
+                setIsOpen={setIsGoalDialogOpen}
+                goalToEdit={editingGoal}
+                onFinished={() => setEditingGoal(null)}
+              />
+              <AddProgressDialog
+                isOpen={isAddProgressDialogOpen}
+                setIsOpen={setIsAddProgressDialogOpen}
+                goal={goalToAddProgress}
+                onFinished={() => setGoalToAddProgress(null)}
               />
             </div>
         )}

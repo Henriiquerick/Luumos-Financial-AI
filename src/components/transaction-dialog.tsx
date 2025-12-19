@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { TransactionForm } from '@/components/transaction-form';
-import type { CreditCard, Transaction } from '@/lib/types';
+import type { CreditCard, Transaction, CustomCategory } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
 
 interface TransactionDialogProps {
@@ -10,6 +10,7 @@ interface TransactionDialogProps {
   setIsOpen: (isOpen: boolean) => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
+  customCategories: CustomCategory[];
   transactionToEdit?: Transaction | null;
   onFinished: () => void;
 }
@@ -18,7 +19,8 @@ export function TransactionDialog({
   isOpen, 
   setIsOpen, 
   transactions, 
-  creditCards, 
+  creditCards,
+  customCategories,
   transactionToEdit,
   onFinished,
 }: TransactionDialogProps) {
@@ -47,6 +49,7 @@ export function TransactionDialog({
           }}
           transactions={transactions}
           creditCards={creditCards}
+          customCategories={customCategories}
           transactionToEdit={transactionToEdit}
         />
       </DialogContent>

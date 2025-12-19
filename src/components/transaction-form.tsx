@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { ALL_CATEGORIES, TRANSLATED_CATEGORIES } from '@/lib/constants';
-import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
+import type { Transaction, TransactionCategory, CreditCard, CustomCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
@@ -30,7 +30,7 @@ const formSchema = z.object({
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   date: z.date({required_error: "A date is required."}),
   type: z.enum(['income', 'expense']),
-  category: z.custom<TransactionCategory>(),
+  category: z.string().min(1, 'Category is required.'),
   isInstallment: z.boolean(),
   installments: z.coerce.number().int().min(2).max(60).optional(),
   paymentMethod: z.enum(['cash', 'card']),
@@ -43,10 +43,11 @@ interface TransactionFormProps {
   onSave: () => void;
   transactions: Transaction[];
   creditCards: CreditCard[];
+  customCategories: CustomCategory[];
   transactionToEdit?: Transaction | null;
 }
 
-export function TransactionForm({ onSave, transactions, creditCards, transactionToEdit }: TransactionFormProps) {
+export function TransactionForm({ onSave, transactions, creditCards, customCategories, transactionToEdit }: TransactionFormProps) {
   const [isCategorizing, setIsCategorizing] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -144,16 +145,16 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
 
       const result = await response.json();
 
-      if (result.category && ALL_CATEGORIES.includes(result.category as TransactionCategory)) {
-        setValue('category', result.category as TransactionCategory);
-        toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', TRANSLATED_CATEGORIES[language][result.category as TransactionCategory]) });
+      if (result.category && (ALL_CATEGORIES.includes(result.category as TransactionCategory) || customCategories.some(c => c.name === result.category))) {
+        setValue('category', result.category);
+        toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', result.category) });
       }
     } catch (error) {
       console.error('AI categorization failed:', error);
     } finally {
       setIsCategorizing(false);
     }
-  }, [getValues, setValue, transactions, toast, t, language]);
+  }, [getValues, setValue, transactions, customCategories, toast, t]);
   
   useEffect(() => {
     if (transactionType === 'income') {
@@ -172,7 +173,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
     if (transactionToEdit) {
       // UPDATE LOGIC
       const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
-      const dataToUpdate: Partial<Transaction> & { date: Timestamp } = {
+      const dataToUpdate: Partial<Transaction> & { date: Timestamp, category: string } = {
         description: values.description,
         amount: values.amount,
         category: values.category,
@@ -201,7 +202,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
 
         for (let i = 0; i < values.installments; i++) {
           const newDocRef = doc(transactionsRef); // Generate a new doc ref for each installment
-          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any } = {
+          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
             description: `${values.description} (${i + 1}/${values.installments})`,
             amount: installmentAmount,
             category: values.category,
@@ -218,7 +219,7 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
         await batch.commit();
         toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
       } else { 
-        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string } = {
+        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string, category: string } = {
           description: values.description,
           amount: values.amount,
           category: values.category,
@@ -244,9 +245,29 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
   }
 
   const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
-  const incomeCategories: TransactionCategory[] = ['Salary', 'Investments', 'Other'];
-  const expenseCategories = ALL_CATEGORIES.filter(c => !incomeCategories.includes(c) || c === 'Other');
+  
+  const incomeCategories = useMemo(() => {
+    const defaultIncome = ALL_CATEGORIES
+        .filter(c => ['Salary', 'Investments', 'Other'].includes(c))
+        .map(c => ({ name: c, isCustom: false }));
+    const customIncome = (customCategories || [])
+        .filter(c => c.type === 'income')
+        .map(c => ({ name: c.name, isCustom: true }));
+    return [...defaultIncome, ...customIncome];
+  }, [customCategories]);
+
+  const expenseCategories = useMemo(() => {
+      const defaultExpense = ALL_CATEGORIES
+          .filter(c => !['Salary', 'Investments'].includes(c))
+          .map(c => ({ name: c, isCustom: false }));
+      const customExpense = (customCategories || [])
+          .filter(c => c.type === 'expense')
+          .map(c => ({ name: c.name, isCustom: true }));
+      return [...defaultExpense, ...customExpense];
+  }, [customCategories]);
+
   const categoriesToShow = transactionType === 'income' ? incomeCategories : expenseCategories;
+
 
   return (
     <Form {...form}>
@@ -340,8 +361,8 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
                 </FormControl>
                 <SelectContent>
                   {categoriesToShow.map(cat => (
-                    <SelectItem key={cat} value={cat}>
-                      {TRANSLATED_CATEGORIES[language][cat]}
+                    <SelectItem key={cat.name} value={cat.name}>
+                       {cat.isCustom ? cat.name : TRANSLATED_CATEGORIES[language][cat.name as TransactionCategory]}
                     </SelectItem>
                   ))}
                 </SelectContent>

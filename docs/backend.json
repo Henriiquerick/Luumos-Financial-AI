@@ -139,6 +139,62 @@
         "id",
         "aiPersonality"
       ]
+    },
+    "CustomCategory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CustomCategory",
+      "type": "object",
+      "description": "Represents a user-defined category for transactions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the custom category."
+        },
+        "icon": {
+          "type": "string",
+          "description": "An emoji character representing the category."
+        },
+        "color": {
+          "type": "string",
+          "description": "A hex color code for the category."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["income", "expense"],
+          "description": "The type of transaction this category applies to."
+        }
+      },
+      "required": ["name", "icon", "color", "type"]
+    },
+    "FinancialGoal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FinancialGoal",
+      "type": "object",
+      "description": "Represents a user's financial goal.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the financial goal."
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "The target amount to be saved for the goal."
+        },
+        "currentAmount": {
+          "type": "number",
+          "description": "The current amount saved towards the goal."
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date",
+          "description": "The deadline for achieving the goal."
+        },
+        "icon": {
+          "type": "string",
+          "description": "An emoji character representing the goal."
+        }
+      },
+      "required": ["title", "targetAmount", "currentAmount", "deadline", "icon"]
     }
   },
   "auth": {
@@ -176,6 +232,26 @@
             "$ref": "#/entities/UserProfile"
           },
           "description": "Stores user profile data including AI personality preferences."
+        }
+      },
+      {
+        "path": "/users/{userId}/custom_categories/{categoryId}",
+        "definition": {
+          "entityName": "CustomCategory",
+          "schema": {
+            "$ref": "#/entities/CustomCategory"
+          },
+          "description": "Stores user-defined transaction categories."
+        }
+      },
+      {
+        "path": "/users/{userId}/goals/{goalId}",
+        "definition": {
+          "entityName": "FinancialGoal",
+          "schema": {
+            "$ref": "#/entities/FinancialGoal"
+          },
+          "description": "Stores user's financial goals."
         }
       }
     ]

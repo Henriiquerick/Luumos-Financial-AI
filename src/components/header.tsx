@@ -1,5 +1,5 @@
 
-import { Bot, LogOut } from 'lucide-react';
+import { Bot, LogOut, Tags } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,8 @@ import { PERSONAS } from '@/lib/personas';
 import { ModeToggle } from './mode-toggle';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslation } from '@/contexts/language-context';
+import { useState } from 'react';
+import { ManageCategoriesDialog } from './manage-categories-dialog';
 
 interface HeaderProps {
   userProfile: UserProfile | null;
@@ -19,6 +21,7 @@ export default function Header({ userProfile }: HeaderProps) {
   const auth = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
 
   const handleSignOut = () => {
     if (auth) {
@@ -30,26 +33,33 @@ export default function Header({ userProfile }: HeaderProps) {
   const activePersonality = PERSONAS.find(p => p.id === userProfile?.aiPersonality);
 
   return (
-    <header className="w-full max-w-7xl mx-auto mb-8 flex justify-between items-center">
-      <div className="flex items-center gap-2">
-        <Bot className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold tracking-tighter">Lucent AI</h1>
-      </div>
-      <div className="flex items-center gap-2">
-        {activePersonality && (
-          <Badge variant="secondary" className="border-accent/20 hidden sm:flex items-center gap-2">
-            <span>{activePersonality.icon}</span>
-            <span>{activePersonality.name}</span>
-          </Badge>
-        )}
-        <UserProfileDialog />
-        <ModeToggle />
-        <LanguageSwitcher />
-        <Button variant="ghost" onClick={handleSignOut}>
-          <LogOut className="mr-2" />
-          {t.header.sign_out}
-        </Button>
-      </div>
-    </header>
+    <>
+      <header className="w-full max-w-7xl mx-auto mb-8 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Bot className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold tracking-tighter">Lucent AI</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {activePersonality && (
+            <Badge variant="secondary" className="border-accent/20 hidden sm:flex items-center gap-2">
+              <span>{activePersonality.icon}</span>
+              <span>{activePersonality.name}</span>
+            </Badge>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => setIsCategoryDialogOpen(true)}>
+            <Tags className="h-5 w-5" />
+            <span className="sr-only">Gerenciar Categorias</span>
+          </Button>
+          <UserProfileDialog />
+          <ModeToggle />
+          <LanguageSwitcher />
+          <Button variant="ghost" onClick={handleSignOut}>
+            <LogOut className="mr-2" />
+            {t.header.sign_out}
+          </Button>
+        </div>
+      </header>
+      <ManageCategoriesDialog isOpen={isCategoryDialogOpen} setIsOpen={setIsCategoryDialogOpen} />
+    </>
   );
 }

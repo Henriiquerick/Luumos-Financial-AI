@@ -19,7 +19,7 @@ export type Transaction = {
   date: Date | Timestamp;
   installments: number;
   installmentId?: string;
-  category: TransactionCategory;
+  category: string; // Can be default or custom
   type: 'income' | 'expense';
   cardId?: string;
 };
@@ -75,3 +75,20 @@ export type UserProfile = {
   jobTitle?: string;
   company?: string;
 };
+
+export type CustomCategory = {
+  id: string;
+  name: string;
+  icon: string; // emoji
+  color: string; // hex
+  type: 'income' | 'expense';
+}
+
+export type FinancialGoal = {
+    id: string;
+    title: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline: Date | Timestamp;
+    icon: string; // emoji
+}
