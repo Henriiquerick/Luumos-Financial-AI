@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
+import { ALL_CATEGORIES, TRANSLATED_CATEGORIES } from '@/lib/constants';
 import type { Transaction, TransactionCategory, CreditCard } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
@@ -144,25 +144,22 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
 
       const result = await response.json();
 
-      if (result.category && CATEGORIES.includes(result.category as TransactionCategory)) {
+      if (result.category && ALL_CATEGORIES.includes(result.category as TransactionCategory)) {
         setValue('category', result.category as TransactionCategory);
-        toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', result.category) });
+        toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', TRANSLATED_CATEGORIES[language][result.category as TransactionCategory]) });
       }
     } catch (error) {
       console.error('AI categorization failed:', error);
     } finally {
       setIsCategorizing(false);
     }
-  }, [getValues, setValue, transactions, toast, t]);
+  }, [getValues, setValue, transactions, toast, t, language]);
   
   useEffect(() => {
     if (transactionType === 'income') {
       setValue('paymentMethod', 'cash'); 
       setValue('isInstallment', false); 
       setValue('category', 'Salary'); 
-    } else {
-      // Don't reset category if we are not in income mode
-      // setValue('category', 'Other'); 
     }
   }, [transactionType, setValue]);
 
@@ -242,9 +239,9 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
   }
 
   const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
-  const incomeCategories = ['Salary', 'Investments', 'Other'];
-  const expenseCategories = CATEGORIES.filter(c => !incomeCategories.includes(c) || c === 'Other');
-
+  const incomeCategories: TransactionCategory[] = ['Salary', 'Investments', 'Other'];
+  const expenseCategories = ALL_CATEGORIES.filter(c => !incomeCategories.includes(c) || c === 'Other');
+  const categoriesToShow = transactionType === 'income' ? incomeCategories : expenseCategories;
 
   return (
     <Form {...form}>
@@ -337,8 +334,10 @@ export function TransactionForm({ onSave, transactions, creditCards, transaction
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {(transactionType === 'income' ? incomeCategories : expenseCategories).map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  {categoriesToShow.map(cat => (
+                    <SelectItem key={cat} value={cat}>
+                      {TRANSLATED_CATEGORIES[language][cat]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

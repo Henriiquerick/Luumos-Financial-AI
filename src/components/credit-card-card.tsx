@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import type { CreditCard, Transaction } from '@/lib/types';
 import { getCardUsage } from '@/lib/finance-utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -200,15 +200,15 @@ export function CreditCardCard({
             </div>
 
             <CardHeader>
-              <CardTitle className="flex items-start justify-between">
-                <span>{card.name}</span>
-                 {card.expiryDate && (
-                    <div className="text-right">
-                        <span className="text-xs font-mono opacity-70 tracking-wider">VALID THRU</span>
-                        <p className="text-sm font-semibold">{card.expiryDate}</p>
-                    </div>
+                <CardTitle>
+                    <span>{card.name}</span>
+                </CardTitle>
+                {card.expiryDate && (
+                    <CardDescription className="text-white/70">
+                        <span className="text-xs font-mono opacity-70 tracking-wider">VALID THRU: </span>
+                        <span className="text-sm font-semibold">{card.expiryDate}</span>
+                    </CardDescription>
                 )}
-              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {card.type === 'credit' ? (
