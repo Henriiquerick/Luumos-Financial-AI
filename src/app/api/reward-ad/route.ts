@@ -2,7 +2,7 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { getFirestore, Timestamp, increment, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { DocumentReference, Transaction as FirestoreTransaction } from 'firebase-admin/firestore';
 import { initAdmin } from '@/firebase/admin';
 import { PLAN_LIMITS, ADS_WATCH_LIMITS } from '@/lib/constants';
@@ -57,6 +57,9 @@ const checkAndResetCountersInTransaction = (
 
 
 export async function POST(req: Request) {
+  if (!app) {
+      return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
+  }
   console.log('Iniciando Reward Ad. Admin Apps:', app.name ? 'OK' : 'FALHOU');
   try {
     const body = await req.json();
@@ -96,10 +99,10 @@ export async function POST(req: Request) {
             throw new Error('AD_LIMIT_REACHED');
         }
         
-        // 3. Incrementa os créditos e o contador de anúncios
+        // 3. Incrementa os créditos e o contador de anúncios usando FieldValue
         transaction.update(userRef, {
-            dailyCredits: increment(1),
-            adsWatchedToday: increment(1)
+            dailyCredits: FieldValue.increment(1),
+            adsWatchedToday: FieldValue.increment(1)
         });
         
         const finalCreditBalance = (updatedProfile.dailyCredits || 0) + 1;
