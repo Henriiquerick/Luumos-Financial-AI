@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
@@ -113,5 +112,3 @@ export function InstallmentTunnelChart({ transactions, cards }: InstallmentTunne
     </Card>
   );
 }
-
-    

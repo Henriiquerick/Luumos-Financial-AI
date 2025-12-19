@@ -1,4 +1,3 @@
-
 import { addMonths, startOfMonth, isSameMonth, startOfToday, getDaysInMonth, getDate, subMonths, endOfMonth, format } from 'date-fns';
 import type { Transaction, CreditCard } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -113,10 +112,10 @@ export function calculateCardBillProjection(
     const monthData: { [key: string]: string | number } = { name };
     let totalOfMonth = 0;
     Object.entries(bills).forEach(([cardName, amount]) => {
-      monthData[cardName] = Math.round(amount);
+      monthData[cardName] = amount;
       totalOfMonth += amount;
     });
-    monthData.total = Math.round(totalOfMonth);
+    monthData.total = totalOfMonth;
     return monthData;
   }).sort((a, b) => (a.name as string).localeCompare(b.name as string)); // Sort by month key
 }
