@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 
 // Função Singleton para garantir que só inicializamos uma vez

@@ -1,3 +1,4 @@
+'use server';
 
 import { contextualChatFlow } from '@/ai/flows/contextual-chat';
 import { NextResponse } from 'next/server';
@@ -38,7 +39,7 @@ async function checkAndResetCredits(userId: string, userProfile: UserProfile, su
         const userPlan = subscription?.plan || 'free';
         const newCredits = PLAN_LIMITS[userPlan];
         
-        const userRef = doc(db, 'users', userId);
+        const userRef = db.collection('users').doc(userId);
         await updateDoc(userRef, {
             dailyCredits: newCredits,
             lastCreditReset: serverTimestamp() 
@@ -80,8 +81,8 @@ export async function POST(req: Request) {
     }
 
     // --- LÓGICA DE CRÉDITOS ---
-    const userRef = doc(db, 'users', userId);
-    const subscriptionRef = doc(db, 'users', userId, 'subscription', 'status');
+    const userRef = db.collection('users').doc(userId);
+    const subscriptionRef = userRef.collection('subscription').doc('status');
 
     const [userDoc, subscriptionDoc] = await Promise.all([
         getDoc(userRef),
