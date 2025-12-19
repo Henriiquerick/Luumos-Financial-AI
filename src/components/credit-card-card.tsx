@@ -158,7 +158,7 @@ export function CreditCardCard({
             )}
             
             <div
-              className="absolute top-2 right-2 z-20"
+              className="absolute top-2 right-2 z-50"
               style={{ pointerEvents: 'auto' }}
             >
               <button
@@ -169,11 +169,10 @@ export function CreditCardCard({
                   setIsMenuOpen(!isMenuOpen);
                 }}
                 className={cn(
-                  "p-2 rounded-full transition-colors cursor-pointer",
-                  theme.text === '#FFFFFF' ? 'hover:bg-white/10 text-white' : 'hover:bg-black/10 text-black'
+                  "p-2 rounded-full transition-colors cursor-pointer text-white bg-black/40 hover:bg-black/60 shadow-sm"
                 )}
               >
-                <MoreVertical className="w-5 h-5 opacity-60 hover:opacity-100 transition-opacity" />
+                <MoreVertical className="w-5 h-5" />
               </button>
 
               {isMenuOpen && (
