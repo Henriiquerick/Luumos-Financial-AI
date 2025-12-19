@@ -14,8 +14,8 @@ import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
-import { useCurrency } from '@/contexts/currency-context';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
+import { MoneyInput } from './ui/money-input';
 
 const formSchema = z.object({
   title: z.string().min(2, 'O título é obrigatório.'),
@@ -36,7 +36,6 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { parseMoney } = useCurrency();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -125,12 +124,9 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
               <FormItem>
                 <FormLabel>Valor Atual</FormLabel>
                 <FormControl>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="R$ 0,00"
-                    value={value ?? ''}
-                    onChange={e => onChange(parseMoney(e.target.value))}
+                  <MoneyInput
+                    value={value}
+                    onValueChange={(value) => onChange(value)}
                     {...rest}
                   />
                 </FormControl>
@@ -145,12 +141,9 @@ export function GoalForm({ onSave, goalToEdit }: GoalFormProps) {
               <FormItem>
                 <FormLabel>Valor Alvo</FormLabel>
                 <FormControl>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="R$ 1.000,00"
-                    value={value ?? ''}
-                    onChange={e => onChange(parseMoney(e.target.value))}
+                  <MoneyInput
+                    value={value}
+                    onValueChange={(value) => onChange(value)}
                     {...rest}
                   />
                 </FormControl>

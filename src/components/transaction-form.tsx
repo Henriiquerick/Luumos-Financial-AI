@@ -23,6 +23,7 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/no
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
 import { DatePicker } from './ui/date-picker';
+import { MoneyInput } from './ui/money-input';
 
 
 const formSchema = z.object({
@@ -53,7 +54,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   const firestore = useFirestore();
   const { user } = useUser();
   const { t, language } = useTranslation();
-  const { formatMoney, parseMoney } = useCurrency();
+  const { formatMoney } = useCurrency();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -319,12 +320,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               <FormItem>
                 <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="text" 
-                    inputMode="decimal"
-                    value={value || ''}
+                  <MoneyInput
+                    value={value}
+                    onValueChange={(value) => onChange(value)}
                     {...rest}
-                    onChange={e => onChange(parseMoney(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />

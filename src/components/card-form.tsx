@@ -11,7 +11,6 @@ import type { CreditCard } from '@/lib/types';
 import { useEffect, useMemo, useRef } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
-import { useCurrency } from '@/contexts/currency-context';
 import { Combobox } from './ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CARD_TYPES, getIssuer, CARD_ISSUERS, CARD_BRANDS } from '@/lib/card-data';
 import type { CardType } from '@/lib/types';
+import { MoneyInput } from './ui/money-input';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Card name is required.'),
@@ -81,7 +81,6 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { t } = useTranslation();
-  const { parseMoney } = useCurrency();
   const isInitialLoad = useRef(true);
   const hasNotifiedInitialColor = useRef(false);
 
@@ -317,11 +316,9 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
                   <FormItem>
                     <FormLabel>{cardType === 'voucher' ? t.modals.card.fields.balance : t.modals.card.fields.limit}</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={value ?? ''}
-                        onChange={e => onChange(parseMoney(e.target.value))}
+                      <MoneyInput
+                        value={value}
+                        onValueChange={(value) => onChange(value)}
                         {...rest}
                       />
                     </FormControl>

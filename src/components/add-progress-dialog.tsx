@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,15 +12,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { FinancialGoal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useCurrency } from '@/contexts/currency-context';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
+import { MoneyInput } from './ui/money-input';
 
 const formSchema = z.object({
   amount: z.coerce.number().positive('O valor deve ser positivo.'),
@@ -40,8 +38,7 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { language } = useTranslation();
-  const { parseMoney } = useCurrency();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -93,14 +90,11 @@ export function AddProgressDialog({ isOpen, setIsOpen, goal, onFinished }: AddPr
                 <FormItem>
                   <FormLabel>Valor a Adicionar</FormLabel>
                   <FormControl>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="R$ 0,00"
-                      value={value || ''}
-                      onChange={e => onChange(parseMoney(e.target.value))}
-                      {...rest}
-                    />
+                     <MoneyInput
+                        value={value}
+                        onValueChange={(value) => onChange(value)}
+                        {...rest}
+                      />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
