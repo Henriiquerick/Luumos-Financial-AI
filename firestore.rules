@@ -2,34 +2,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Função auxiliar para verificar se o usuário logado é o dono do documento.
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Regras para a coleção de usuários
-    match /users/{userId} {
-      // PERMITE:
-      // - create: Um novo usuário criar seu próprio perfil.
-      // - read, update: O usuário ler e atualizar seu próprio perfil.
-      // NEGA:
-      // - delete: Impede que o usuário apague seu documento de perfil.
-      // - list: Impede que a lista de todos os usuários seja consultada.
-      allow read, update, create: if isOwner(userId);
-      
-      // Regras para subcoleções do usuário (transactions, cards, etc.)
-      match /{subcollection}/{docId} {
-        
-        // Permite Leitura, Atualização e Exclusão para o dono.
-        allow read, update, delete: if isOwner(userId);
-        
-        // Permite a Criação se o usuário for o dono e os timestamps estiverem corretos.
-        // Isso garante que o app está definindo os timestamps de criação/atualização.
-        allow create: if isOwner(userId)
-                      && request.resource.data.createdAt == request.time
-                      && request.resource.data.updatedAt == request.time;
-      }
+    // Permite que um usuário autenticado leia e escreva qualquer documento
+    // ou subcoleção dentro de seu próprio documento de usuário.
+    // A sintaxe {document=**} é um "wildcard recursivo".
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
