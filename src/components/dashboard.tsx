@@ -30,6 +30,8 @@ import { ToastAction } from '@/components/ui/toast';
 import { FinancialGoalsCard } from './financial-goals-card';
 import { GoalDialog } from './goal-dialog';
 import { AddProgressDialog } from './add-progress-dialog';
+import { useSubscription } from '@/hooks/useSubscription';
+
 
 const InstallmentTunnelChart = dynamic(
   () => import('@/components/installment-tunnel-chart').then(mod => mod.InstallmentTunnelChart),
@@ -53,6 +55,7 @@ export default function Dashboard() {
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
 
   // Memoize Firestore references
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
@@ -273,7 +276,7 @@ export default function Dashboard() {
     };
   }, [typedTransactions]);
 
-  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading || isCategoriesLoading || isGoalsLoading;
+  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading || isCategoriesLoading || isGoalsLoading || isSubscriptionLoading;
 
   const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
   const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;

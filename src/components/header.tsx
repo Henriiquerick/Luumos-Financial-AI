@@ -4,14 +4,16 @@ import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { UserProfileDialog } from './user-profile-dialog';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, Subscription } from '@/lib/types';
 import { Badge } from './ui/badge';
-import { PERSONAS } from '@/lib/personas';
+import { PERSONALITIES } from '@/lib/agent-config';
 import { ModeToggle } from './mode-toggle';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslation } from '@/contexts/language-context';
 import { useState } from 'react';
 import { ManageCategoriesDialog } from './manage-categories-dialog';
+import { EnergyCreditsDisplay } from './energy-credits-display';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface HeaderProps {
   userProfile: UserProfile | null;
@@ -22,6 +24,7 @@ export default function Header({ userProfile }: HeaderProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const { subscription } = useSubscription();
 
   const handleSignOut = () => {
     if (auth) {
@@ -30,7 +33,7 @@ export default function Header({ userProfile }: HeaderProps) {
     }
   };
 
-  const activePersonality = PERSONAS.find(p => p.id === userProfile?.aiPersonality);
+  const activePersonality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality);
 
   return (
     <>
@@ -45,6 +48,9 @@ export default function Header({ userProfile }: HeaderProps) {
               <span>{activePersonality.icon}</span>
               <span>{activePersonality.name}</span>
             </Badge>
+          )}
+          {userProfile && subscription && (
+            <EnergyCreditsDisplay userProfile={userProfile} subscription={subscription} />
           )}
           <Button variant="ghost" size="icon" onClick={() => setIsCategoryDialogOpen(true)}>
             <Tags className="h-5 w-5" />
