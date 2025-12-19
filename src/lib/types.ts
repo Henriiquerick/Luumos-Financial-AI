@@ -30,6 +30,7 @@ export type AIPersonality = {
   instruction: string;
   tagline: string;
   style: string;
+  icon: string;
 };
 
 export type AIKnowledgeLevel = {
@@ -91,4 +92,19 @@ export type FinancialGoal = {
     currentAmount: number;
     deadline: Date | Timestamp;
     icon: string; // emoji
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+  timestamp?: Timestamp;
+}
+
+export interface ChatSession {
+  id: string;
+  createdAt: Timestamp;
+  personaId: string;
+  knowledgeId: string;
+  messages: ChatMessage[];
+  title?: string;
 }

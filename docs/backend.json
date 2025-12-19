@@ -195,6 +195,62 @@
         }
       },
       "required": ["title", "targetAmount", "currentAmount", "deadline", "icon"]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "A single message in a chat session.",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "The role of the message sender."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the message was sent."
+        }
+      },
+      "required": ["role", "content", "timestamp"]
+    },
+    "ChatSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatSession",
+      "type": "object",
+      "description": "Represents a single chat conversation session.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "A title for the chat session, often the first user message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the session was created."
+        },
+        "personaId": {
+          "type": "string",
+          "description": "The ID of the AI personality used in this session."
+        },
+        "knowledgeId": {
+            "type": "string",
+            "description": "The ID of the AI knowledge level used in this session."
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/ChatMessage"
+          },
+          "description": "An array of messages that make up the conversation."
+        }
+      },
+      "required": ["createdAt", "personaId", "knowledgeId", "messages"]
     }
   },
   "auth": {
@@ -252,6 +308,16 @@
             "$ref": "#/entities/FinancialGoal"
           },
           "description": "Stores user's financial goals."
+        }
+      },
+      {
+        "path": "/users/{userId}/chat_sessions/{sessionId}",
+        "definition": {
+          "entityName": "ChatSession",
+          "schema": {
+            "$ref": "#/entities/ChatSession"
+          },
+          "description": "Stores user's chat conversation history."
         }
       }
     ]
