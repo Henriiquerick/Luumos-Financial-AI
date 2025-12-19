@@ -100,7 +100,7 @@ export function DatePicker({ value, onChange, className, placeholder = "DD/MM/AA
                 initialFocus
                 captionLayout="dropdown-buttons"
                 fromYear={currentYear - 100}
-                toYear={currentYear}
+                toYear={currentYear + 100}
             />
         </PopoverContent>
     </Popover>
