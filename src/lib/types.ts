@@ -31,6 +31,7 @@ export type AIPersonality = {
   tagline: string;
   style: string;
   icon: string;
+  plan: 'free' | 'pro';
 };
 
 export type AIKnowledgeLevel = {
@@ -107,4 +108,24 @@ export interface ChatSession {
   knowledgeId: string;
   messages: ChatMessage[];
   title?: string;
+}
+
+export interface Subscription {
+    id: string;
+    plan: 'free' | 'pro';
+    isActive: boolean;
+    validUntil: Timestamp | null;
+}
+
+export interface AuditLog {
+    id: string;
+    actionType: 'CREATE' | 'UPDATE' | 'DELETE';
+    timestamp: Timestamp;
+    transactionId: string;
+    previousData?: Partial<Transaction>;
+    newData?: Partial<Transaction>;
+    metadata: {
+        user_agent: string;
+        ip_address: string; // Note: IP address might be sensitive and subject to privacy regulations
+    };
 }

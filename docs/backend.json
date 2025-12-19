@@ -251,6 +251,67 @@
         }
       },
       "required": ["createdAt", "personaId", "knowledgeId", "messages"]
+    },
+    "Subscription": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Subscription",
+        "type": "object",
+        "description": "Represents the user's subscription status.",
+        "properties": {
+            "plan": {
+                "type": "string",
+                "enum": ["free", "pro"],
+                "description": "The current subscription plan of the user."
+            },
+            "isActive": {
+                "type": "boolean",
+                "description": "Whether the subscription is currently active."
+            },
+            "validUntil": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The date until which the subscription is valid."
+            }
+        },
+        "required": ["plan", "isActive"]
+    },
+    "AuditLog": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "AuditLog",
+        "type": "object",
+        "description": "Logs changes to critical user data like transactions.",
+        "properties": {
+            "actionType": {
+                "type": "string",
+                "enum": ["CREATE", "UPDATE", "DELETE"],
+                "description": "The type of action performed."
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the action occurred."
+            },
+            "transactionId": {
+                "type": "string",
+                "description": "The ID of the affected transaction."
+            },
+            "previousData": {
+                "$ref": "#/entities/Transaction",
+                "description": "The state of the data before the change (for UPDATE/DELETE)."
+            },
+            "newData": {
+                "$ref": "#/entities/Transaction",
+                "description": "The state of the data after the change (for CREATE/UPDATE)."
+            },
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "user_agent": {"type": "string"},
+                    "ip_address": {"type": "string"}
+                }
+            }
+        },
+        "required": ["actionType", "timestamp", "transactionId"]
     }
   },
   "auth": {
@@ -319,6 +380,22 @@
           },
           "description": "Stores user's chat conversation history."
         }
+      },
+      {
+          "path": "/users/{userId}/subscription/status",
+          "definition": {
+              "entityName": "Subscription",
+              "schema": { "$ref": "#/entities/Subscription" },
+              "description": "A singleton document storing the user's subscription status."
+          }
+      },
+      {
+          "path": "/users/{userId}/audit_logs/{logId}",
+          "definition": {
+              "entityName": "AuditLog",
+              "schema": { "$ref": "#/entities/AuditLog" },
+              "description": "Stores audit logs for sensitive operations."
+          }
       }
     ]
   }

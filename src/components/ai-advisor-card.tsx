@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText } from 'lucide-react';
+import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel, ChatMessage, ChatSession } from '@/lib/types';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useTranslation } from '@/contexts/language-context';
 import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
@@ -33,6 +34,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+  const { subscription } = useSubscription();
   const firestore = useFirestore();
   const { t, language } = useTranslation();
   
@@ -137,6 +139,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONALITIES.find(p => p.id === id);
     if (newPersonality && newPersonality.id !== personality.id) {
+       if (newPersonality.plan === 'pro' && subscription?.plan === 'free') {
+        alert('This is a PRO feature. Please upgrade your plan to use this personality.'); // Placeholder for a real upgrade modal
+        return;
+      }
       onPersonalityChange(newPersonality);
       handleStartNewSession();
     }
@@ -233,7 +239,17 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                 </SelectTrigger>
                 <SelectContent>
                   {PERSONALITIES.map(p => 
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                     <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{p.name}</span>
+                        {p.plan === 'pro' && (
+                          <span className="flex items-center gap-1 text-xs text-amber-500">
+                            <Star className="w-3 h-3" />
+                            PRO
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
