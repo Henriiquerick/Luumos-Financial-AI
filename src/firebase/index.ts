@@ -2,56 +2,55 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, setPersistence, browserLocalPersistence, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+
+// Funções utilitárias mantidas
 import {
   setDocumentNonBlocking,
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
-} from './non-blocking-updates'
+} from './non-blocking-updates';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// Variáveis globais para cache do SDK (Singleton Pattern)
+let firebaseApp: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let firestore: Firestore | null = null;
+
 export function initializeFirebase() {
-  // Se já houver uma instância do Firebase, retorna os SDKs existentes.
-  if (getApps().length) {
-    const existingApp = getApp();
-    return getSdks(existingApp);
+  // Se já inicializamos antes, retorna as instâncias cacheadas
+  if (firebaseApp) {
+    return { firebaseApp, auth, firestore };
   }
 
-  // Log de Diagnóstico para verificar as variáveis de ambiente
-  console.log("🔥 Diagnóstico Firebase:", {
-    apiKeyPresent: !!firebaseConfig.apiKey,
-    apiKeyPreview: firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + "..." : "MISSING",
-    authDomain: firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId
+  // Se o Firebase já foi inicializado por outra via (ex: SSR), recupera a instância
+  if (getApps().length > 0) {
+    firebaseApp = getApp();
+    auth = getAuth(firebaseApp);
+    firestore = getFirestore(firebaseApp);
+    return { firebaseApp, auth, firestore };
+  }
+
+  // Validação de Segurança
+  if (!firebaseConfig.apiKey) {
+    console.error("⚠️ Firebase Config inválida ou ausente. Verifique o .env.local");
+    return { firebaseApp: null, auth: null, firestore: null };
+  }
+
+  // INICIALIZAÇÃO LIMPA (PRODUÇÃO)
+  // Sem emuladores, sem configurações complexas de debug.
+  firebaseApp = initializeApp(firebaseConfig);
+  
+  // Configura Autenticação com Persistência Local (Vital para não deslogar no reload)
+  auth = getAuth(firebaseApp);
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Erro ao definir persistência de auth:", error);
   });
 
+  firestore = getFirestore(firebaseApp);
 
-  // Validação Crítica: Verifica se as variáveis de ambiente essenciais estão presentes.
-  // Isso só executa no lado do cliente, onde process.env.NEXT_PUBLIC_* está disponível.
-  if (!firebaseConfig.apiKey) {
-    console.error("⚠️ Firebase Config is missing or incomplete! Check your .env.local file and NEXT_PUBLIC_ variables.");
-    // Retorna um objeto com serviços nulos para evitar que o aplicativo quebre.
-    // Os hooks useFirebase/useUser tratarão esse estado.
-    return { firebaseApp: null, auth: null, firestore: null };
-  }
-
-  // Inicializa o Firebase com a configuração validada.
-  const firebaseApp = initializeApp(firebaseConfig);
-  return getSdks(firebaseApp);
-}
-
-export function getSdks(firebaseApp: FirebaseApp | null) {
-  if (!firebaseApp) {
-    return { firebaseApp: null, auth: null, firestore: null };
-  }
-  
-  const auth = getAuth(firebaseApp);
-  // Define a persistência da autenticação para 'local'
-  setPersistence(auth, browserLocalPersistence);
-  
-  const firestore = getFirestore(firebaseApp);
+  console.log("🔥 Firebase inicializado (Modo Produção)");
 
   return {
     firebaseApp,
@@ -60,6 +59,17 @@ export function getSdks(firebaseApp: FirebaseApp | null) {
   };
 }
 
+// Função auxiliar para obter SDKs já prontos
+export function getSdks(app: FirebaseApp | null) {
+  if (!app) return initializeFirebase();
+  return {
+    firebaseApp: app,
+    auth: getAuth(app),
+    firestore: getFirestore(app)
+  };
+}
+
+// Exports mantidos conforme seu projeto original
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
