@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
 import { Bot, Loader2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
-import { useRouter } from 'next/navigation';
 
 interface PersonaOnboardingProps {
   onComplete: (persona: AIPersonality, knowledge: AIKnowledgeLevel) => void;
@@ -19,7 +18,6 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   const [selectedKnowledge, setSelectedKnowledge] = useState<AIKnowledgeLevel | null>(null);
   const [selectedPersonality, setSelectedPersonality] = useState<AIPersonality | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleNextStep = () => {
     if (selectedKnowledge) {
@@ -32,16 +30,14 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
 
     setIsLoading(true);
     try {
-      // Tenta salvar as preferências no Firebase
+      // Tenta salvar as preferências, mas não bloqueia o fluxo se falhar
       onComplete(selectedPersonality, selectedKnowledge);
     } catch (error) {
-      console.error("Erro ao salvar o perfil de onboarding, mas prosseguindo:", error);
-      // Opcionalmente, pode-se adicionar um toast aqui para notificar o erro.
+      console.error("Erro ao salvar o perfil de onboarding (ignorado para garantir a navegação):", error);
     } finally {
-      // Garante que o usuário seja sempre redirecionado para o dashboard.
-      router.push('/dashboard');
-      // Não desativamos o isLoading aqui para que o spinner continue
-      // durante a transição de página, evitando um "flicker" no botão.
+      // FORÇA o redirecionamento para o dashboard com um reload completo.
+      // Isso quebra qualquer loop de redirecionamento causado por estado obsoleto.
+      window.location.href = '/dashboard';
     }
   };
 
