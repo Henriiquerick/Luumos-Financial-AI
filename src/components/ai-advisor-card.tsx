@@ -4,9 +4,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star, AlertCircle, Trash2 } from 'lucide-react';
+import { Loader2, Bot, Send, MessageSquarePlus, Star, AlertCircle, Trash2, ChevronDown, Check, X, Pencil } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel, ChatMessage, ChatSession } from '@/lib/types';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
@@ -33,6 +34,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
 
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [newSessionTitle, setNewSessionTitle] = useState('');
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
@@ -44,10 +47,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const { data: chatSessions, isLoading: isLoadingSessions } = useCollection<ChatSession>(sessionsRef);
 
   const welcomeMessage = t.chat.welcomeMessages[personality.id] || t.chat.welcome;
+  const activeSession = chatSessions?.find(s => s.id === activeSessionId);
 
   useEffect(() => {
     if (activeSessionId) {
-      const activeSession = chatSessions?.find(s => s.id === activeSessionId);
       if (activeSession) {
         setMessages(activeSession.messages);
       }
@@ -55,7 +58,14 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       setMessages([]);
     }
      setChatError(null);
-  }, [activeSessionId, chatSessions]);
+  }, [activeSessionId, chatSessions, activeSession]);
+  
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSendMessage(event);
+    }
+  };
 
   const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
     if (e) e.preventDefault();
@@ -70,7 +80,6 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     let currentSessionId = activeSessionId;
 
     try {
-      // 1. Create session if it doesn't exist
       if (!currentSessionId) {
         const sessionData = {
           createdAt: serverTimestamp(),
@@ -83,13 +92,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         currentSessionId = docRef.id;
         setActiveSessionId(currentSessionId);
       } else {
-        const sessionRef = collection(firestore, 'users', user.uid, 'chat_sessions');
-        await updateDoc(doc(sessionRef, currentSessionId), {
-          messages: arrayUnion(userMessage),
-        });
+        const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
+        await updateDoc(sessionRef, { messages: arrayUnion(userMessage) });
       }
 
-      // 2. Call AI API
       const contextData = {
         balance,
         transactions: transactions.slice(-5),
@@ -102,11 +108,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid, // Passar o userId para a API
-          messages: [...messages, userMessage],
-          data: contextData,
-        }),
+        body: JSON.stringify({ userId: user.uid, messages: [...messages, userMessage], data: contextData }),
       });
       
       const result = await response.json();
@@ -117,19 +119,14 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         } else {
             throw new Error(result.error || 'Failed to get a response from the AI.');
         }
-        // Remove a última mensagem do usuário da UI se a chamada falhar
         setMessages(prev => prev.slice(0, -1));
         return;
       }
       
       const modelMessage: ChatMessage = { role: 'model', content: result.text, timestamp: Timestamp.now() };
 
-      // 3. Save AI response
-      const sessionRef = collection(firestore, 'users', user.uid, 'chat_sessions');
-      await updateDoc(doc(sessionRef, currentSessionId), {
-        messages: arrayUnion(modelMessage),
-      });
-
+      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
+      await updateDoc(sessionRef, { messages: arrayUnion(modelMessage) });
       setMessages(prev => [...prev, modelMessage]);
 
     } catch (error: any) {
@@ -147,37 +144,55 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     }
   }, [messages, chatError]);
   
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user || !window.confirm('Tem certeza que deseja excluir esta conversa?')) {
-      return;
-    }
-    try {
-      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', sessionId);
-      await deleteDoc(sessionRef);
-
-      if (activeSessionId === sessionId) {
-        setActiveSessionId(null);
-        setMessages([]);
-      }
-      // The useCollection hook will automatically update the UI
-    } catch (error) {
-      console.error("Error deleting chat session: ", error);
-      alert('Failed to delete chat session.');
-    }
-  };
-
   const handleStartNewSession = () => {
     setActiveSessionId(null);
     setMessages([]);
     setChatError(null);
   };
   
+  const handleLoadSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+  };
+  
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!user || !window.confirm('Tem certeza que deseja excluir esta conversa?')) return;
+    try {
+      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', sessionId);
+      await deleteDoc(sessionRef);
+      if (activeSessionId === sessionId) {
+        handleStartNewSession();
+      }
+    } catch (error) {
+      console.error("Error deleting chat session: ", error);
+      alert('Failed to delete chat session.');
+    }
+  };
+  
+  const handleStartRename = (session: ChatSession) => {
+    setEditingSessionId(session.id);
+    setNewSessionTitle(session.title || '');
+  };
+
+  const handleSaveRename = async () => {
+    if (!user || !editingSessionId || !newSessionTitle.trim()) {
+      setEditingSessionId(null);
+      return;
+    };
+    try {
+      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', editingSessionId);
+      await updateDoc(sessionRef, { title: newSessionTitle.trim() });
+    } catch (error) {
+      console.error("Error renaming session:", error);
+    } finally {
+      setEditingSessionId(null);
+    }
+  };
+
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONALITIES.find(p => p.id === id);
     if (newPersonality && newPersonality.id !== personality.id) {
        if (newPersonality.plan === 'pro' && subscription?.plan === 'free') {
-        alert('This is a PRO feature. Please upgrade your plan to use this personality.'); // Placeholder for a real upgrade modal
+        alert('This is a PRO feature. Please upgrade your plan to use this personality.');
         return;
       }
       onPersonalityChange(newPersonality);
@@ -193,169 +208,154 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSendMessage(event);
-    }
-  };
-
   return (
-    <div className="flex h-full max-h-[70vh] gap-4">
-      {/* Sessions Sidebar */}
-      <Card className="w-1/3 flex-shrink-0 bg-card/30 border-accent/10 hidden lg:flex flex-col">
-          <CardHeader className='pb-2'>
-              <CardTitle className='text-base flex items-center justify-between'>
-                Histórico
-                <Button variant="ghost" size="icon" onClick={handleStartNewSession} className="h-7 w-7">
-                    <MessageSquarePlus className="h-4 w-4" />
+    <Card className="flex-grow h-full max-h-[85vh] bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col relative overflow-hidden">
+      <CardHeader className='pb-4'>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className='w-full justify-center h-auto text-base p-2'>
+                    <span className='font-semibold truncate max-w-[250px]'>
+                      {activeSession?.title || 'Nova Conversa'}
+                    </span>
+                    <ChevronDown className='w-5 h-5 ml-2'/>
                 </Button>
-              </CardTitle>
-          </CardHeader>
-          <CardContent className='flex-grow overflow-hidden p-2 pt-0'>
-              <ScrollArea className="h-full">
-                  <div className='space-y-1 p-2'>
-                    {isLoadingSessions ? (
-                        <div className="flex justify-center items-center h-full">
-                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        chatSessions?.map(session => (
-                            <div 
-                              key={session.id} 
-                              className={cn(
-                                "group flex items-center justify-between p-3 mb-2 rounded-lg cursor-pointer transition-colors",
-                                activeSessionId === session.id ? 'bg-primary/20' : 'hover:bg-white/10'
-                              )}
-                              onClick={() => setActiveSessionId(session.id)}
-                            >
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                  <MessageSquareText className="h-4 w-4 flex-shrink-0" />
-                                  <span className="truncate text-sm text-foreground/80 flex-1">{session.title || 'Nova Conversa'}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className='w-[--radix-dropdown-menu-trigger-width]'>
+                <DropdownMenuItem onSelect={handleStartNewSession}>
+                    <MessageSquarePlus className='mr-2'/>
+                    Nova Conversa
+                </DropdownMenuItem>
+                <DropdownMenuSeparator/>
+                <ScrollArea className='max-h-60'>
+                    {chatSessions?.map(session => (
+                        <DropdownMenuItem key={session.id} onSelect={(e) => e.preventDefault()} className="group justify-between">
+                            {editingSessionId === session.id ? (
+                                <div className='flex items-center gap-2 w-full'>
+                                    <input 
+                                        type="text" 
+                                        value={newSessionTitle} 
+                                        onChange={(e) => setNewSessionTitle(e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveRename();
+                                            if (e.key === 'Escape') setEditingSessionId(null);
+                                        }}
+                                        className="bg-transparent text-sm w-full outline-none border-b border-primary"
+                                        autoFocus
+                                    />
+                                    <Button variant="ghost" size="icon" className='h-6 w-6 text-green-500' onClick={handleSaveRename}><Check className='w-4 h-4'/></Button>
+                                    <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => setEditingSessionId(null)}><X className='w-4 h-4'/></Button>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:bg-red-400/20"
-                                  onClick={(e) => handleDeleteSession(session.id, e)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))
-                    )}
-                    {chatSessions?.length === 0 && !isLoadingSessions && (
-                        <p className='text-center text-xs text-muted-foreground pt-4'>
-                            Seu histórico de conversas aparecerá aqui.
-                        </p>
-                    )}
-                  </div>
-              </ScrollArea>
-          </CardContent>
-      </Card>
-      
-      {/* Main Chat Card */}
-      <Card className="flex-grow bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col relative overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="text-accent" />
-            <span>{t.chat.agent_title}</span>
-          </CardTitle>
-          <CardDescription>
-            {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden p-6 pt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">{t.chat.support_level}</label>
-              <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
-                <SelectTrigger className="w-full mt-1 text-xs h-10">
-                  <SelectValue placeholder="Select a level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {KNOWLEDGE_LEVELS.map(k => 
-                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">{t.chat.personality}</label>
-              <Select value={personality.id} onValueChange={handlePersonalityChange}>
-                <SelectTrigger className="w-full mt-1 text-xs h-10">
-                  <SelectValue placeholder="Select a personality" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PERSONALITIES.map(p => 
-                     <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{p.name}</span>
-                        {p.plan === 'pro' && (
-                          <span className="flex items-center gap-1 text-xs text-amber-500">
-                            <Star className="w-3 h-3" />
-                            PRO
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                            ) : (
+                                <>
+                                    <span className='truncate flex-1' onClick={() => handleLoadSession(session.id)}>
+                                      {session.title || 'Conversa sem título'}
+                                    </span>
+                                    <div className='flex opacity-0 group-hover:opacity-100 transition-opacity'>
+                                        <Button variant="ghost" size="icon" className='h-6 w-6' onClick={() => handleStartRename(session)}><Pencil className='w-4 h-4'/></Button>
+                                        <Button variant="ghost" size="icon" className='h-6 w-6 text-red-400' onClick={() => handleDeleteSession(session.id)}><Trash2 className='w-4 h-4'/></Button>
+                                    </div>
+                                </>
+                            )}
+                        </DropdownMenuItem>
+                    ))}
+                </ScrollArea>
+            </DropdownMenuContent>
+        </DropdownMenu>
+        <CardDescription className='text-center'>
+          {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden p-6 pt-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">{t.chat.support_level}</label>
+            <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
+              <SelectTrigger className="w-full mt-1 text-xs h-10">
+                <SelectValue placeholder="Select a level" />
+              </SelectTrigger>
+              <SelectContent>
+                {KNOWLEDGE_LEVELS.map(k => 
+                  <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
-             <div className="space-y-4">
-              {!activeSessionId && messages.length === 0 && (
-                   <div className="flex items-start gap-3 justify-start">
-                     <span className="text-2xl mt-1">{personality.icon}</span>
-                     <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
-                        <p>{welcomeMessage}</p>
-                     </div>
-                  </div>
-              )}
-              {messages.map((msg, index) => (
-                <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                  {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
-                  <div className={cn("p-3 rounded-lg max-w-sm whitespace-pre-wrap font-code text-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50')}>
-                    {msg.content}
-                  </div>
+          <div>
+            <label className="text-sm font-medium">{t.chat.personality}</label>
+            <Select value={personality.id} onValueChange={handlePersonalityChange}>
+              <SelectTrigger className="w-full mt-1 text-xs h-10">
+                <SelectValue placeholder="Select a personality" />
+              </SelectTrigger>
+              <SelectContent>
+                {PERSONALITIES.map(p => 
+                   <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{p.name}</span>
+                      {p.plan === 'pro' && (
+                        <span className="flex items-center gap-1 text-xs text-amber-500">
+                          <Star className="w-3 h-3" />
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
+           <div className="space-y-4">
+            {!activeSessionId && messages.length === 0 && (
+                 <div className="flex items-start gap-3 justify-start">
+                   <span className="text-2xl mt-1">{personality.icon}</span>
+                   <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
+                      <p>{welcomeMessage}</p>
+                   </div>
                 </div>
-              ))}
-               {isLoading && (
-                  <div className="flex items-start gap-3 justify-start">
-                     <span className="text-2xl mt-1">{personality.icon}</span>
-                     <div className="p-3 rounded-lg bg-muted/50">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                     </div>
-                  </div>
-              )}
-              {chatError && (
-                 <div className="flex items-center gap-3 justify-center p-3 bg-destructive/20 text-destructive border border-destructive/50 rounded-lg">
-                    <AlertCircle className="h-5 w-5"/>
-                    <p className="text-sm font-medium">{chatError}</p>
+            )}
+            {messages.map((msg, index) => (
+              <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
+                <div className={cn("p-3 rounded-lg max-w-sm whitespace-pre-wrap font-code text-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50')}>
+                  {msg.content}
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            ))}
+             {isLoading && (
+                <div className="flex items-start gap-3 justify-start">
+                   <span className="text-2xl mt-1">{personality.icon}</span>
+                   <div className="p-3 rounded-lg bg-muted/50">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                   </div>
+                </div>
+            )}
+            {chatError && (
+               <div className="flex items-center gap-3 justify-center p-3 bg-destructive/20 text-destructive border border-destructive/50 rounded-lg">
+                  <AlertCircle className="h-5 w-5"/>
+                  <p className="text-sm font-medium">{chatError}</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
 
-          <form onSubmit={handleSendMessage} className="relative">
-            <Textarea
-              id="user-question"
-              placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="pr-12"
-              rows={2}
-            />
-            <Button type="submit" disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
-               <Send className="h-5 w-5 text-primary" />
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <form onSubmit={handleSendMessage} className="relative">
+          <Textarea
+            id="user-question"
+            placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="pr-12"
+            rows={2}
+          />
+          <Button type="submit" disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
+             <Send className="h-5 w-5 text-primary" />
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

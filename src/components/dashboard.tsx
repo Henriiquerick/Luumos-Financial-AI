@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -306,31 +307,53 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
               </div>
-              <DailyInsightCard 
-                transactions={typedTransactions}
-                personality={personality}
-                balance={netBalance}
-              />
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                <div className="lg:col-span-2 space-y-6">
-                  <BalanceCard 
-                    netBalance={netBalance} 
-                    cashBalance={cashBalance}
-                    onAddTransaction={handleAddTransaction} 
-                  />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className='md:col-span-2 lg:col-span-1'>
+                    <BalanceCard 
+                        netBalance={netBalance} 
+                        cashBalance={cashBalance}
+                        onAddTransaction={handleAddTransaction} 
+                    />
+                </div>
+                 <div className='md:col-span-2 lg:col-span-2'>
+                    <DailyInsightCard 
+                        transactions={typedTransactions}
+                        personality={personality}
+                        balance={netBalance}
+                    />
+                 </div>
+              </div>
+
+
+              <div className="mt-6 space-y-6">
                   <CardsCarousel 
                     cards={localCreditCards || []} 
                     transactions={typedTransactions} 
                     onAddCard={handleAddCard}
                     onEditCard={handleEditCard}
                   />
-                  <FinancialGoalsCard 
-                    goals={goals || []}
-                    onAddGoal={handleAddGoal}
-                    onEditGoal={handleEditGoal}
-                    onAddProgress={handleAddProgress}
-                  />
-                  <InstallmentTunnelChart transactions={typedTransactions} cards={localCreditCards || []} />
+
+                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                    <FinancialGoalsCard 
+                        goals={goals || []}
+                        onAddGoal={handleAddGoal}
+                        onEditGoal={handleEditGoal}
+                        onAddProgress={handleAddProgress}
+                    />
+                    <InstallmentTunnelChart transactions={typedTransactions} cards={localCreditCards || []} />
+                  </div>
+                  
+                   <AiAdvisorCard
+                        knowledge={knowledge}
+                        personality={personality}
+                        onKnowledgeChange={handleKnowledgeChange}
+                        onPersonalityChange={handlePersonalityChange}
+                        transactions={typedTransactions}
+                        cards={localCreditCards || []}
+                        balance={netBalance}
+                    />
+
                   <RecentTransactions 
                     transactions={typedTransactions}
                     categories={customCategories || []}
@@ -344,23 +367,10 @@ export default function Dashboard() {
                           {t.dashboard.view_full_history}
                         </Link>
                       </Button>
+                      <Button className="ml-4" onClick={handleAddTransaction} >
+                        <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
+                     </Button>
                     </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="block lg:hidden">
-                    <Button className="w-full" onClick={handleAddTransaction} >
-                      <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
-                    </Button>
-                  </div>
-                  <AiAdvisorCard
-                    knowledge={knowledge}
-                    personality={personality}
-                    onKnowledgeChange={handleKnowledgeChange}
-                    onPersonalityChange={handlePersonalityChange}
-                    transactions={typedTransactions}
-                    cards={localCreditCards || []}
-                    balance={netBalance}
-                  />
                 </div>
               </div>
               <TransactionDialog 
