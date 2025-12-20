@@ -31,14 +31,13 @@ export function MoneyInput({ className, onValueChange, value: initialValue, ...p
     }
 
     if (numValue !== undefined && !isNaN(numValue)) {
-      // Check if the input is not focused before formatting
-      if (document.activeElement !== document.getElementById(props.id || '')) {
+      if (document.activeElement?.id !== props.id) {
          setDisplayValue(formatNumber(numValue));
       }
     } else {
        setDisplayValue('');
     }
-  }, [initialValue, currency.locale]);
+  }, [initialValue, currency.locale, props.id]);
 
   const parseValue = (str: string): number | undefined => {
     if (!str) return undefined;
@@ -48,14 +47,18 @@ export function MoneyInput({ className, onValueChange, value: initialValue, ...p
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let rawValue = e.target.value;
+    let value = e.target.value;
 
     const regex = new RegExp(`[^0-9\\${currency.decimalSeparator}]`, 'g');
-    let filteredValue = rawValue.replace(regex, '');
+    let filteredValue = value.replace(regex, '');
 
     const parts = filteredValue.split(currency.decimalSeparator);
     if (parts.length > 2) {
       filteredValue = parts[0] + currency.decimalSeparator + parts.slice(1).join('');
+    }
+    
+    if(parts[1] && parts[1].length > 2) {
+        filteredValue = parts[0] + currency.decimalSeparator + parts[1].slice(0, 2);
     }
 
     setDisplayValue(filteredValue);
@@ -70,6 +73,7 @@ export function MoneyInput({ className, onValueChange, value: initialValue, ...p
       setDisplayValue(formatNumber(numericValue));
     } else {
       setDisplayValue('');
+      onValueChange(undefined);
     }
     props.onBlur?.(e);
   };
@@ -95,7 +99,7 @@ export function MoneyInput({ className, onValueChange, value: initialValue, ...p
         placeholder="0,00"
         className={cn(
           'flex h-12 w-full rounded-md border border-input bg-background py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-          'pl-10 pr-3', // Espaço para o símbolo e padding direito
+          'pl-10 pr-3',
           className
         )}
         {...props}
