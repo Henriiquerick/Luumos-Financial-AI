@@ -12,7 +12,8 @@ import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlockin
 import { collection, doc } from 'firebase/firestore';
 import type { CustomCategory } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
@@ -31,6 +32,7 @@ interface CategoryFormProps {
 export function CategoryForm({ onSave, categoryToEdit }: CategoryFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,6 +43,8 @@ export function CategoryForm({ onSave, categoryToEdit }: CategoryFormProps) {
       type: 'expense',
     },
   });
+
+  const iconValue = form.watch('icon');
 
   useEffect(() => {
     if (categoryToEdit) {
@@ -54,6 +58,11 @@ export function CategoryForm({ onSave, categoryToEdit }: CategoryFormProps) {
       });
     }
   }, [categoryToEdit, form]);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    form.setValue('icon', emojiData.emoji, { shouldValidate: true });
+    setShowEmojiPicker(false);
+  };
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
@@ -85,19 +94,31 @@ export function CategoryForm({ onSave, categoryToEdit }: CategoryFormProps) {
           )}
         />
         <div className="grid grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
+            <FormItem>
                 <FormLabel>Ícone</FormLabel>
-                <FormControl>
-                  <Input maxLength={2} {...field} />
-                </FormControl>
+                 <div className="relative">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="h-10 w-full flex items-center justify-center text-2xl"
+                    >
+                        {iconValue}
+                    </Button>
+                    {showEmojiPicker && (
+                        <>
+                            <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setShowEmojiPicker(false)} />
+                            <div className="absolute top-12 left-0 z-50">
+                                <EmojiPicker
+                                    onEmojiClick={handleEmojiClick}
+                                    autoFocusSearch={false}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
                 <FormMessage />
-              </FormItem>
-            )}
-          />
+            </FormItem>
           <FormField
             control={form.control}
             name="color"
