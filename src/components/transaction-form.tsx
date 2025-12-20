@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -395,7 +394,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment && !transactionToEdit}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
@@ -417,7 +416,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment && !transactionToEdit}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
