@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -5,7 +6,7 @@ import CurrencyInput, { type CurrencyInputProps } from 'react-currency-input-fie
 import { useCurrency } from '@/contexts/currency-context';
 import { cn } from '@/lib/utils';
 
-type MoneyInputProps = Omit<CurrencyInputProps, 'prefix' | 'groupSeparator' | 'decimalSeparator'> & {
+type MoneyInputProps = Omit<CurrencyInputProps, 'prefix' | 'groupSeparator' | 'decimalSeparator' | 'onValueChange'> & {
   onValueChange: (value: number | undefined) => void;
 };
 
@@ -22,7 +23,7 @@ export function MoneyInput({ className, onValueChange, ...props }: MoneyInputPro
       groupSeparator={currency.thousandSeparator}
       decimalSeparator={currency.decimalSeparator}
       decimalsLimit={2}
-      onValueChange={(value, _name, values) => onValueChange(values?.float)}
+      onValueChange={(value, name, values) => onValueChange(values?.float ?? undefined)}
       {...props}
     />
   );
