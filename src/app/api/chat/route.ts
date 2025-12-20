@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     
     // 3. Decrementar o crédito (operação otimista, mas confirmada antes de prosseguir)
     await userRef.update({
-        dailyCredits: (userProfile.dailyCredits || 0) - 1
+        dailyCredits: FieldValue.increment(-1)
     });
 
     // --- FIM DA LÓGICA DE CRÉDITOS ---
