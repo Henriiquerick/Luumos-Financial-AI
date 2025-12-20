@@ -186,6 +186,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       if (values.type === 'expense' && values.paymentMethod === 'card') {
         dataToUpdate.cardId = values.cardId;
       } else {
+        // Explicitly remove cardId if payment method is not card
         dataToUpdate.cardId = undefined;
       }
       
@@ -394,7 +395,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment || !!transactionToEdit}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
@@ -416,7 +417,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment || !!transactionToEdit}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
