@@ -4,10 +4,9 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { initAdmin } from '@/firebase/admin';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { UserProfile, Transaction } from '@/lib/types';
 import { PERSONALITIES } from '@/lib/agent-config';
-import { generateInsightAnalysis } from '@/lib/finance-utils';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -32,7 +31,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // 1. Buscar dados diretamente do Firebase Admin
+    // --- LÓGICA DE CACHE ---
+    const todayStr = new Date().toISOString().split('T')[0];
+    const cacheRef = db.collection('users').doc(userId).collection('cache').doc('daily_insight');
+    const cacheDoc = await cacheRef.get();
+
+    if (cacheDoc.exists && cacheDoc.data()?.date === todayStr) {
+      console.log(`CACHE HIT for user: ${userId}`);
+      return NextResponse.json({ insight: cacheDoc.data()?.content });
+    }
+    
+    console.log(`CACHE MISS for user: ${userId}`);
+    // --- FIM DA LÓGICA DE CACHE ---
+
+
+    // 1. Buscar dados diretamente do Firebase Admin (se o cache falhar)
     const userRef = db.collection('users').doc(userId);
     const transactionsRef = userRef.collection('transactions').orderBy('date', 'desc').limit(50);
     
@@ -46,7 +59,8 @@ export async function POST(req: Request) {
     }
 
     if (transactionsSnapshot.empty) {
-        return NextResponse.json({ insight: "Você ainda não tem transações suficientes para uma análise. Comece a registrar seus gastos e receitas!" });
+        const noTransactionInsight = "Você ainda não tem transações suficientes para uma análise. Comece a registrar seus gastos e receitas!";
+        return NextResponse.json({ insight: noTransactionInsight });
     }
 
 
@@ -84,12 +98,20 @@ export async function POST(req: Request) {
     // 5. Chamar a API da Groq
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: finalPrompt }],
-      model: 'llama-3.3-70b-versatile', // Modelo inteligente para análise
+      model: 'llama-3.1-70b-instant', 
       temperature: 0.7,
       max_tokens: 150,
     });
 
     const insightText = completion.choices[0]?.message?.content || "Não foi possível gerar um insight hoje. Tente mais tarde.";
+
+    // --- SALVAR NO CACHE ---
+    await cacheRef.set({
+        content: insightText,
+        date: todayStr,
+        lastUpdated: FieldValue.serverTimestamp()
+    });
+    // --- FIM DO SALVAMENTO ---
 
     return NextResponse.json({ insight: insightText });
 
