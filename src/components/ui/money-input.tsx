@@ -6,11 +6,12 @@ import CurrencyInput, { type CurrencyInputProps } from 'react-currency-input-fie
 import { useCurrency } from '@/contexts/currency-context';
 import { cn } from '@/lib/utils';
 
+// Ajustamos o onValueChange para receber uma string (que a lib nos dá) e repassar o número.
 type MoneyInputProps = Omit<CurrencyInputProps, 'prefix' | 'groupSeparator' | 'decimalSeparator' | 'onValueChange'> & {
   onValueChange: (value: number | undefined) => void;
 };
 
-export function MoneyInput({ className, onValueChange, ...props }: MoneyInputProps) {
+export function MoneyInput({ className, onValueChange, value, ...props }: MoneyInputProps) {
   const { currency } = useCurrency();
 
   return (
@@ -23,7 +24,10 @@ export function MoneyInput({ className, onValueChange, ...props }: MoneyInputPro
       groupSeparator={currency.thousandSeparator}
       decimalSeparator={currency.decimalSeparator}
       decimalsLimit={2}
-      onValueChange={(value, name, values) => onValueChange(values?.float ?? undefined)}
+      // A lib nos dá o valor como string ('1.234,56') e o valor numérico.
+      // Repassamos o valor numérico para o react-hook-form.
+      onValueChange={(value, name, values) => onValueChange(values?.float)}
+      value={value} // Passamos o valor do formulário diretamente.
       {...props}
     />
   );
