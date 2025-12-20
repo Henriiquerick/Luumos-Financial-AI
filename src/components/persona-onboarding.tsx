@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
-import { Bot } from 'lucide-react';
+import { Bot, Loader2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
+import { useRouter } from 'next/navigation';
 
 interface PersonaOnboardingProps {
   onComplete: (persona: AIPersonality, knowledge: AIKnowledgeLevel) => void;
@@ -17,6 +18,8 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   const [step, setStep] = useState(1);
   const [selectedKnowledge, setSelectedKnowledge] = useState<AIKnowledgeLevel | null>(null);
   const [selectedPersonality, setSelectedPersonality] = useState<AIPersonality | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleNextStep = () => {
     if (selectedKnowledge) {
@@ -24,9 +27,21 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
     }
   };
 
-  const handleConfirm = () => {
-    if (selectedKnowledge && selectedPersonality) {
+  const handleConfirm = async () => {
+    if (!selectedKnowledge || !selectedPersonality) return;
+
+    setIsLoading(true);
+    try {
+      // Tenta salvar as preferências no Firebase
       onComplete(selectedPersonality, selectedKnowledge);
+    } catch (error) {
+      console.error("Erro ao salvar o perfil de onboarding, mas prosseguindo:", error);
+      // Opcionalmente, pode-se adicionar um toast aqui para notificar o erro.
+    } finally {
+      // Garante que o usuário seja sempre redirecionado para o dashboard.
+      router.push('/dashboard');
+      // Não desativamos o isLoading aqui para que o spinner continue
+      // durante a transição de página, evitando um "flicker" no botão.
     }
   };
 
@@ -100,7 +115,8 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
             <Button onClick={() => setStep(1)} variant="outline" size="lg">
               Voltar
             </Button>
-            <Button onClick={handleConfirm} disabled={!selectedPersonality} size="lg" className="bg-accent hover:bg-accent/90">
+            <Button onClick={handleConfirm} disabled={!selectedPersonality || isLoading} size="lg" className="bg-accent hover:bg-accent/90">
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               Começar Minha Jornada
             </Button>
           </div>
