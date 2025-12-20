@@ -23,8 +23,8 @@ export function MoneyInput({ className, onValueChange, value, ...props }: MoneyI
       prefix={`${currency.symbol} `}
       groupSeparator={currency.thousandSeparator}
       decimalSeparator={currency.decimalSeparator}
-      decimalsLimit={2}
-      // A lib nos dá o valor como string ('1.234,56') e o valor numérico.
+      decimalScale={2} // Garante 2 casas decimais
+      // A lib nos dá o valor como string ('1.000,50') e o valor numérico.
       // Repassamos o valor numérico para o react-hook-form.
       onValueChange={(value, name, values) => onValueChange(values?.float)}
       value={value} // Passamos o valor do formulário diretamente.
