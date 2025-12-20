@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -32,6 +31,7 @@ import { AddProgressDialog } from './add-progress-dialog';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useFinancialData } from '@/hooks/use-financial-data';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 
 const InstallmentTunnelChart = dynamic(
@@ -49,8 +49,8 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const router = useRouter();
   
-  // 1. Substitui os hooks antigos pelo hook com cache do TanStack Query
   const { data: financialData, isLoading: isFinancialDataLoading } = useFinancialData();
   const { 
     transactions = [], 
@@ -62,7 +62,6 @@ export default function Dashboard() {
   const { data: userProfile, isLoading: isProfileLoading } = useFinancialData();
   const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
 
-  // Estados para controlar os modais
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
@@ -74,22 +73,6 @@ export default function Dashboard() {
   
   const handleInvalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
-  };
-
-  const handlePersonalityChange = (personality: AIPersonality) => {
-    if (user) {
-      const userProfileRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userProfileRef, { aiPersonality: personality.id }, { merge: true });
-      handleInvalidateQueries();
-    }
-  };
-
-  const handleKnowledgeChange = (knowledge: AIKnowledgeLevel) => {
-    if (user) {
-      const userProfileRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userProfileRef, { aiKnowledgeLevel: knowledge.id }, { merge: true });
-      handleInvalidateQueries();
-    }
   };
 
   const handleOnboardingComplete = (personality: AIPersonality, knowledge: AIKnowledgeLevel) => {
@@ -104,6 +87,77 @@ export default function Dashboard() {
         handleInvalidateQueries();
     }
   }
+
+  const { netBalance, cashBalance } = useMemo(() => {
+    const today = startOfToday();
+    const currentCashBalance = transactions.reduce((acc, t) => {
+      if (t.cardId) return acc;
+      const multiplier = t.type === 'income' ? 1 : -1;
+      return acc + t.amount * multiplier;
+    }, 0);
+    
+    const currentMonthCardBill = transactions.reduce((acc, t) => {
+      if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
+        return acc + t.amount;
+      }
+      return acc;
+    }, 0);
+
+    return {
+      netBalance: currentCashBalance - currentMonthCardBill,
+      cashBalance: currentCashBalance
+    };
+  }, [transactions]);
+
+  const isLoading = isFinancialDataLoading || isSubscriptionLoading || isProfileLoading;
+  
+  // DEBUG SCREEN
+  if (true) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 font-mono p-8">
+        <h1 className="text-3xl font-bold border-b border-green-700 pb-2 mb-4">RAIO-X DO DASHBOARD</h1>
+        
+        <div className="bg-gray-900/50 border border-green-800 p-4 rounded-lg">
+            <p>Status: <span className={isLoading ? 'text-yellow-400' : 'text-green-400'}>{isLoading ? 'Carregando dados...' : 'Dados Carregados'}</span></p>
+            <p>User ID: <span className="text-cyan-400">{user?.uid || 'Nenhum usuário logado'}</span></p>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="text-xl border-b border-green-800 pb-1 mb-2">Verificação de Onboarding</h2>
+            <div className="bg-gray-900/50 border border-green-800 p-4 rounded-lg">
+                <p>O perfil do usuário (`userProfile`) foi encontrado? {userProfile ? <span className='text-green-400'>SIM</span> : <span className='text-red-500'>NÃO</span>}</p>
+                <p>Campo `aiPersonality` existe no perfil? {userProfile?.aiPersonality ? <span className='text-green-400'>SIM (Valor: {userProfile.aiPersonality})</span> : <span className='text-red-500'>NÃO</span>}</p>
+            </div>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="text-xl border-b border-green-800 pb-1 mb-2">Objeto UserProfile Completo (do hook `useFinancialData`):</h2>
+            <pre className="bg-gray-900 p-4 rounded text-xs border border-green-800 max-h-96 overflow-auto">
+                {JSON.stringify(userProfile, null, 2)}
+            </pre>
+        </div>
+        
+        <div className="mt-10 border-t border-gray-700 pt-5 opacity-30">
+           <h2 className="text-xl mb-4 text-center text-gray-500">--- PREVIEW DO APP ABAIXO ---</h2>
+           {userProfile && <Header userProfile={userProfile} />}
+            <div className="mb-8">
+                <h1 className="text-4xl font-bold tracking-tighter">
+                  {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
+                </h1>
+                <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+            </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (!isLoading && (!userProfile || !userProfile.aiPersonality)) {
+     return <PersonaOnboarding onComplete={handleOnboardingComplete} />
+  }
+
+  const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
+  const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
 
   const handleAddCard = () => {
     setEditingCard(null);
@@ -206,32 +260,6 @@ export default function Dashboard() {
     }
   };
 
-  const { netBalance, cashBalance } = useMemo(() => {
-    const today = startOfToday();
-    const currentCashBalance = transactions.reduce((acc, t) => {
-      if (t.cardId) return acc;
-      const multiplier = t.type === 'income' ? 1 : -1;
-      return acc + t.amount * multiplier;
-    }, 0);
-    
-    const currentMonthCardBill = transactions.reduce((acc, t) => {
-      if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
-        return acc + t.amount;
-      }
-      return acc;
-    }, 0);
-
-    return {
-      netBalance: currentCashBalance - currentMonthCardBill,
-      cashBalance: currentCashBalance
-    };
-  }, [transactions]);
-
-  const isLoading = isFinancialDataLoading || isSubscriptionLoading || isProfileLoading;
-
-  const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
-  const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
-
   return (
     <AuthGate>
         {isLoading ? (
@@ -246,8 +274,6 @@ export default function Dashboard() {
                   <Skeleton className="h-12 w-1/4 mx-auto" />
                 </div>
             </main>
-        ) : !userProfile?.aiPersonality || !userProfile?.aiKnowledgeLevel ? (
-            <PersonaOnboarding onComplete={handleOnboardingComplete} />
         ) : (
             <div className="w-full max-w-7xl mx-auto">
               <Header userProfile={userProfile} />
@@ -366,5 +392,3 @@ export default function Dashboard() {
     </AuthGate>
   )
 }
-
-    
