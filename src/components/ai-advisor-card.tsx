@@ -222,19 +222,22 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                         </div>
                     ) : (
                         chatSessions?.map(session => (
-                            <div key={session.id} className="group relative">
-                                <Button 
-                                    variant={activeSessionId === session.id ? "secondary" : "ghost"}
-                                    className="w-full justify-start h-auto py-2"
-                                    onClick={() => setActiveSessionId(session.id)}
-                                >
-                                    <MessageSquareText className="mr-2 h-4 w-4 flex-shrink-0" />
-                                    <span className="truncate text-xs">{session.title || 'Nova Conversa'}</span>
-                                </Button>
+                            <div 
+                              key={session.id} 
+                              className={cn(
+                                "group flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors",
+                                activeSessionId === session.id ? 'bg-primary/20' : 'hover:bg-muted/50'
+                              )}
+                              onClick={() => setActiveSessionId(session.id)}
+                            >
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <MessageSquareText className="h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate text-sm text-foreground/80 flex-1">{session.title || 'Nova Conversa'}</span>
+                                </div>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                                   onClick={(e) => handleDeleteSession(session.id, e)}
                                 >
                                     <Trash2 className="h-4 w-4 text-red-500/70 hover:text-red-500" />
@@ -357,3 +360,4 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </div>
   );
 }
+
