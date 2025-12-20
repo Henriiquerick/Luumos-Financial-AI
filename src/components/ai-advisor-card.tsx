@@ -36,9 +36,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionTitle, setNewSessionTitle] = useState('');
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSendingRef = useRef(false);
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const isSendingRef = useRef(false); // Trava para impedir envios múltiplos
   const { user } = useUser();
   const { subscription } = useSubscription();
   const firestore = useFirestore();
@@ -49,6 +50,14 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
   const welcomeMessage = t.chat.welcomeMessages[personality.id] || t.chat.welcome;
   const activeSession = chatSessions?.find(s => s.id === activeSessionId);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, chatError]);
 
   useEffect(() => {
     if (activeSessionId) {
@@ -63,8 +72,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Previne nova linha
-      handleSendMessage(); // Chama a função de envio
+      event.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -123,7 +132,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         } else {
             throw new Error(result.error || 'Failed to get a response from the AI.');
         }
-        setMessages(prev => prev.slice(0, -1)); // Remove a mensagem do usuário se a API falhar
+        setMessages(prev => prev.slice(0, -1));
         return;
       }
       
@@ -139,16 +148,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      setTimeout(() => { isSendingRef.current = false; }, 100); // Destrava após um pequeno delay
+      setTimeout(() => { isSendingRef.current = false; }, 100);
     }
   };
 
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-    }
-  }, [messages, chatError]);
-  
   const handleStartNewSession = () => {
     setActiveSessionId(null);
     setMessages([]);
@@ -215,7 +218,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
   return (
     <Card className="flex-grow h-full max-h-[85vh] bg-card/50 border-accent/20 shadow-lg shadow-accent/5 flex flex-col relative overflow-hidden">
-      <CardHeader className='pb-4'>
+      <CardHeader className='pb-4 shrink-0'>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className='w-full justify-center h-auto text-base p-2'>
@@ -271,98 +274,103 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
           {t.chat.acting_as} <span className="font-semibold text-foreground">{personality.name}</span> | {t.chat.level} <span className="font-semibold text-foreground">{knowledge.name}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col space-y-4 overflow-hidden p-6 pt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium">{t.chat.support_level}</label>
-            <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
-              <SelectTrigger className="w-full mt-1 text-xs h-10">
-                <SelectValue placeholder="Select a level" />
-              </SelectTrigger>
-              <SelectContent>
-                {KNOWLEDGE_LEVELS.map(k => 
-                  <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-sm font-medium">{t.chat.personality}</label>
-            <Select value={personality.id} onValueChange={handlePersonalityChange}>
-              <SelectTrigger className="w-full mt-1 text-xs h-10">
-                <SelectValue placeholder="Select a personality" />
-              </SelectTrigger>
-              <SelectContent>
-                {PERSONALITIES.map(p => 
-                   <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{p.name}</span>
-                      {p.plan === 'pro' && (
-                        <span className="flex items-center gap-1 text-xs text-amber-500">
-                          <Star className="w-3 h-3" />
-                          PRO
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
-           <div className="space-y-4">
-            {!activeSessionId && messages.length === 0 && (
-                 <div className="flex items-start gap-3 justify-start">
-                   <span className="text-2xl mt-1">{personality.icon}</span>
-                   <div className="p-3 rounded-lg bg-muted/50 whitespace-pre-wrap font-code text-sm">
-                      <p>{welcomeMessage}</p>
-                   </div>
-                </div>
-            )}
-            {messages.map((msg, index) => (
-              <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
-                <div className={cn("p-3 rounded-lg max-w-sm whitespace-pre-wrap font-code text-sm", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50')}>
-                  {msg.content}
-                </div>
+      
+      <div className="p-6 pt-2 shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">{t.chat.support_level}</label>
+                <Select value={knowledge.id} onValueChange={handleKnowledgeChange}>
+                  <SelectTrigger className="w-full mt-1 text-xs h-10">
+                    <SelectValue placeholder="Select a level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {KNOWLEDGE_LEVELS.map(k => 
+                      <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-             {isLoading && (
-                <div className="flex items-start gap-3 justify-start">
-                   <span className="text-2xl mt-1">{personality.icon}</span>
-                   <div className="p-3 rounded-lg bg-muted/50">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                   </div>
-                </div>
-            )}
-            {chatError && (
-               <div className="flex items-center gap-3 justify-center p-3 bg-destructive/20 text-destructive border border-destructive/50 rounded-lg">
-                  <AlertCircle className="h-5 w-5"/>
-                  <p className="text-sm font-medium">{chatError}</p>
+              <div>
+                <label className="text-sm font-medium">{t.chat.personality}</label>
+                <Select value={personality.id} onValueChange={handlePersonalityChange}>
+                  <SelectTrigger className="w-full mt-1 text-xs h-10">
+                    <SelectValue placeholder="Select a personality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PERSONALITIES.map(p => 
+                      <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{p.name}</span>
+                          {p.plan === 'pro' && (
+                            <span className="flex items-center gap-1 text-xs text-amber-500">
+                              <Star className="w-3 h-3" />
+                              PRO
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+            </div>
+      </div>
+      
+      <div className="flex-grow overflow-y-auto p-6 pt-0 space-y-6 scroll-smooth">
+        {!activeSessionId && messages.length === 0 && (
+             <div className="flex items-start gap-3 justify-start">
+               <span className="text-2xl mt-1">{personality.icon}</span>
+               <div className="p-3 rounded-2xl bg-muted/50 whitespace-pre-wrap font-code text-sm rounded-bl-none">
+                  <p>{welcomeMessage}</p>
+               </div>
+            </div>
+        )}
+        {messages.map((msg, index) => (
+          <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+            {msg.role === 'model' && <span className="text-2xl mt-1">{personality.icon}</span>}
+            <div className={cn(
+                "max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed whitespace-pre-wrap font-code", 
+                msg.role === 'user' 
+                ? 'bg-primary text-primary-foreground rounded-br-none' 
+                : 'bg-muted/50 rounded-bl-none'
+            )}>
+              {msg.content}
+            </div>
           </div>
-        </ScrollArea>
+        ))}
+         {isLoading && (
+            <div className="flex items-start gap-3 justify-start">
+               <span className="text-2xl mt-1">{personality.icon}</span>
+               <div className="p-3 rounded-lg bg-muted/50">
+                <Loader2 className="h-5 w-5 animate-spin" />
+               </div>
+            </div>
+        )}
+        {chatError && (
+           <div className="flex items-center gap-3 justify-center p-3 bg-destructive/20 text-destructive border border-destructive/50 rounded-lg">
+              <AlertCircle className="h-5 w-5"/>
+              <p className="text-sm font-medium">{chatError}</p>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        <div className="relative">
-          <Textarea
-            id="user-question"
-            placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="pr-12"
-            rows={2}
-          />
-          <Button type="submit" onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
-             <Send className="h-5 w-5 text-primary" />
-          </Button>
-        </div>
-      </CardContent>
+      <div className="p-4 border-t bg-background shrink-0">
+          <div className="flex items-end gap-2 relative">
+              <Textarea
+                id="user-question"
+                placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="min-h-[50px] max-h-[150px] resize-none pr-12"
+                rows={2}
+              />
+              <Button type="submit" onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2 h-8 w-8" size="icon">
+                 <Send className="h-4 w-4 text-primary" />
+              </Button>
+          </div>
+       </div>
     </Card>
   );
 }
-
-    
