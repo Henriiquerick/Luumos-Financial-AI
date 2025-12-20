@@ -6,6 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/contexts/language-context';
 import { CurrencyProvider } from '@/contexts/currency-context';
+import QueryProvider from '@/components/providers/query-provider';
 
 export const metadata: Metadata = {
   title: 'Lucent AI',
@@ -34,16 +35,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LanguageProvider>
-            <FirebaseClientProvider>
-              <CurrencyProvider>
-                <div className="p-4 md:p-8">
-                  {children}
-                </div>
-                <Toaster />
-              </CurrencyProvider>
-            </FirebaseClientProvider>
-          </LanguageProvider>
+          <QueryProvider>
+            <LanguageProvider>
+              <FirebaseClientProvider>
+                <CurrencyProvider>
+                  <div className="p-4 md:p-8">
+                    {children}
+                  </div>
+                  <Toaster />
+                </CurrencyProvider>
+              </FirebaseClientProvider>
+            </LanguageProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
