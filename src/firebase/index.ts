@@ -51,10 +51,12 @@ export function getSdks(firebaseApp: FirebaseApp | null) {
   // Define a persistência da autenticação para 'local'
   setPersistence(auth, browserLocalPersistence);
   
+  const firestore = getFirestore(firebaseApp);
+
   return {
     firebaseApp,
     auth,
-    firestore: getFirestore(firebaseApp)
+    firestore,
   };
 }
 
