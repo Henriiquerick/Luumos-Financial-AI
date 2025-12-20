@@ -38,8 +38,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [newSessionTitle, setNewSessionTitle] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isSendingRef = useRef(false);
-
+  
   const { user } = useUser();
   const { subscription } = useSubscription();
   const firestore = useFirestore();
@@ -78,9 +77,9 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   };
 
   const handleSendMessage = async () => {
-    if (!userInput.trim() || isSendingRef.current || !user) return;
+    // A trava agora é apenas o estado `isLoading`
+    if (!userInput.trim() || isLoading || !user) return;
 
-    isSendingRef.current = true;
     setIsLoading(true);
     setChatError(null);
     
@@ -147,8 +146,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const errorMessage: ChatMessage = { role: 'model', content: t.chat.error, timestamp: Timestamp.now() };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
+      // Apenas seta o isLoading para falso, sem timeouts
       setIsLoading(false);
-      setTimeout(() => { isSendingRef.current = false; }, 100);
     }
   };
 
@@ -374,3 +373,5 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
+
+    
