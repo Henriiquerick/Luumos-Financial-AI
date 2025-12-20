@@ -111,47 +111,100 @@ export default function Dashboard() {
 
   const isLoading = isFinancialDataLoading || isSubscriptionLoading || isProfileLoading;
   
-  // DEBUG SCREEN
-  if (true) {
-    return (
-      <div className="min-h-screen bg-black text-green-400 font-mono p-8">
-        <h1 className="text-3xl font-bold border-b border-green-700 pb-2 mb-4">RAIO-X DO DASHBOARD</h1>
-        
-        <div className="bg-gray-900/50 border border-green-800 p-4 rounded-lg">
-            <p>Status: <span className={isLoading ? 'text-yellow-400' : 'text-green-400'}>{isLoading ? 'Carregando dados...' : 'Dados Carregados'}</span></p>
-            <p>User ID: <span className="text-cyan-400">{user?.uid || 'Nenhum usuário logado'}</span></p>
-        </div>
-
-        <div className="mt-6">
-            <h2 className="text-xl border-b border-green-800 pb-1 mb-2">Verificação de Onboarding</h2>
-            <div className="bg-gray-900/50 border border-green-800 p-4 rounded-lg">
-                <p>O perfil do usuário (`userProfile`) foi encontrado? {userProfile ? <span className='text-green-400'>SIM</span> : <span className='text-red-500'>NÃO</span>}</p>
-                <p>Campo `aiPersonality` existe no perfil? {userProfile?.aiPersonality ? <span className='text-green-400'>SIM (Valor: {userProfile.aiPersonality})</span> : <span className='text-red-500'>NÃO</span>}</p>
-            </div>
-        </div>
-
-        <div className="mt-6">
-            <h2 className="text-xl border-b border-green-800 pb-1 mb-2">Objeto UserProfile Completo (do hook `useFinancialData`):</h2>
-            <pre className="bg-gray-900 p-4 rounded text-xs border border-green-800 max-h-96 overflow-auto">
-                {JSON.stringify(userProfile, null, 2)}
-            </pre>
-        </div>
-        
-        <div className="mt-10 border-t border-gray-700 pt-5 opacity-30">
-           <h2 className="text-xl mb-4 text-center text-gray-500">--- PREVIEW DO APP ABAIXO ---</h2>
-           {userProfile && <Header userProfile={userProfile} />}
-            <div className="mb-8">
+  const childrenContent = (
+    <AuthGate>
+        {isLoading ? (
+             <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-background">
+                <div className="w-full max-w-7xl space-y-8">
+                  <Skeleton className="h-16 w-1/3" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                  </div>
+                  <Skeleton className="h-12 w-1/4 mx-auto" />
+                </div>
+            </main>
+        ) : (
+            <div className="w-full max-w-7xl mx-auto">
+              <Header userProfile={userProfile as UserProfile} />
+              <div className="mb-8">
                 <h1 className="text-4xl font-bold tracking-tighter">
                   {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
                 </h1>
                 <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className='md:col-span-2 lg:col-span-1'>
+                    <BalanceCard 
+                        netBalance={netBalance} 
+                        cashBalance={cashBalance}
+                        onAddTransaction={() => {}} 
+                    />
+                </div>
+                 <div className='md:col-span-2 lg:col-span-2'>
+                    <DailyInsightCard 
+                        transactions={transactions}
+                        personality={PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES[0]}
+                        balance={netBalance}
+                    />
+                 </div>
+              </div>
             </div>
+        )}
+    </AuthGate>
+  )
+  
+  // --- TELA DE DIAGNÓSTICO ---
+  const showDebug = true;
+  if (showDebug) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 font-mono p-8">
+        <h1 className="text-3xl font-bold border-b border-green-700 pb-2 mb-4">DASHBOARD DEBUG SCREEN</h1>
+        
+        <div className="grid gap-4">
+            <div className="bg-gray-900 p-4 rounded border border-green-900">
+                <h2 className="font-bold text-white mb-2">1. Loading States</h2>
+                <p>Financial Data Loading: <span className="text-white">{String(isFinancialDataLoading)}</span></p>
+                <p>User Profile Loading: <span className="text-white">{String(isProfileLoading)}</span></p>
+                <p>Subscription Loading: <span className="text-white">{String(isSubscriptionLoading)}</span></p>
+                <p>Auth User Object Loading: <span className="text-white">{String(isLoading)}</span></p>
+            </div>
+
+            <div className="bg-gray-900 p-4 rounded border border-green-900">
+                <h2 className="font-bold text-white mb-2">2. Data Objects</h2>
+                <p>User Object exists: <span className={user ? "text-blue-400" : "text-red-500"}>{user ? "YES" : "NO (NULL)"}</span></p>
+                <p>User Profile from Hook: <span className={userProfile ? "text-blue-400" : "text-red-500"}>{userProfile ? "YES" : "NO (NULL)"}</span></p>
+            </div>
+
+            <div className="bg-gray-900 p-4 rounded border border-green-900">
+                <h2 className="font-bold text-white mb-2">3. Critical Onboarding Flag</h2>
+                <p>Profile `aiPersonality` field: <strong className="text-yellow-400">{userProfile?.aiPersonality ? userProfile.aiPersonality : "NOT FOUND"}</strong></p>
+            </div>
+
+            <div className="bg-gray-900 p-4 rounded border border-green-900">
+                <h2 className="font-bold text-white mb-2">4. Full User Profile Object (from useFinancialData)</h2>
+                <pre className="whitespace-pre-wrap text-xs text-gray-400">
+                    {JSON.stringify(userProfile, null, 2)}
+                </pre>
+            </div>
+             <div className="bg-gray-900 p-4 rounded border border-green-900">
+                <h2 className="font-bold text-white mb-2">5. Auth User Object (from useUser)</h2>
+                <pre className="whitespace-pre-wrap text-xs text-gray-400">
+                    {JSON.stringify(user, null, 2)}
+                </pre>
+            </div>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-gray-800 opacity-50">
+            <p className="mb-2 text-center text-gray-500">--- Real Dashboard Content Below ---</p>
+            {childrenContent}
         </div>
       </div>
     );
   }
-
-
+  
   if (!isLoading && (!userProfile || !userProfile.aiPersonality)) {
      return <PersonaOnboarding onComplete={handleOnboardingComplete} />
   }
@@ -276,7 +329,7 @@ export default function Dashboard() {
             </main>
         ) : (
             <div className="w-full max-w-7xl mx-auto">
-              <Header userProfile={userProfile} />
+              <Header userProfile={userProfile as UserProfile} />
               <div className="mb-8">
                 <h1 className="text-4xl font-bold tracking-tighter">
                   {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
@@ -322,8 +375,8 @@ export default function Dashboard() {
                    <AiAdvisorCard
                         knowledge={knowledge}
                         personality={personality}
-                        onKnowledgeChange={handleKnowledgeChange}
-                        onPersonalityChange={handlePersonalityChange}
+                        onKnowledgeChange={() => {}}
+                        onPersonalityChange={() => {}}
                         transactions={transactions}
                         cards={creditCards}
                         balance={netBalance}
@@ -392,3 +445,5 @@ export default function Dashboard() {
     </AuthGate>
   )
 }
+
+    
