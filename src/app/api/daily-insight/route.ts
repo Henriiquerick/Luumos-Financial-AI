@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { initAdmin } from '@/firebase/admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import type { Transaction, UserProfile } from '@/lib/types';
+import type { UserProfile, Transaction } from '@/lib/types';
 import { PERSONALITIES } from '@/lib/agent-config';
 import { generateInsightAnalysis } from '@/lib/finance-utils';
 
@@ -45,47 +45,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
+    if (transactionsSnapshot.empty) {
+        return NextResponse.json({ insight: "Você ainda não tem transações suficientes para uma análise. Comece a registrar seus gastos e receitas!" });
+    }
+
+
     const userProfile = userDoc.data() as UserProfile;
     const transactions = transactionsSnapshot.docs.map(doc => {
         const data = doc.data() as Transaction;
         return {
             ...data,
-            date: getDateFromTimestamp(data.date) // Converte Timestamp para Date
+            date: getDateFromTimestamp(data.date) 
         }
     });
 
-    // 2. Gerar a análise financeira
-    // A função generateInsightAnalysis precisa ser adaptada para calcular o balanço internamente ou receber os dados
-    // Por simplicidade, vamos recalcular o balanço aqui.
-    const cashBalance = transactions.reduce((acc, t) => {
-        if (t.cardId) return acc;
-        const multiplier = t.type === 'income' ? 1 : -1;
-        return acc + t.amount * multiplier;
-    }, 0);
+    const simplifiedTransactions = transactions.map(t => ({
+      categoria: t.category,
+      valor: t.amount,
+      tipo: t.type,
+      data: t.date.toISOString().split('T')[0] // Formato YYYY-MM-DD
+    }));
 
-    const analysis = generateInsightAnalysis(transactions, cashBalance);
-    
     // 3. Obter a personalidade e instrução do sistema
     const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'biris')!;
-    const systemInstruction = personality.instruction;
-
+    
     // 4. Montar o prompt para a Groq
     const finalPrompt = `
-      ${systemInstruction}
+      ${personality.instruction}
       
-      You are giving a user a quick, proactive daily financial insight. 
-      Based on the following analysis, give a short, engaging comment (max 2 sentences) in your persona's voice.
-      DO NOT repeat the numbers, just the conclusion.
+      Você está dando ao usuário um insight financeiro diário, rápido e proativo.
+      Baseado na análise JSON a seguir, forneça um comentário curto e envolvente (máx. 2 frases) com a voz da sua persona.
+      NÃO repita os números, apenas a conclusão. Seja direto e acionável. Use emojis.
+      Responda em Português do Brasil.
 
-      Analysis: ${analysis}
-
-      Your Insight (in Brazilian Portuguese):
+      Análise de Transações Recentes: ${JSON.stringify(simplifiedTransactions)}
     `;
 
     // 5. Chamar a API da Groq
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: finalPrompt }],
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.1-70b-instant', // Usando um modelo rápido e capaz
       temperature: 0.7,
       max_tokens: 150,
     });
