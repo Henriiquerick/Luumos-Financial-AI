@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { ALL_CATEGORIES, TRANSLATED_CATEGORIES } from '@/lib/constants';
+import { ALL_CATEGORIES, TRANSLATED_CATEGORIES, DEFAULT_CATEGORIES } from '@/lib/constants';
 import type { Transaction, TransactionCategory, CreditCard, CustomCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
@@ -145,8 +146,13 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       }
 
       const result = await response.json();
+      
+      const allCategoryNames = [
+        ...DEFAULT_CATEGORIES.map(c => c.value),
+        ...customCategories.map(c => c.name)
+      ];
 
-      if (result.category && (ALL_CATEGORIES.includes(result.category as TransactionCategory) || customCategories.some(c => c.name === result.category))) {
+      if (result.category && allCategoryNames.includes(result.category)) {
         setValue('category', result.category);
         toast({ title: t.toasts.ai.title, description: t.toasts.ai.description.replace('{category}', result.category) });
       }
@@ -158,12 +164,19 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   }, [getValues, setValue, transactions, customCategories, toast, t]);
   
   useEffect(() => {
+    if (transactionToEdit) return; // Não alterar valores padrão ao editar
+
     if (transactionType === 'income') {
       setValue('paymentMethod', 'cash'); 
       setValue('isInstallment', false); 
-      setValue('category', 'Salary'); 
+      // Apenas mude a categoria se a categoria atual for de despesa
+      const currentCategory = getValues('category');
+      const isExpenseCategory = DEFAULT_CATEGORIES.find(c => c.value === currentCategory && c.type === 'expense');
+      if (isExpenseCategory || !currentCategory) {
+        setValue('category', 'Salary'); 
+      }
     }
-  }, [transactionType, setValue]);
+  }, [transactionType, setValue, transactionToEdit, getValues]);
 
 
   async function onSubmit(values: FormValues) {
@@ -182,11 +195,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         type: values.type,
       };
 
-      if (values.type === 'expense' && values.paymentMethod === 'card') {
+      if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
         dataToUpdate.cardId = values.cardId;
       } else {
-        // Explicitly remove cardId if payment method is not card
-        dataToUpdate.cardId = undefined;
+        dataToUpdate.cardId = undefined; // Usa undefined para remover o campo
       }
       
       updateDocumentNonBlocking(transactionRef, dataToUpdate);
@@ -258,27 +270,16 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
 
   const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
   
-  const incomeCategories = useMemo(() => {
-    const defaultIncome = ALL_CATEGORIES
-        .filter(c => ['Salary', 'Investments', 'Other'].includes(c))
-        .map(c => ({ name: c, isCustom: false, icon: '', color: '' }));
-    const customIncome = (customCategories || [])
-        .filter(c => c.type === 'income')
-        .map(c => ({ name: c.name, isCustom: true, icon: c.icon, color: c.color }));
-    return [...defaultIncome, ...customIncome];
-  }, [customCategories]);
-
-  const expenseCategories = useMemo(() => {
-      const defaultExpense = ALL_CATEGORIES
-          .filter(c => !['Salary', 'Investments'].includes(c))
-          .map(c => ({ name: c, isCustom: false, icon: '', color: '' }));
-      const customExpense = (customCategories || [])
-          .filter(c => c.type === 'expense')
-          .map(c => ({ name: c.name, isCustom: true, icon: c.icon, color: c.color }));
-      return [...defaultExpense, ...customExpense];
-  }, [customCategories]);
-
-  const categoriesToShow = transactionType === 'income' ? incomeCategories : expenseCategories;
+  const categoriesToShow = useMemo(() => {
+    const defaultCats = DEFAULT_CATEGORIES.filter(c => c.type === transactionType);
+    const customCats = customCategories.filter(c => c.type === transactionType);
+    
+    const all = [
+      ...customCats.map(c => ({ value: c.name, label: c.name, icon: c.icon })),
+      ...defaultCats.map(c => ({ value: c.value, label: TRANSLATED_CATEGORIES[language][c.labelKey as TransactionCategory], icon: c.icon }))
+    ];
+    return all;
+  }, [transactionType, customCategories, language]);
 
 
   return (
@@ -289,7 +290,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           name="type"
           render={({ field }) => (
             <FormItem>
-              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={!!transactionToEdit}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={!!transactionToEdit}>
                 <FormControl>
                   <SelectTrigger className="bg-transparent text-lg font-semibold py-6">
                     <SelectValue placeholder="Select transaction type" />
@@ -372,10 +373,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 </FormControl>
                 <SelectContent>
                   {categoriesToShow.map(cat => (
-                    <SelectItem key={cat.name} value={cat.name}>
+                    <SelectItem key={cat.value} value={cat.value}>
                        <div className="flex items-center gap-2">
-                        {cat.isCustom && <span className="text-lg" style={{ color: cat.color }}>{cat.icon}</span>}
-                        <span>{cat.isCustom ? cat.name : TRANSLATED_CATEGORIES[language][cat.name as TransactionCategory]}</span>
+                        <span className="text-lg">{cat.icon}</span>
+                        <span>{cat.label}</span>
                        </div>
                     </SelectItem>
                   ))}
@@ -394,7 +395,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isInstallment && !transactionToEdit}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isInstallment && !transactionToEdit}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />

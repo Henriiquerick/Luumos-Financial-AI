@@ -16,18 +16,19 @@ export const ADS_WATCH_LIMITS: Record<string, number> = {
     pro: 20, // Pro plan gets same as gold
 };
 
-
-export const CATEGORIES_OLD: TransactionCategory[] = [
-  'Groceries',
-  'Dining',
-  'Shopping',
-  'Entertainment',
-  'Utilities',
-  'Rent',
-  'Salary',
-  'Investments',
-  'Other',
-];
+// Estrutura de dados enriquecida para as categorias padrão
+export const DEFAULT_CATEGORIES = [
+  { value: 'Groceries', labelKey: 'Groceries', icon: '🛒', type: 'expense' },
+  { value: 'Dining', labelKey: 'Dining', icon: '🍽️', type: 'expense' },
+  { value: 'Shopping', labelKey: 'Shopping', icon: '🛍️', type: 'expense' },
+  { value: 'Entertainment', labelKey: 'Entertainment', icon: '🎮', type: 'expense' },
+  { value: 'Utilities', labelKey: 'Utilities', icon: '📄', type: 'expense' },
+  { value: 'Rent', labelKey: 'Rent', icon: '🏠', type: 'expense' },
+  { value: 'Transport', labelKey: 'Transport', icon: '🚌', type: 'expense' },
+  { value: 'Salary', labelKey: 'Salary', icon: '💰', type: 'income' },
+  { value: 'Investments', labelKey: 'Investments', icon: '📈', type: 'income' },
+  { value: 'Other', labelKey: 'Other', icon: '📦', type: 'expense' },
+] as const;
 
 
 export const TRANSLATED_CATEGORIES: Record<Language, Record<TransactionCategory, string>> = {
@@ -41,6 +42,7 @@ export const TRANSLATED_CATEGORIES: Record<Language, Record<TransactionCategory,
         Salary: 'Salário',
         Investments: 'Investimentos',
         Other: 'Outro',
+        Transport: 'Transporte',
     },
     en: {
         Groceries: 'Groceries',
@@ -52,6 +54,7 @@ export const TRANSLATED_CATEGORIES: Record<Language, Record<TransactionCategory,
         Salary: 'Salary',
         Investments: 'Investments',
         Other: 'Other',
+        Transport: 'Transport',
     },
     es: {
         Groceries: 'Supermercado',
@@ -63,9 +66,11 @@ export const TRANSLATED_CATEGORIES: Record<Language, Record<TransactionCategory,
         Salary: 'Salario',
         Investments: 'Inversiones',
         Other: 'Otro',
+        Transport: 'Transporte',
     }
 }
 
+// Mantém o array simples de strings para validação e compatibilidade onde necessário.
 export const ALL_CATEGORIES: TransactionCategory[] = [
   'Groceries',
   'Dining',
@@ -73,7 +78,15 @@ export const ALL_CATEGORIES: TransactionCategory[] = [
   'Entertainment',
   'Utilities',
   'Rent',
+  'Transport',
   'Salary',
   'Investments',
   'Other',
 ];
+
+// Mapeia o valor da categoria padrão para seu ícone correspondente.
+export const DEFAULT_CATEGORY_ICONS: Record<TransactionCategory, string> = 
+  DEFAULT_CATEGORIES.reduce((acc, cat) => {
+    acc[cat.value] = cat.icon;
+    return acc;
+  }, {} as Record<TransactionCategory, string>);

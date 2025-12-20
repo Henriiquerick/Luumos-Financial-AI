@@ -9,6 +9,7 @@ export type TransactionCategory =
   | 'Entertainment'
   | 'Utilities'
   | 'Rent'
+  | 'Transport'
   | 'Salary'
   | 'Investments'
   | 'Other';

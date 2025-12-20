@@ -1,35 +1,24 @@
-import type { TransactionCategory } from '@/lib/types';
-import {
-  Landmark,
-  ShoppingCart,
-  UtensilsCrossed,
-  Film,
-  Receipt,
-  Home,
-  Wallet,
-  TrendingUp,
-  Shapes,
-} from 'lucide-react';
-import type { LucideProps } from 'lucide-react';
-import type { ComponentType } from 'react';
 
-const categoryIcons: Record<TransactionCategory, ComponentType<LucideProps>> = {
-  Salary: Wallet,
-  Rent: Home,
-  Groceries: ShoppingCart,
-  Dining: UtensilsCrossed,
-  Shopping: ShoppingCart,
-  Entertainment: Film,
-  Utilities: Receipt,
-  Investments: TrendingUp,
-  Other: Shapes,
-};
+import type { TransactionCategory } from '@/lib/types';
+import { Shapes } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
+import { DEFAULT_CATEGORY_ICONS } from '@/lib/constants';
 
 interface CategoryIconProps extends LucideProps {
   category: TransactionCategory;
+  className?: string;
 }
 
-export function CategoryIcon({ category, ...props }: CategoryIconProps) {
-  const Icon = categoryIcons[category] || Shapes;
-  return <Icon {...props} />;
+export function CategoryIcon({ category, className, ...props }: CategoryIconProps) {
+  const icon = DEFAULT_CATEGORY_ICONS[category];
+
+  if (!icon) {
+    return <Shapes className={className} {...props} />;
+  }
+
+  return (
+    <span className={className} role="img" aria-label={category}>
+      {icon}
+    </span>
+  );
 }

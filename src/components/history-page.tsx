@@ -20,13 +20,12 @@ import {
   writeBatch,
   getDocs as getDocsFirestore,
 } from 'firebase/firestore';
-import type { Transaction, CustomCategory, CreditCard } from '@/lib/types';
+import type { Transaction, CustomCategory, CreditCard, TransactionCategory } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CategoryIcon } from './category-icon';
 import { formatDate } from '@/lib/i18n-utils';
 import { useCurrency } from '@/contexts/currency-context';
 import { Loader2, ArrowLeft, Pencil, Trash2 } from 'lucide-react';
@@ -36,10 +35,11 @@ import Header from './header';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import Link from 'next/link';
-import { TRANSLATED_CATEGORIES } from '@/lib/constants';
+import { TRANSLATED_CATEGORIES, DEFAULT_CATEGORY_ICONS } from '@/lib/constants';
 import { TransactionDialog } from './transaction-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from './ui/toast';
+import type { Language } from '@/lib/translations';
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -72,8 +72,14 @@ export function HistoryPage() {
     const custom = customCategories?.find(c => c.name === categoryName);
     if (custom) return { name: custom.name, icon: custom.icon };
     
-    const defaultName = TRANSLATED_CATEGORIES[language][categoryName as keyof typeof TRANSLATED_CATEGORIES[Language]] || categoryName;
-    return { name: defaultName, icon: <CategoryIcon category={categoryName as any} className="h-5 w-5 text-primary" /> };
+    const isDefaultCategory = Object.keys(TRANSLATED_CATEGORIES[language]).includes(categoryName);
+    if(isDefaultCategory){
+      const defaultName = TRANSLATED_CATEGORIES[language][categoryName as keyof typeof TRANSLATED_CATEGORIES[Language]] || categoryName;
+      const defaultIcon = DEFAULT_CATEGORY_ICONS[categoryName as TransactionCategory] || '📦';
+      return { name: defaultName, icon: defaultIcon };
+    }
+    
+    return { name: categoryName, icon: '📦' };
   }
   
   const typedTransactions = useMemo(() => {
@@ -268,7 +274,7 @@ export function HistoryPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-muted/50 rounded-md text-xl">
-                            {categoryDisplay.icon}
+                            <span role="img">{categoryDisplay.icon}</span>
                           </div>
                           <div>
                             <div className="font-medium">{t.description}</div>

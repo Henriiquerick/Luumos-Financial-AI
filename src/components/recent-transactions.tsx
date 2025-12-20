@@ -3,14 +3,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Transaction, CustomCategory } from '@/lib/types';
+import type { Transaction, CustomCategory, TransactionCategory } from '@/lib/types';
 import { CategoryIcon } from './category-icon';
 import { useTranslation } from '@/contexts/language-context';
 import { Button } from './ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/i18n-utils';
 import { useCurrency } from '@/contexts/currency-context';
-import { TRANSLATED_CATEGORIES } from '@/lib/constants';
+import { TRANSLATED_CATEGORIES, DEFAULT_CATEGORY_ICONS } from '@/lib/constants';
 import type { Language } from '@/lib/translations';
 
 interface RecentTransactionsProps {
@@ -31,8 +31,15 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
     const custom = categories.find(c => c.name === categoryName);
     if (custom) return { name: custom.name, icon: custom.icon };
     
-    const defaultName = TRANSLATED_CATEGORIES[language][categoryName as keyof typeof TRANSLATED_CATEGORIES[Language]] || categoryName;
-    return { name: defaultName, icon: <CategoryIcon category={categoryName as any} className="h-5 w-5 text-primary" /> };
+    const isDefaultCategory = Object.keys(TRANSLATED_CATEGORIES[language]).includes(categoryName);
+    if(isDefaultCategory){
+      const defaultName = TRANSLATED_CATEGORIES[language][categoryName as keyof typeof TRANSLATED_CATEGORIES[Language]] || categoryName;
+      const defaultIcon = DEFAULT_CATEGORY_ICONS[categoryName as TransactionCategory] || '📦';
+      return { name: defaultName, icon: defaultIcon };
+    }
+    
+    // Fallback for categories that might not be in either list (should not happen in normal use)
+    return { name: categoryName, icon: '📦' };
   }
 
   return (
@@ -66,7 +73,7 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-muted/50 rounded-md text-xl">
-                          {categoryDisplay.icon}
+                          <span role="img">{categoryDisplay.icon}</span>
                         </div>
                         <div>
                           <div className="font-medium">{t.description}</div>
