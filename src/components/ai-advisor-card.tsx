@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -38,6 +37,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [newSessionTitle, setNewSessionTitle] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSendingRef = useRef(false);
   
   const { user } = useUser();
   const { subscription } = useSubscription();
@@ -47,7 +47,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const sessionsRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'chat_sessions'), orderBy('createdAt', 'desc')) : null, [user, firestore]);
   const { data: chatSessions, isLoading: isLoadingSessions } = useCollection<ChatSession>(sessionsRef);
 
-  const welcomeMessage = t.chat.welcomeMessages[personality.id] || t.chat.welcome;
+  // --- CORREÇÃO DO ERRO TYPESCRIPT AQUI ---
+  // Usamos (t.chat.welcomeMessages as any) para permitir acesso dinâmico
+  const welcomeMessage = (t.chat.welcomeMessages as any)[personality.id] || t.chat.welcome;
+  
   const activeSession = chatSessions?.find(s => s.id === activeSessionId);
 
   const scrollToBottom = () => {
@@ -77,17 +80,18 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   };
 
   const handleSendMessage = async () => {
-    // A trava agora é apenas o estado `isLoading`
-    if (!userInput.trim() || isLoading || !user) return;
+    if (!userInput.trim() || isSendingRef.current || !user) return;
 
+    isSendingRef.current = true;
     setIsLoading(true);
     setChatError(null);
     
     const userMessageContent = userInput;
+    setUserInput(''); 
+    
     const userMessage: ChatMessage = { role: 'user', content: userMessageContent, timestamp: Timestamp.now() };
     
     setMessages(prev => [...prev, userMessage]);
-    setUserInput('');
 
     let currentSessionId = activeSessionId;
 
@@ -146,8 +150,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const errorMessage: ChatMessage = { role: 'model', content: t.chat.error, timestamp: Timestamp.now() };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
-      // Apenas seta o isLoading para falso, sem timeouts
       setIsLoading(false);
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 100);
     }
   };
 
@@ -365,7 +371,13 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                 className="min-h-[50px] max-h-[150px] resize-none pr-12"
                 rows={2}
               />
-              <Button type="submit" onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2 h-8 w-8" size="icon">
+              <Button 
+                type="button" 
+                onClick={handleSendMessage} 
+                disabled={isLoading || !userInput.trim()} 
+                className="absolute right-2 bottom-2 h-8 w-8" 
+                size="icon"
+              >
                  <Send className="h-4 w-4 text-primary" />
               </Button>
           </div>
@@ -373,5 +385,3 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
-
-    
