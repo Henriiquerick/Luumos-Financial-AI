@@ -7,11 +7,7 @@ import { cn } from '@/lib/utils';
 import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
 import { Bot, Loader2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
-
-// IMPORTS CRITICOS
-// O caminho '@/firebase' é o que validamos no passo anterior.
 import { initializeFirebase } from '@/firebase'; 
-// Usamos setDoc para garantir que o documento seja CRIADO se não existir
 import { doc, setDoc } from 'firebase/firestore';
 
 interface PersonaOnboardingProps {
@@ -35,7 +31,6 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
 
   const handleConfirm = async () => {
     if (!selectedKnowledge || !selectedPersonality) return;
-
     setIsLoading(true);
 
     try {
@@ -44,40 +39,32 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
       if (user && db) {
         const userRef = doc(db, 'users', user.uid);
         
-        console.log("💾 Iniciando salvamento blindado (setDoc)...");
+        console.log("💾 Salvando dados no Firestore (Produção)...");
         
-        // MUDANÇA CHAVE: setDoc com merge: true
-        // Isso garante que se o documento não existir, ele é criado.
-        // Se existir, apenas atualiza os campos.
+        // PADRONIZAÇÃO DOS CAMPOS
         await setDoc(userRef, {
-          persona: selectedPersonality,
-          knowledgeLevel: selectedKnowledge,
-          onboardingCompleted: true, // A chave que o Dashboard busca
-          email: user.email, // Garantia extra
+          // Salva com o nome que o Dashboard procura
+          aiPersonality: selectedPersonality.id, 
+          aiKnowledgeLevel: selectedKnowledge.id,
+          onboardingCompleted: true, // A flag principal
+          email: user.email,
           updatedAt: new Date(),
-          uid: user.uid // Redundância útil
+          uid: user.uid
         }, { merge: true });
 
-        console.log("✅ Dados enviados com sucesso! Aguardando sincronização...");
+        console.log("✅ Sucesso! Redirecionando...");
       } else {
-        console.warn("⚠️ Usuário ou Banco de dados não disponível no momento do clique.");
+        throw new Error("Usuário ou banco de dados não está disponível.");
       }
-
-      // Atualiza estado local (visual)
-      onComplete(selectedPersonality, selectedKnowledge);
-
     } catch (error: any) {
-      console.error("❌ ERRO CRÍTICO AO SALVAR:", error);
-      alert(`Erro ao salvar perfil: ${error.message}. Se o erro persistir, verifique sua conexão.`);
-    } finally {
-      // O PULO DO GATO: Espera 2 segundos antes de recarregar.
-      // Isso dá tempo para o Firebase sair da "memória local" e ir para a nuvem,
-      // evitando que o Dashboard carregue antes dos dados chegarem lá.
-      setTimeout(() => {
-          console.log("🚀 Redirecionando para Dashboard agora...");
-          window.location.href = '/dashboard';
-      }, 2000);
+      console.error("❌ ERRO AO SALVAR NO ONBOARDING:", error);
+      alert(`Erro de conexão ao salvar seu perfil: ${error.message}.`);
+      setIsLoading(false); // Para o loading para você tentar de novo
+      return; // NÃO REDIRECIONA se der erro
     }
+
+    // Se chegou aqui, deu certo.
+    window.location.href = '/dashboard';
   };
 
   return (
