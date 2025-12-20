@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addMonths } from 'date-fns';
+import { addMonths, getDate } from 'date-fns';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -202,13 +202,25 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         const installmentId = crypto.randomUUID();
         const installmentAmount = values.amount / values.installments;
 
+        const selectedCard = creditCards.find(c => c.id === values.cardId);
+        let baseInstallmentDate = values.date;
+
+        // Lógica de fechamento da fatura
+        if (selectedCard && selectedCard.closingDay > 0) {
+            const purchaseDay = getDate(values.date);
+            if (purchaseDay >= selectedCard.closingDay) {
+                // Se a compra foi no dia do fechamento ou depois, joga para o próximo mês
+                baseInstallmentDate = addMonths(values.date, 1);
+            }
+        }
+        
         for (let i = 0; i < values.installments; i++) {
-          const newDocRef = doc(transactionsRef); // Generate a new doc ref for each installment
+          const newDocRef = doc(transactionsRef);
           const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
             description: `${values.description} (${i + 1}/${values.installments})`,
             amount: installmentAmount,
             category: values.category,
-            date: Timestamp.fromDate(addMonths(values.date, i)),
+            date: Timestamp.fromDate(addMonths(baseInstallmentDate, i)),
             type: 'expense',
             installments: values.installments,
             installmentId: installmentId,
@@ -470,3 +482,4 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
+
