@@ -89,15 +89,22 @@ export async function POST(req: Request) {
 
     await userRef.update({ dailyCredits: FieldValue.increment(-1) });
 
-    const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === contextData?.knowledgeId) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
-    const personality = PERSONALITIES.find(p => p.id === contextData?.personalityId) || PERSONALITIES.find(p => p.id === 'neytan')!;
+    const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
+    const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
 
     const langInstruction = 
         contextData?.language === 'pt' ? 'Responda estritamente em Português do Brasil.' :
         contextData?.language === 'es' ? 'Responda estritamente em Espanhol.' :
         'Answer strictly in English.';
 
+    const genderInstruction = (userProfile as any).gender === 'female' 
+        ? "O usuário se identifica como mulher. Use pronomes femininos e adjetivos como 'preparada', 'focada', 'gata', 'diva'." 
+        : "O usuário se identifica como homem. Use pronomes masculinos e adjetivos como 'preparado', 'focado', 'campeão', 'monstro'.";
+
     const systemPrompt = `
+      --- DIRETRIZ DE GÊNERO ---
+      ${genderInstruction}
+
       --- DIRETRIZ DE IDIOMA ---
       ${langInstruction}
 
@@ -111,7 +118,7 @@ export async function POST(req: Request) {
       ${contextData ? JSON.stringify(contextData, null, 2) : "Nenhum dado financeiro disponível."}
 
       --- INSTRUÇÃO FINAL ---
-      Responda à mensagem do usuário usando APENAS o conhecimento do seu Nível e estritamente o tom da sua Personalidade, no idioma solicitado.
+      Responda à mensagem do usuário usando APENAS o conhecimento do seu Nível e estritamente o tom da sua Personalidade, no idioma e gênero solicitados.
     `;
 
     const groqMessages = [
