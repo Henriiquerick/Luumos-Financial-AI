@@ -13,13 +13,11 @@ import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
-import { PersonaOnboarding } from './persona-onboarding';
+import { doc, deleteDoc, writeBatch, query, where, getDocs, collection } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
-import { AuthGate } from './auth-gate';
 import { AddCardDialog } from './add-card-dialog';
 import { useTranslation } from '@/contexts/language-context';
-import { isSameMonth, startOfToday } from 'date-fns';
+import { isSameMonth, startOfToday, addMonths } from 'date-fns';
 import { getDateFromTimestamp } from '@/lib/finance-utils';
 import { useToast } from '@/hooks/use-toast';
 import dynamic from 'next/dynamic';
@@ -74,19 +72,6 @@ export default function Dashboard() {
   const handleInvalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
   };
-
-  const handleOnboardingComplete = (personality: AIPersonality, knowledge: AIKnowledgeLevel) => {
-    if (user && firestore) {
-        const userRef = doc(firestore, 'users', user.uid);
-        // Usamos setDoc com merge para criar ou atualizar o perfil
-        queryClient.setQueryData(['user-profile', user.uid], {
-            aiPersonality: personality.id, 
-            aiKnowledgeLevel: knowledge.id,
-            onboardingCompleted: true,
-        });
-        handleInvalidateQueries();
-    }
-  }
 
   const { netBalance, cashBalance } = useMemo(() => {
     const today = startOfToday();
