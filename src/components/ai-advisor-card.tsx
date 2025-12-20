@@ -38,6 +38,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [newSessionTitle, setNewSessionTitle] = useState('');
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isSendingRef = useRef(false); // Trava para impedir envios múltiplos
   const { user } = useUser();
   const { subscription } = useSubscription();
   const firestore = useFirestore();
@@ -62,20 +63,23 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSendMessage(event);
+      event.preventDefault(); // Previne nova linha
+      handleSendMessage(); // Chama a função de envio
     }
   };
 
-  const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
-    if (e) e.preventDefault();
-    if (isLoading || !userInput.trim() || !user) return;
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isSendingRef.current || !user) return;
 
+    isSendingRef.current = true;
     setIsLoading(true);
-    const userMessage: ChatMessage = { role: 'user', content: userInput, timestamp: Timestamp.now() };
+    setChatError(null);
+    
+    const userMessageContent = userInput;
+    const userMessage: ChatMessage = { role: 'user', content: userMessageContent, timestamp: Timestamp.now() };
+    
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
-    setChatError(null);
 
     let currentSessionId = activeSessionId;
 
@@ -86,7 +90,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
           personaId: personality.id,
           knowledgeId: knowledge.id,
           messages: [userMessage],
-          title: userInput.substring(0, 30),
+          title: userMessageContent.substring(0, 30),
         };
         const docRef = await addDoc(collection(firestore, 'users', user.uid, 'chat_sessions'), sessionData);
         currentSessionId = docRef.id;
@@ -119,7 +123,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         } else {
             throw new Error(result.error || 'Failed to get a response from the AI.');
         }
-        setMessages(prev => prev.slice(0, -1));
+        setMessages(prev => prev.slice(0, -1)); // Remove a mensagem do usuário se a API falhar
         return;
       }
       
@@ -135,6 +139,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setTimeout(() => { isSendingRef.current = false; }, 100); // Destrava após um pequeno delay
     }
   };
 
@@ -341,7 +346,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
           </div>
         </ScrollArea>
 
-        <form onSubmit={handleSendMessage} className="relative">
+        <div className="relative">
           <Textarea
             id="user-question"
             placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
@@ -351,11 +356,13 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             className="pr-12"
             rows={2}
           />
-          <Button type="submit" disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
+          <Button type="submit" onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
              <Send className="h-5 w-5 text-primary" />
           </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
+    
