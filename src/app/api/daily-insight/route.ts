@@ -1,42 +1,104 @@
-import { getDailyInsight } from '@/ai/flows/get-daily-insight';
+
+'use server';
+
+import { NextResponse } from 'next/server';
+import Groq from 'groq-sdk';
+import { initAdmin } from '@/firebase/admin';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import type { Transaction, UserProfile } from '@/lib/types';
+import { PERSONALITIES } from '@/lib/agent-config';
 import { generateInsightAnalysis } from '@/lib/finance-utils';
-import type { Transaction, AIPersonality } from '@/lib/types';
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const app = initAdmin();
+const db = getFirestore(app);
+
+const getDateFromTimestamp = (date: any): Date => {
+  if (date instanceof Timestamp) return date.toDate();
+  if (date instanceof Date) return date;
+  return new Date();
+};
 
 export async function POST(req: Request) {
+  if (!app) {
+    return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
+  }
+
   try {
-    const body = await req.json();
+    const { userId } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+
+    // 1. Buscar dados diretamente do Firebase Admin
+    const userRef = db.collection('users').doc(userId);
+    const transactionsRef = userRef.collection('transactions').orderBy('date', 'desc').limit(50);
     
-    // 🕵️‍♂️ Log do Nerd: Vamos ver o que DIABOS está chegando do front
-    console.log("Recebido no Backend:", JSON.stringify(body.personality, null, 2));
+    const [userDoc, transactionsSnapshot] = await Promise.all([
+        userRef.get(),
+        transactionsRef.get()
+    ]);
 
-    const { transactions, balance, personality } = body as { 
-      transactions: Transaction[], 
-      balance: number, 
-      personality: AIPersonality | undefined // Pode vir undefined!
-    };
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
 
-    const analysis = generateInsightAnalysis(transactions, balance);
-
-    // 🛡️ A Blindagem: Se não tiver personalidade ou instrução, usa o Jorgin.
-    // Isso garante que NUNCA passamos 'undefined' pro Genkit.
-    const safeSystemInstruction = personality?.systemInstruction || 
-      "You are Jorgin, a Gen Z financial assistant. You are funny, uses slang (pt-BR), and gives direct advice.";
-
-    const result = await getDailyInsight({
-        analysis,
-        systemInstruction: safeSystemInstruction,
+    const userProfile = userDoc.data() as UserProfile;
+    const transactions = transactionsSnapshot.docs.map(doc => {
+        const data = doc.data() as Transaction;
+        return {
+            ...data,
+            date: getDateFromTimestamp(data.date) // Converte Timestamp para Date
+        }
     });
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+    // 2. Gerar a análise financeira
+    // A função generateInsightAnalysis precisa ser adaptada para calcular o balanço internamente ou receber os dados
+    // Por simplicidade, vamos recalcular o balanço aqui.
+    const cashBalance = transactions.reduce((acc, t) => {
+        if (t.cardId) return acc;
+        const multiplier = t.type === 'income' ? 1 : -1;
+        return acc + t.amount * multiplier;
+    }, 0);
+
+    const analysis = generateInsightAnalysis(transactions, cashBalance);
+    
+    // 3. Obter a personalidade e instrução do sistema
+    const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'biris')!;
+    const systemInstruction = personality.instruction;
+
+    // 4. Montar o prompt para a Groq
+    const finalPrompt = `
+      ${systemInstruction}
+      
+      You are giving a user a quick, proactive daily financial insight. 
+      Based on the following analysis, give a short, engaging comment (max 2 sentences) in your persona's voice.
+      DO NOT repeat the numbers, just the conclusion.
+
+      Analysis: ${analysis}
+
+      Your Insight (in Brazilian Portuguese):
+    `;
+
+    // 5. Chamar a API da Groq
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: finalPrompt }],
+      model: 'llama-3.1-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 150,
     });
-  } catch (e: any) {
-    console.error('Error in /api/daily-insight:', e);
-    // Dica: Retornar o erro exato ajuda a debugar no front
-    return new Response(JSON.stringify({ 
-      error: e.message || 'An internal error occurred.',
-      details: e.toString() 
-    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+    const insightText = completion.choices[0]?.message?.content || "Não foi possível gerar um insight hoje. Tente mais tarde.";
+
+    return NextResponse.json({ insight: insightText });
+
+  } catch (error: any) {
+    console.error("Groq API or Firebase Error in Daily Insight:", error);
+    return NextResponse.json(
+      { error: error.message, stack: error.stack }, 
+      { status: 500 }
+    );
   }
 }
