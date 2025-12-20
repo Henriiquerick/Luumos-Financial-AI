@@ -13,13 +13,11 @@ import { PlusCircle, History } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { AddCardDialog } from './add-card-dialog';
 import { useTranslation } from '@/contexts/language-context';
 import { isSameMonth, startOfToday } from 'date-fns';
@@ -32,6 +30,8 @@ import { FinancialGoalsCard } from './financial-goals-card';
 import { GoalDialog } from './goal-dialog';
 import { AddProgressDialog } from './add-progress-dialog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useFinancialData } from '@/hooks/use-financial-data';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 const InstallmentTunnelChart = dynamic(
@@ -46,6 +46,22 @@ const InstallmentTunnelChart = dynamic(
 export default function Dashboard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  
+  // 1. Substitui os hooks antigos pelo hook com cache do TanStack Query
+  const { data: financialData, isLoading: isFinancialDataLoading } = useFinancialData();
+  const { 
+    transactions = [], 
+    creditCards = [], 
+    customCategories = [], 
+    goals = [] 
+  } = financialData || {};
+
+  const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
+
+  // Estados para controlar os modais
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
@@ -54,91 +70,48 @@ export default function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
 
-  // Memoize Firestore references
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const transactionsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'transactions') : null, [firestore, user]);
-  const cardsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'cards') : null, [firestore, user]);
-  const categoriesRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'custom_categories') : null, [firestore, user]);
-  const goalsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'goals') : null, [firestore, user]);
-
-
-  // Fetch data using hooks
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-  const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsRef);
-  const { data: creditCardsFromHook, isLoading: isCardsLoading } = useCollection<CreditCard>(cardsRef);
-  const { data: customCategories, isLoading: isCategoriesLoading } = useCollection<CustomCategory>(categoriesRef);
-  const { data: goals, isLoading: isGoalsLoading } = useCollection<FinancialGoal>(goalsRef);
-  
-  // Local state for optimistic UI updates
+  // Estado local para UI otimista com cartões, sincronizado com os dados do hook
   const [localCreditCards, setLocalCreditCards] = useState<CreditCard[]>([]);
-
   useEffect(() => {
-    if (creditCardsFromHook) {
-      setLocalCreditCards(creditCardsFromHook);
+    if (creditCards) {
+      setLocalCreditCards(creditCards);
     }
-  }, [creditCardsFromHook]);
+  }, [creditCards]);
+  
+  // TODO: `useDoc` for a single profile is fine, as it's a single document read.
+  const { data: userProfile, isLoading: isProfileLoading } = useFinancialData();
 
-
-  const typedTransactions = useMemo(() => {
-    if (!transactions) return [];
-    
-    return transactions.map(t => ({
-      ...t,
-      date: getDateFromTimestamp(t.date)
-    }));
-  }, [transactions]);
+  const handleInvalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
+  };
 
   const handlePersonalityChange = (personality: AIPersonality) => {
-    if (userProfileRef) {
-       setDoc(userProfileRef, { aiPersonality: personality.id }, { merge: true }).catch(error => {
-        errorEmitter.emit(
-          'permission-error',
-          new FirestorePermissionError({
-            path: userProfileRef.path,
-            operation: 'update',
-            requestResourceData: { aiPersonality: personality.id },
-          })
-        )
-      });
+    if (user) {
+      const userProfileRef = doc(firestore, 'users', user.uid);
+      setDocumentNonBlocking(userProfileRef, { aiPersonality: personality.id }, { merge: true });
+      handleInvalidateQueries();
     }
   };
 
   const handleKnowledgeChange = (knowledge: AIKnowledgeLevel) => {
-    if (userProfileRef) {
-       setDoc(userProfileRef, { aiKnowledgeLevel: knowledge.id }, { merge: true }).catch(error => {
-        errorEmitter.emit(
-          'permission-error',
-          new FirestorePermissionError({
-            path: userProfileRef.path,
-            operation: 'update',
-            requestResourceData: { aiKnowledgeLevel: knowledge.id },
-          })
-        )
-      });
+    if (user) {
+      const userProfileRef = doc(firestore, 'users', user.uid);
+      setDocumentNonBlocking(userProfileRef, { aiKnowledgeLevel: knowledge.id }, { merge: true });
+      handleInvalidateQueries();
     }
   };
 
   const handleOnboardingComplete = (personality: AIPersonality, knowledge: AIKnowledgeLevel) => {
-    if (userProfileRef && user) {
+    if (user) {
+        const userProfileRef = doc(firestore, 'users', user.uid);
         const profileData = { 
             id: user.uid, 
             aiPersonality: personality.id, 
             aiKnowledgeLevel: knowledge.id 
         };
-        setDoc(userProfileRef, profileData, { merge: true }).catch(error => {
-            errorEmitter.emit(
-              'permission-error',
-              new FirestorePermissionError({
-                path: userProfileRef.path,
-                operation: 'create',
-                requestResourceData: profileData,
-              })
-            )
-        });
+        setDocumentNonBlocking(userProfileRef, profileData, { merge: true });
+        handleInvalidateQueries();
     }
   }
 
@@ -151,11 +124,7 @@ export default function Dashboard() {
     setEditingCard(card);
     setIsCardDialogOpen(true);
   };
-
-  const handleCardDialogFinished = (updatedCard?: CreditCard) => {
-    setEditingCard(null);
-  };
-
+  
   const handleColorChange = (newColor: string) => {
     if (editingCard) {
       setLocalCreditCards(prevCards =>
@@ -191,22 +160,22 @@ export default function Dashboard() {
     setIsAddProgressDialogOpen(true);
   };
   
-    const handleUndoDelete = (deletedTransactions: Transaction[]) => {
-        if (!user || !firestore) return;
-        const batch = writeBatch(firestore);
-        deletedTransactions.forEach(t => {
-            const docRef = doc(firestore, 'users', user.uid, 'transactions', t.id);
-            // We need to convert date back to Timestamp for Firestore
-            const firestoreTransaction = { ...t, date: new Date(t.date) }; 
-            batch.set(docRef, firestoreTransaction);
-        });
-        batch.commit().then(() => {
-            toast({ title: "Restaurado!", description: "A transação foi restaurada." });
-        }).catch(err => {
-            console.error("Error undoing delete:", err);
-            toast({ title: "Erro", description: "Não foi possível restaurar a transação.", variant: "destructive" });
-        });
-    };
+  const handleUndoDelete = (deletedTransactions: Transaction[]) => {
+      if (!user || !firestore) return;
+      const batch = writeBatch(firestore);
+      deletedTransactions.forEach(t => {
+          const docRef = doc(firestore, 'users', user.uid, 'transactions', t.id);
+          const firestoreTransaction = { ...t, date: new Date(t.date) }; 
+          batch.set(docRef, firestoreTransaction);
+      });
+      batch.commit().then(() => {
+          toast({ title: "Restaurado!", description: "A transação foi restaurada." });
+          handleInvalidateQueries();
+      }).catch(err => {
+          console.error("Error undoing delete:", err);
+          toast({ title: "Erro", description: "Não foi possível restaurar a transação.", variant: "destructive" });
+      });
+  };
 
   const handleDeleteTransaction = async (transactionToDelete: Transaction) => {
     if (!user || !firestore) return;
@@ -249,6 +218,7 @@ export default function Dashboard() {
               action: <ToastAction altText="Desfazer" onClick={() => handleUndoDelete(transactionsToDelete)}>Desfazer</ToastAction>
           });
         }
+        handleInvalidateQueries();
       } catch (error) {
         console.error("Error deleting transaction(s): ", error);
         toast({ title: t.toasts.error.title, description: t.toasts.error.description, variant: 'destructive' });
@@ -258,13 +228,13 @@ export default function Dashboard() {
 
   const { netBalance, cashBalance } = useMemo(() => {
     const today = startOfToday();
-    const currentCashBalance = (typedTransactions || []).reduce((acc, t) => {
-      if (t.cardId) return acc; // Ignore card transactions for cash balance
+    const currentCashBalance = transactions.reduce((acc, t) => {
+      if (t.cardId) return acc;
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
     
-    const currentMonthCardBill = (typedTransactions || []).reduce((acc, t) => {
+    const currentMonthCardBill = transactions.reduce((acc, t) => {
       if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
         return acc + t.amount;
       }
@@ -275,9 +245,9 @@ export default function Dashboard() {
       netBalance: currentCashBalance - currentMonthCardBill,
       cashBalance: currentCashBalance
     };
-  }, [typedTransactions]);
+  }, [transactions]);
 
-  const isLoading = isProfileLoading || isTransactionsLoading || isCardsLoading || isCategoriesLoading || isGoalsLoading || isSubscriptionLoading;
+  const isLoading = isFinancialDataLoading || isSubscriptionLoading;
 
   const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
   const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
@@ -318,30 +288,29 @@ export default function Dashboard() {
                 </div>
                  <div className='md:col-span-2 lg:col-span-2'>
                     <DailyInsightCard 
-                        transactions={typedTransactions}
+                        transactions={transactions}
                         personality={personality}
                         balance={netBalance}
                     />
                  </div>
               </div>
 
-
               <div className="mt-6 space-y-6">
                   <CardsCarousel 
-                    cards={localCreditCards || []} 
-                    transactions={typedTransactions} 
+                    cards={localCreditCards} 
+                    transactions={transactions} 
                     onAddCard={handleAddCard}
                     onEditCard={handleEditCard}
                   />
 
                   <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                     <FinancialGoalsCard 
-                        goals={goals || []}
+                        goals={goals}
                         onAddGoal={handleAddGoal}
                         onEditGoal={handleEditGoal}
                         onAddProgress={handleAddProgress}
                     />
-                    <InstallmentTunnelChart transactions={typedTransactions} cards={localCreditCards || []} />
+                    <InstallmentTunnelChart transactions={transactions} cards={localCreditCards} />
                   </div>
                   
                    <AiAdvisorCard
@@ -349,14 +318,14 @@ export default function Dashboard() {
                         personality={personality}
                         onKnowledgeChange={handleKnowledgeChange}
                         onPersonalityChange={handlePersonalityChange}
-                        transactions={typedTransactions}
-                        cards={localCreditCards || []}
+                        transactions={transactions}
+                        cards={localCreditCards}
                         balance={netBalance}
                     />
 
                   <RecentTransactions 
-                    transactions={typedTransactions}
-                    categories={customCategories || []}
+                    transactions={transactions}
+                    categories={customCategories}
                     onEdit={handleEditTransaction}
                     onDelete={handleDeleteTransaction}
                   />
@@ -373,36 +342,47 @@ export default function Dashboard() {
                     </div>
                 </div>
               </div>
-              <TransactionDialog 
-                isOpen={isTransactionDialogOpen} 
-                setIsOpen={setIsTransactionDialogOpen} 
-                transactions={typedTransactions}
-                creditCards={localCreditCards || []}
-                customCategories={customCategories || []}
-                transactionToEdit={editingTransaction}
-                onFinished={() => setEditingTransaction(null)}
-              />
-              <AddCardDialog
-                isOpen={isCardDialogOpen}
-                setIsOpen={setIsCardDialogOpen}
-                cardToEdit={editingCard}
-                onFinished={handleCardDialogFinished}
-                onColorChange={handleColorChange}
-              />
-              <GoalDialog
-                isOpen={isGoalDialogOpen}
-                setIsOpen={setIsGoalDialogOpen}
-                goalToEdit={editingGoal}
-                onFinished={() => setEditingGoal(null)}
-              />
-              <AddProgressDialog
-                isOpen={isAddProgressDialogOpen}
-                setIsOpen={setIsAddProgressDialogOpen}
-                goal={goalToAddProgress}
-                onFinished={() => setGoalToAddProgress(null)}
-              />
-            </div>
         )}
+        <TransactionDialog 
+            isOpen={isTransactionDialogOpen} 
+            setIsOpen={setIsTransactionDialogOpen} 
+            transactions={transactions}
+            creditCards={localCreditCards}
+            customCategories={customCategories}
+            transactionToEdit={editingTransaction}
+            onFinished={() => {
+                setEditingTransaction(null);
+                handleInvalidateQueries();
+            }}
+        />
+        <AddCardDialog
+            isOpen={isCardDialogOpen}
+            setIsOpen={setIsCardDialogOpen}
+            cardToEdit={editingCard}
+            onFinished={() => {
+                setEditingCard(null);
+                handleInvalidateQueries();
+            }}
+            onColorChange={handleColorChange}
+        />
+        <GoalDialog
+            isOpen={isGoalDialogOpen}
+            setIsOpen={setIsGoalDialogOpen}
+            goalToEdit={editingGoal}
+            onFinished={() => {
+                setEditingGoal(null);
+                handleInvalidateQueries();
+            }}
+        />
+        <AddProgressDialog
+            isOpen={isAddProgressDialogOpen}
+            setIsOpen={setIsAddProgressDialogOpen}
+            goal={goalToAddProgress}
+            onFinished={() => {
+                setGoalToAddProgress(null);
+                handleInvalidateQueries();
+            }}
+        />
     </AuthGate>
   )
 }
