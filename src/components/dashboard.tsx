@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
@@ -12,8 +12,8 @@ import { PlusCircle, History } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { CardsCarousel } from '@/components/cards-carousel';
 import { DailyInsightCard } from '@/components/daily-insight-card';
-import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { collection, doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { PersonaOnboarding } from './persona-onboarding';
 import { Skeleton } from './ui/skeleton';
 import { AuthGate } from './auth-gate';
@@ -31,7 +31,7 @@ import { AddProgressDialog } from './add-progress-dialog';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useFinancialData } from '@/hooks/use-financial-data';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 
 const InstallmentTunnelChart = dynamic(
@@ -49,8 +49,9 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const router = useRouter();
   
+  const { profile: userProfile, isLoading: isProfileLoading } = useUserProfile();
+
   const { data: financialData, isLoading: isFinancialDataLoading } = useFinancialData();
   const { 
     transactions = [], 
@@ -59,7 +60,6 @@ export default function Dashboard() {
     goals = [] 
   } = financialData || {};
 
-  const { data: userProfile, isLoading: isProfileLoading } = useFinancialData();
   const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
 
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
@@ -76,14 +76,14 @@ export default function Dashboard() {
   };
 
   const handleOnboardingComplete = (personality: AIPersonality, knowledge: AIKnowledgeLevel) => {
-    if (user) {
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        const profileData = { 
-            id: user.uid, 
+    if (user && firestore) {
+        const userRef = doc(firestore, 'users', user.uid);
+        // Usamos setDoc com merge para criar ou atualizar o perfil
+        queryClient.setQueryData(['user-profile', user.uid], {
             aiPersonality: personality.id, 
-            aiKnowledgeLevel: knowledge.id 
-        };
-        setDocumentNonBlocking(userProfileRef, profileData, { merge: true });
+            aiKnowledgeLevel: knowledge.id,
+            onboardingCompleted: true,
+        });
         handleInvalidateQueries();
     }
   }
@@ -91,13 +91,26 @@ export default function Dashboard() {
   const { netBalance, cashBalance } = useMemo(() => {
     const today = startOfToday();
     const currentCashBalance = transactions.reduce((acc, t) => {
-      if (t.cardId) return acc;
+      if (t.cardId) return acc; // ignora transações de cartão para o saldo em conta
       const multiplier = t.type === 'income' ? 1 : -1;
       return acc + t.amount * multiplier;
     }, 0);
     
+    // O disponível real é o saldo em conta menos as faturas ABERTAS
     const currentMonthCardBill = transactions.reduce((acc, t) => {
-      if (t.cardId && t.type === 'expense' && isSameMonth(getDateFromTimestamp(t.date), today)) {
+      const card = creditCards.find(c => c.id === t.cardId);
+      if(!card) return acc;
+      
+      const transactionDate = getDateFromTimestamp(t.date);
+      const closingDay = card.closingDay;
+      const transactionDay = transactionDate.getDate();
+
+      // Fatura do mês atual: compra feita ANTES do dia do fechamento, no mês ATUAL
+      const isCurrentBill = isSameMonth(transactionDate, today) && transactionDay <= closingDay;
+      // Fatura do mês atual: compra feita DEPOIS do dia do fechamento, no mês ANTERIOR
+      const isPreviousMonthBill = isSameMonth(addMonths(transactionDate, 1), today) && transactionDay > closingDay;
+
+      if (t.type === 'expense' && (isCurrentBill || isPreviousMonthBill)) {
         return acc + t.amount;
       }
       return acc;
@@ -107,106 +120,30 @@ export default function Dashboard() {
       netBalance: currentCashBalance - currentMonthCardBill,
       cashBalance: currentCashBalance
     };
-  }, [transactions]);
+  }, [transactions, creditCards]);
 
   const isLoading = isFinancialDataLoading || isSubscriptionLoading || isProfileLoading;
   
-  const childrenContent = (
-    <AuthGate>
-        {isLoading ? (
-             <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-background">
-                <div className="w-full max-w-7xl space-y-8">
-                  <Skeleton className="h-16 w-1/3" />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                  </div>
-                  <Skeleton className="h-12 w-1/4 mx-auto" />
+  if (isLoading) {
+      return (
+            <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-background">
+              <div className="w-full max-w-7xl space-y-8">
+                <Skeleton className="h-16 w-1/3" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
                 </div>
-            </main>
-        ) : (
-            <div className="w-full max-w-7xl mx-auto">
-              <Header userProfile={userProfile as UserProfile} />
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold tracking-tighter">
-                  {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
-                </h1>
-                <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+                <Skeleton className="h-12 w-1/4 mx-auto" />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className='md:col-span-2 lg:col-span-1'>
-                    <BalanceCard 
-                        netBalance={netBalance} 
-                        cashBalance={cashBalance}
-                        onAddTransaction={() => {}} 
-                    />
-                </div>
-                 <div className='md:col-span-2 lg:col-span-2'>
-                    <DailyInsightCard 
-                        transactions={transactions}
-                        personality={PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES[0]}
-                        balance={netBalance}
-                    />
-                 </div>
-              </div>
-            </div>
-        )}
-    </AuthGate>
-  )
-  
-  // --- TELA DE DIAGNÓSTICO ---
-  const showDebug = true;
-  if (showDebug) {
-    return (
-      <div className="min-h-screen bg-black text-green-400 font-mono p-8">
-        <h1 className="text-3xl font-bold border-b border-green-700 pb-2 mb-4">DASHBOARD DEBUG SCREEN</h1>
-        
-        <div className="grid gap-4">
-            <div className="bg-gray-900 p-4 rounded border border-green-900">
-                <h2 className="font-bold text-white mb-2">1. Loading States</h2>
-                <p>Financial Data Loading: <span className="text-white">{String(isFinancialDataLoading)}</span></p>
-                <p>User Profile Loading: <span className="text-white">{String(isProfileLoading)}</span></p>
-                <p>Subscription Loading: <span className="text-white">{String(isSubscriptionLoading)}</span></p>
-                <p>Auth User Object Loading: <span className="text-white">{String(isLoading)}</span></p>
-            </div>
-
-            <div className="bg-gray-900 p-4 rounded border border-green-900">
-                <h2 className="font-bold text-white mb-2">2. Data Objects</h2>
-                <p>User Object exists: <span className={user ? "text-blue-400" : "text-red-500"}>{user ? "YES" : "NO (NULL)"}</span></p>
-                <p>User Profile from Hook: <span className={userProfile ? "text-blue-400" : "text-red-500"}>{userProfile ? "YES" : "NO (NULL)"}</span></p>
-            </div>
-
-            <div className="bg-gray-900 p-4 rounded border border-green-900">
-                <h2 className="font-bold text-white mb-2">3. Critical Onboarding Flag</h2>
-                <p>Profile `aiPersonality` field: <strong className="text-yellow-400">{userProfile?.aiPersonality ? userProfile.aiPersonality : "NOT FOUND"}</strong></p>
-            </div>
-
-            <div className="bg-gray-900 p-4 rounded border border-green-900">
-                <h2 className="font-bold text-white mb-2">4. Full User Profile Object (from useFinancialData)</h2>
-                <pre className="whitespace-pre-wrap text-xs text-gray-400">
-                    {JSON.stringify(userProfile, null, 2)}
-                </pre>
-            </div>
-             <div className="bg-gray-900 p-4 rounded border border-green-900">
-                <h2 className="font-bold text-white mb-2">5. Auth User Object (from useUser)</h2>
-                <pre className="whitespace-pre-wrap text-xs text-gray-400">
-                    {JSON.stringify(user, null, 2)}
-                </pre>
-            </div>
-        </div>
-
-        <div className="mt-8 pt-8 border-t border-gray-800 opacity-50">
-            <p className="mb-2 text-center text-gray-500">--- Real Dashboard Content Below ---</p>
-            {childrenContent}
-        </div>
-      </div>
-    );
+          </main>
+      );
   }
   
-  if (!isLoading && (!userProfile || !userProfile.aiPersonality)) {
-     return <PersonaOnboarding onComplete={handleOnboardingComplete} />
+  // A proteção de rota agora está no layout, então aqui só precisamos dos dados
+  if (!userProfile) {
+    // Isso não deve acontecer se a proteção de rota funcionar, mas é uma salvaguarda
+    return null; 
   }
 
   const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
@@ -314,136 +251,119 @@ export default function Dashboard() {
   };
 
   return (
-    <AuthGate>
-        {isLoading ? (
-             <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-background">
-                <div className="w-full max-w-7xl space-y-8">
-                  <Skeleton className="h-16 w-1/3" />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                  </div>
-                  <Skeleton className="h-12 w-1/4 mx-auto" />
-                </div>
-            </main>
-        ) : (
-            <div className="w-full max-w-7xl mx-auto">
-              <Header userProfile={userProfile as UserProfile} />
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold tracking-tighter">
-                  {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
-                </h1>
-                <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
-              </div>
+        <div className="w-full max-w-7xl mx-auto">
+          <Header userProfile={userProfile as UserProfile} />
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold tracking-tighter">
+              {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
+            </h1>
+            <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className='md:col-span-2 lg:col-span-1'>
-                    <BalanceCard 
-                        netBalance={netBalance} 
-                        cashBalance={cashBalance}
-                        onAddTransaction={handleAddTransaction} 
-                    />
-                </div>
-                 <div className='md:col-span-2 lg:col-span-2'>
-                    <DailyInsightCard 
-                        transactions={transactions}
-                        personality={personality}
-                        balance={netBalance}
-                    />
-                 </div>
-              </div>
-
-              <div className="mt-6 space-y-6">
-                  <CardsCarousel 
-                    cards={creditCards} 
-                    transactions={transactions} 
-                    onAddCard={handleAddCard}
-                    onEditCard={handleEditCard}
-                  />
-
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                    <FinancialGoalsCard 
-                        goals={goals}
-                        onAddGoal={handleAddGoal}
-                        onEditGoal={handleEditGoal}
-                        onAddProgress={handleAddProgress}
-                    />
-                    <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
-                  </div>
-                  
-                   <AiAdvisorCard
-                        knowledge={knowledge}
-                        personality={personality}
-                        onKnowledgeChange={() => {}}
-                        onPersonalityChange={() => {}}
-                        transactions={transactions}
-                        cards={creditCards}
-                        balance={netBalance}
-                    />
-
-                  <RecentTransactions 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className='md:col-span-2 lg:col-span-1'>
+                <BalanceCard 
+                    netBalance={netBalance} 
+                    cashBalance={cashBalance}
+                    onAddTransaction={handleAddTransaction} 
+                />
+            </div>
+              <div className='md:col-span-2 lg:col-span-2'>
+                <DailyInsightCard 
                     transactions={transactions}
-                    categories={customCategories}
-                    onEdit={handleEditTransaction}
-                    onDelete={handleDeleteTransaction}
-                  />
-                   <div className="text-center pt-4">
-                      <Button asChild variant="outline">
-                        <Link href="/dashboard/history">
-                          <History className="mr-2 h-4 w-4" />
-                          {t.dashboard.view_full_history}
-                        </Link>
-                      </Button>
-                      <Button className="ml-4" onClick={handleAddTransaction} >
-                        <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
-                     </Button>
-                    </div>
-                </div>
+                    personality={personality}
+                    balance={netBalance}
+                />
               </div>
-        )}
-        <TransactionDialog 
-            isOpen={isTransactionDialogOpen} 
-            setIsOpen={setIsTransactionDialogOpen} 
-            transactions={transactions}
-            creditCards={creditCards}
-            customCategories={customCategories}
-            transactionToEdit={editingTransaction}
-            onFinished={() => {
-                setEditingTransaction(null);
-                handleInvalidateQueries();
-            }}
-        />
-        <AddCardDialog
-            isOpen={isCardDialogOpen}
-            setIsOpen={setIsCardDialogOpen}
-            cardToEdit={editingCard}
-            onFinished={() => {
-                setEditingCard(null);
-                handleInvalidateQueries();
-            }}
-            onColorChange={() => {}}
-        />
-        <GoalDialog
-            isOpen={isGoalDialogOpen}
-            setIsOpen={setIsGoalDialogOpen}
-            goalToEdit={editingGoal}
-            onFinished={() => {
-                setEditingGoal(null);
-                handleInvalidateQueries();
-            }}
-        />
-        <AddProgressDialog
-            isOpen={isAddProgressDialogOpen}
-            setIsOpen={setIsAddProgressDialogOpen}
-            goal={goalToAddProgress}
-            onFinished={() => {
-                setGoalToAddProgress(null);
-                handleInvalidateQueries();
-            }}
-        />
-    </AuthGate>
+          </div>
+
+          <div className="mt-6 space-y-6">
+              <CardsCarousel 
+                cards={creditCards} 
+                transactions={transactions} 
+                onAddCard={handleAddCard}
+                onEditCard={handleEditCard}
+              />
+
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                <FinancialGoalsCard 
+                    goals={goals}
+                    onAddGoal={handleAddGoal}
+                    onEditGoal={handleEditGoal}
+                    onAddProgress={handleAddProgress}
+                />
+                <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
+              </div>
+              
+                <AiAdvisorCard
+                    knowledge={knowledge}
+                    personality={personality}
+                    onKnowledgeChange={() => {}}
+                    onPersonalityChange={() => {}}
+                    transactions={transactions}
+                    cards={creditCards}
+                    balance={netBalance}
+                />
+
+              <RecentTransactions 
+                transactions={transactions}
+                categories={customCategories}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+              />
+                <div className="text-center pt-4">
+                  <Button asChild variant="outline">
+                    <Link href="/dashboard/history">
+                      <History className="mr-2 h-4 w-4" />
+                      {t.dashboard.view_full_history}
+                    </Link>
+                  </Button>
+                  <Button className="ml-4" onClick={handleAddTransaction} >
+                    <PlusCircle className="mr-2 h-4 w-4" /> {t.dashboard.add_transaction}
+                  </Button>
+                </div>
+            </div>
+          
+            <TransactionDialog 
+                isOpen={isTransactionDialogOpen} 
+                setIsOpen={setIsTransactionDialogOpen} 
+                transactions={transactions}
+                creditCards={creditCards}
+                customCategories={customCategories}
+                transactionToEdit={editingTransaction}
+                onFinished={() => {
+                    setEditingTransaction(null);
+                    handleInvalidateQueries();
+                }}
+            />
+            <AddCardDialog
+                isOpen={isCardDialogOpen}
+                setIsOpen={setIsCardDialogOpen}
+                cardToEdit={editingCard}
+                onFinished={() => {
+                    setEditingCard(null);
+                    handleInvalidateQueries();
+                }}
+                onColorChange={() => {}}
+            />
+            <GoalDialog
+                isOpen={isGoalDialogOpen}
+                setIsOpen={setIsGoalDialogOpen}
+                goalToEdit={editingGoal}
+                onFinished={() => {
+                    setEditingGoal(null);
+                    handleInvalidateQueries();
+                }}
+            />
+            <AddProgressDialog
+                isOpen={isAddProgressDialogOpen}
+                setIsOpen={setIsAddProgressDialogOpen}
+                goal={goalToAddProgress}
+                onFinished={() => {
+                    setGoalToAddProgress(null);
+                    handleInvalidateQueries();
+                }}
+            />
+        </div>
   )
 }
-
-    
