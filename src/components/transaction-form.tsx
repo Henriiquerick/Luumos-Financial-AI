@@ -205,11 +205,9 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         const selectedCard = creditCards.find(c => c.id === values.cardId);
         let baseInstallmentDate = values.date;
 
-        // Lógica de fechamento da fatura
         if (selectedCard && selectedCard.closingDay > 0) {
             const purchaseDay = getDate(values.date);
             if (purchaseDay >= selectedCard.closingDay) {
-                // Se a compra foi no dia do fechamento ou depois, joga para o próximo mês
                 baseInstallmentDate = addMonths(values.date, 1);
             }
         }
@@ -263,20 +261,20 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   const incomeCategories = useMemo(() => {
     const defaultIncome = ALL_CATEGORIES
         .filter(c => ['Salary', 'Investments', 'Other'].includes(c))
-        .map(c => ({ name: c, isCustom: false }));
+        .map(c => ({ name: c, isCustom: false, icon: '', color: '' }));
     const customIncome = (customCategories || [])
         .filter(c => c.type === 'income')
-        .map(c => ({ name: c.name, isCustom: true }));
+        .map(c => ({ name: c.name, isCustom: true, icon: c.icon, color: c.color }));
     return [...defaultIncome, ...customIncome];
   }, [customCategories]);
 
   const expenseCategories = useMemo(() => {
       const defaultExpense = ALL_CATEGORIES
           .filter(c => !['Salary', 'Investments'].includes(c))
-          .map(c => ({ name: c, isCustom: false }));
+          .map(c => ({ name: c, isCustom: false, icon: '', color: '' }));
       const customExpense = (customCategories || [])
           .filter(c => c.type === 'expense')
-          .map(c => ({ name: c.name, isCustom: true }));
+          .map(c => ({ name: c.name, isCustom: true, icon: c.icon, color: c.color }));
       return [...defaultExpense, ...customExpense];
   }, [customCategories]);
 
@@ -333,6 +331,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
                   <MoneyInput
+                    placeholder="R$ 0,00"
                     value={value}
                     onValueChange={(value) => onChange(value)}
                     {...rest}
@@ -374,7 +373,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 <SelectContent>
                   {categoriesToShow.map(cat => (
                     <SelectItem key={cat.name} value={cat.name}>
-                       {cat.isCustom ? cat.name : TRANSLATED_CATEGORIES[language][cat.name as TransactionCategory]}
+                       <div className="flex items-center gap-2">
+                        {cat.isCustom && <span className="text-lg" style={{ color: cat.color }}>{cat.icon}</span>}
+                        <span>{cat.isCustom ? cat.name : TRANSLATED_CATEGORIES[language][cat.name as TransactionCategory]}</span>
+                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -482,4 +484,3 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
-
