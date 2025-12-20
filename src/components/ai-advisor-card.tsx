@@ -57,15 +57,15 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
      setChatError(null);
   }, [activeSessionId, chatSessions]);
 
-  const handleSendMessage = async () => {
-    if (!userInput.trim() || !user) return;
-    
+  const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (isLoading || !userInput.trim() || !user) return;
+
+    setIsLoading(true);
     const userMessage: ChatMessage = { role: 'user', content: userInput, timestamp: Timestamp.now() };
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
-    setIsLoading(true);
     setChatError(null);
-
 
     let currentSessionId = activeSessionId;
 
@@ -117,7 +117,6 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         } else {
             throw new Error(result.error || 'Failed to get a response from the AI.');
         }
-        setIsLoading(false);
         // Remove a última mensagem do usuário da UI se a chamada falhar
         setMessages(prev => prev.slice(0, -1));
         return;
@@ -197,7 +196,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      handleSendMessage();
+      handleSendMessage(event);
     }
   };
 
@@ -225,8 +224,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                             <div 
                               key={session.id} 
                               className={cn(
-                                "group flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors",
-                                activeSessionId === session.id ? 'bg-primary/20' : 'hover:bg-muted/50'
+                                "group flex items-center justify-between p-3 mb-2 rounded-lg cursor-pointer transition-colors",
+                                activeSessionId === session.id ? 'bg-primary/20' : 'hover:bg-white/10'
                               )}
                               onClick={() => setActiveSessionId(session.id)}
                             >
@@ -237,10 +236,10 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:bg-red-400/20"
                                   onClick={(e) => handleDeleteSession(session.id, e)}
                                 >
-                                    <Trash2 className="h-4 w-4 text-red-500/70 hover:text-red-500" />
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
                         ))
@@ -341,7 +340,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
             </div>
           </ScrollArea>
 
-          <div className="relative">
+          <form onSubmit={handleSendMessage} className="relative">
             <Textarea
               id="user-question"
               placeholder={t.chat.placeholder.replace('{personalityName}', personality.name)}
@@ -351,13 +350,12 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
               className="pr-12"
               rows={2}
             />
-            <Button onClick={handleSendMessage} disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
+            <Button type="submit" disabled={isLoading || !userInput.trim()} className="absolute right-2 bottom-2" size="icon" variant="ghost">
                <Send className="h-5 w-5 text-primary" />
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
   );
 }
-
