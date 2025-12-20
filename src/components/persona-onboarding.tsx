@@ -8,11 +8,11 @@ import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
 import { Bot, Loader2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 
-// --- CORREÇÃO DO IMPORT ---
-// Tente digitar "initializeFirebase" e dar Enter para o VS Code achar o caminho certo.
-// Se o seu arquivo estiver em src/lib/firebase/index.ts, use:
-import { initializeFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+// IMPORTS CRITICOS
+// O caminho '@/firebase' é o que validamos no passo anterior.
+import { initializeFirebase } from '@/firebase'; 
+// Usamos setDoc para garantir que o documento seja CRIADO se não existir
+import { doc, setDoc } from 'firebase/firestore';
 
 interface PersonaOnboardingProps {
   onComplete: (persona: AIPersonality, knowledge: AIKnowledgeLevel) => void;
@@ -24,8 +24,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   const [selectedPersonality, setSelectedPersonality] = useState<AIPersonality | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Inicializa SDKs para uso local no componente
-  // O hook initializeFirebase garante que estamos usando a instância correta
+  // Inicializa a conexão com o Firebase
   const { auth, firestore: db } = initializeFirebase();
 
   const handleNextStep = () => {
@@ -40,30 +39,44 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
     setIsLoading(true);
 
     try {
-      // 1. Tenta salvar DIRETAMENTE no Firebase aqui.
       const user = auth?.currentUser;
       
       if (user && db) {
         const userRef = doc(db, 'users', user.uid);
         
-        // Atualiza persona, nível e marca onboarding como completo
-        await updateDoc(userRef, {
+        console.log("💾 Iniciando salvamento blindado (setDoc)...");
+        
+        // MUDANÇA CHAVE: setDoc com merge: true
+        // Isso garante que se o documento não existir, ele é criado.
+        // Se existir, apenas atualiza os campos.
+        await setDoc(userRef, {
           persona: selectedPersonality,
           knowledgeLevel: selectedKnowledge,
-          onboardingCompleted: true, // Flag para impedir o loop
-          updatedAt: new Date()
-        });
-        console.log("✅ Perfil salvo com sucesso!");
+          onboardingCompleted: true, // A chave que o Dashboard busca
+          email: user.email, // Garantia extra
+          updatedAt: new Date(),
+          uid: user.uid // Redundância útil
+        }, { merge: true });
+
+        console.log("✅ Dados enviados com sucesso! Aguardando sincronização...");
+      } else {
+        console.warn("⚠️ Usuário ou Banco de dados não disponível no momento do clique.");
       }
 
-      // 2. Passa para o pai atualizar o estado local
+      // Atualiza estado local (visual)
       onComplete(selectedPersonality, selectedKnowledge);
 
-    } catch (error) {
-      console.error("⚠️ Erro ao salvar (Ignorado para forçar entrada):", error);
+    } catch (error: any) {
+      console.error("❌ ERRO CRÍTICO AO SALVAR:", error);
+      alert(`Erro ao salvar perfil: ${error.message}. Se o erro persistir, verifique sua conexão.`);
     } finally {
-      // 3. Redirecionamento forçado para quebrar loops de cache
-      window.location.href = '/dashboard';
+      // O PULO DO GATO: Espera 2 segundos antes de recarregar.
+      // Isso dá tempo para o Firebase sair da "memória local" e ir para a nuvem,
+      // evitando que o Dashboard carregue antes dos dados chegarem lá.
+      setTimeout(() => {
+          console.log("🚀 Redirecionando para Dashboard agora...");
+          window.location.href = '/dashboard';
+      }, 2000);
     }
   };
 
@@ -137,9 +150,20 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
             <Button onClick={() => setStep(1)} variant="outline" size="lg">
               Voltar
             </Button>
-            <Button onClick={handleConfirm} disabled={!selectedPersonality || isLoading} size="lg" className="bg-accent hover:bg-accent/90">
-              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              Começar Minha Jornada
+            <Button 
+              onClick={handleConfirm} 
+              disabled={!selectedPersonality || isLoading} 
+              size="lg" 
+              className="bg-accent hover:bg-accent/90 min-w-[200px]"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Começar Minha Jornada"
+              )}
             </Button>
           </div>
         </>
