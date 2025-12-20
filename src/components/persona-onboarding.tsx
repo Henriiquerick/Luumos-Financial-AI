@@ -8,10 +8,11 @@ import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
 import { Bot, Loader2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 
-// Imports necessários para salvar direto no banco e quebrar o loop
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, updateDoc } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase'; // Ajuste o caminho se necessário
+// --- CORREÇÃO DO IMPORT ---
+// Tente digitar "initializeFirebase" e dar Enter para o VS Code achar o caminho certo.
+// Se o seu arquivo estiver em src/lib/firebase/index.ts, use:
+import { initializeFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface PersonaOnboardingProps {
   onComplete: (persona: AIPersonality, knowledge: AIKnowledgeLevel) => void;
@@ -24,6 +25,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   // Inicializa SDKs para uso local no componente
+  // O hook initializeFirebase garante que estamos usando a instância correta
   const { auth, firestore: db } = initializeFirebase();
 
   const handleNextStep = () => {
@@ -39,7 +41,6 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
 
     try {
       // 1. Tenta salvar DIRETAMENTE no Firebase aqui.
-      // Isso é crucial: garantimos que o dado existe antes de redirecionar.
       const user = auth?.currentUser;
       
       if (user && db) {
@@ -49,20 +50,19 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
         await updateDoc(userRef, {
           persona: selectedPersonality,
           knowledgeLevel: selectedKnowledge,
-          onboardingCompleted: true, // A flag mágica que impede o loop
+          onboardingCompleted: true, // Flag para impedir o loop
           updatedAt: new Date()
         });
-        console.log("✅ Perfil salvo com sucesso no Firebase!");
+        console.log("✅ Perfil salvo com sucesso!");
       }
 
-      // 2. Chama a prop do pai (para atualizar estado local se houver)
+      // 2. Passa para o pai atualizar o estado local
       onComplete(selectedPersonality, selectedKnowledge);
 
     } catch (error) {
-      console.error("⚠️ Erro ao salvar perfil (Ignorado para forçar entrada):", error);
+      console.error("⚠️ Erro ao salvar (Ignorado para forçar entrada):", error);
     } finally {
-      // 3. O "Nuclear Option": Redirecionamento forçado via window
-      // Como salvamos o dado acima, o Dashboard agora vai carregar corretamente.
+      // 3. Redirecionamento forçado para quebrar loops de cache
       window.location.href = '/dashboard';
     }
   };
