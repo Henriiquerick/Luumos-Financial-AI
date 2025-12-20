@@ -59,6 +59,7 @@ export default function Dashboard() {
     goals = [] 
   } = financialData || {};
 
+  const { data: userProfile, isLoading: isProfileLoading } = useFinancialData();
   const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
 
   // Estados para controlar os modais
@@ -70,18 +71,7 @@ export default function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
-
-  // Estado local para UI otimista com cartões, sincronizado com os dados do hook
-  const [localCreditCards, setLocalCreditCards] = useState<CreditCard[]>([]);
-  useEffect(() => {
-    if (creditCards) {
-      setLocalCreditCards(creditCards);
-    }
-  }, [creditCards]);
   
-  // TODO: `useDoc` for a single profile is fine, as it's a single document read.
-  const { data: userProfile, isLoading: isProfileLoading } = useFinancialData();
-
   const handleInvalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
   };
@@ -123,16 +113,6 @@ export default function Dashboard() {
   const handleEditCard = (card: CreditCard) => {
     setEditingCard(card);
     setIsCardDialogOpen(true);
-  };
-  
-  const handleColorChange = (newColor: string) => {
-    if (editingCard) {
-      setLocalCreditCards(prevCards =>
-        prevCards.map(c =>
-          c.id === editingCard.id ? { ...c, color: newColor } : c
-        )
-      );
-    }
   };
   
   const handleAddTransaction = () => {
@@ -247,7 +227,7 @@ export default function Dashboard() {
     };
   }, [transactions]);
 
-  const isLoading = isFinancialDataLoading || isSubscriptionLoading;
+  const isLoading = isFinancialDataLoading || isSubscriptionLoading || isProfileLoading;
 
   const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
   const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
@@ -297,7 +277,7 @@ export default function Dashboard() {
 
               <div className="mt-6 space-y-6">
                   <CardsCarousel 
-                    cards={localCreditCards} 
+                    cards={creditCards} 
                     transactions={transactions} 
                     onAddCard={handleAddCard}
                     onEditCard={handleEditCard}
@@ -310,7 +290,7 @@ export default function Dashboard() {
                         onEditGoal={handleEditGoal}
                         onAddProgress={handleAddProgress}
                     />
-                    <InstallmentTunnelChart transactions={transactions} cards={localCreditCards} />
+                    <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
                   </div>
                   
                    <AiAdvisorCard
@@ -319,7 +299,7 @@ export default function Dashboard() {
                         onKnowledgeChange={handleKnowledgeChange}
                         onPersonalityChange={handlePersonalityChange}
                         transactions={transactions}
-                        cards={localCreditCards}
+                        cards={creditCards}
                         balance={netBalance}
                     />
 
@@ -347,7 +327,7 @@ export default function Dashboard() {
             isOpen={isTransactionDialogOpen} 
             setIsOpen={setIsTransactionDialogOpen} 
             transactions={transactions}
-            creditCards={localCreditCards}
+            creditCards={creditCards}
             customCategories={customCategories}
             transactionToEdit={editingTransaction}
             onFinished={() => {
@@ -363,7 +343,7 @@ export default function Dashboard() {
                 setEditingCard(null);
                 handleInvalidateQueries();
             }}
-            onColorChange={handleColorChange}
+            onColorChange={() => {}}
         />
         <GoalDialog
             isOpen={isGoalDialogOpen}
@@ -386,3 +366,5 @@ export default function Dashboard() {
     </AuthGate>
   )
 }
+
+    
