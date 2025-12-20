@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, AlertCircle } from 'lucide-react';
 import type { AIPersonality, Transaction } from '@/lib/types';
-import type { GetDailyInsightOutput } from '@/ai/flows/get-daily-insight';
 import { useTranslation } from '@/contexts/language-context';
 import { useUser } from '@/firebase';
 
@@ -19,7 +18,6 @@ interface DailyInsightCardProps {
 interface CachedInsight {
   date: string;
   insight: string;
-  personalityId: string;
 }
 
 export function DailyInsightCard({ transactions, personality, balance }: DailyInsightCardProps) {
@@ -31,6 +29,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
 
   useEffect(() => {
     const fetchInsight = async () => {
+      // 1. Guarda de segurança para garantir que o usuário está logado
       if (!user?.uid) {
         setError('User not authenticated.');
         setIsLoading(false);
@@ -47,59 +46,61 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
         const cachedItem = localStorage.getItem(cacheKey);
         if (cachedItem) {
           const cached: CachedInsight = JSON.parse(cachedItem);
-          if (cached.date === todayStr && cached.personalityId === personality.id) {
+          // O insight agora independe da personalidade, então removemos a verificação
+          if (cached.date === todayStr) {
             setInsight(cached.insight);
             setIsLoading(false);
             return;
           }
         }
 
+        // 2. CORREÇÃO: Enviando o userId no corpo da requisição
         const response = await fetch('/api/daily-insight', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId: user.uid }), // CORREÇÃO APLICADA
+          body: JSON.stringify({ userId: user.uid }),
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch daily insight');
-        }
+        const result = await response.json();
 
-        const result: GetDailyInsightOutput = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch daily insight');
+        }
         
         if (result.insight) {
           setInsight(result.insight);
           const newCache: CachedInsight = {
             date: todayStr,
             insight: result.insight,
-            personalityId: personality.id,
           };
           localStorage.setItem(cacheKey, JSON.stringify(newCache));
         } else {
           throw new Error("Failed to generate insight.");
         }
 
-      } catch (e) {
+      } catch (e: any) {
         console.error('Failed to generate daily insight:', e);
-        setError(t.dashboard.insight_error.replace('{personalityName}', personality.name));
+        setError(e.message || t.dashboard.insight_error.replace('{personalityName}', personality.name));
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (personality && transactions && user) {
+    // A chamada agora só depende do usuário estar logado
+    if (user) {
       fetchInsight();
     } else if (!user) {
         setIsLoading(false);
     }
-  }, [transactions, personality, balance, user, t]);
+  }, [user, t, personality.name]); // Removido transactions e balance para evitar re-chamadas desnecessárias
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 animate-fade-in">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
-          <div className="text-2xl mt-1">{personality.icon}</div>
+          <div className="text-2xl mt-1">💡</div>
           <div className="flex-grow">
             <h3 className="font-semibold text-accent flex items-center gap-2">
               <Bot className="w-5 h-5" />
