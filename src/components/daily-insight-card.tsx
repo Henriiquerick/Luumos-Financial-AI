@@ -8,6 +8,7 @@ import { Bot, AlertCircle } from 'lucide-react';
 import type { AIPersonality, Transaction } from '@/lib/types';
 import type { GetDailyInsightOutput } from '@/ai/flows/get-daily-insight';
 import { useTranslation } from '@/contexts/language-context';
+import { useUser } from '@/firebase';
 
 interface DailyInsightCardProps {
   transactions: Transaction[];
@@ -26,14 +27,21 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const { t } = useTranslation();
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchInsight = async () => {
+      if (!user?.uid) {
+        setError('User not authenticated.');
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError('');
 
       const todayStr = new Date().toISOString().split('T')[0];
-      const cacheKey = 'daily_insight_cache';
+      const cacheKey = `daily_insight_cache_${user.uid}`;
 
       try {
         const cachedItem = localStorage.getItem(cacheKey);
@@ -51,11 +59,7 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            transactions,
-            balance,
-            personality,
-          }),
+          body: JSON.stringify({ userId: user.uid }), // CORREÇÃO APLICADA
         });
 
         if (!response.ok) {
@@ -84,10 +88,12 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
       }
     };
 
-    if (personality && transactions) {
+    if (personality && transactions && user) {
       fetchInsight();
+    } else if (!user) {
+        setIsLoading(false);
     }
-  }, [transactions, personality, balance, t]);
+  }, [transactions, personality, balance, user, t]);
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 animate-fade-in">
