@@ -6,14 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star, AlertCircle } from 'lucide-react';
+import { Loader2, Bot, Send, MessageSquarePlus, MessageSquareText, Star, AlertCircle, Trash2 } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel, ChatMessage, ChatSession } from '@/lib/types';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useTranslation } from '@/contexts/language-context';
-import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface AiAdvisorCardProps {
@@ -147,6 +147,26 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, chatError]);
+  
+  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || !window.confirm('Tem certeza que deseja excluir esta conversa?')) {
+      return;
+    }
+    try {
+      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', sessionId);
+      await deleteDoc(sessionRef);
+
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+      }
+      // The useCollection hook will automatically update the UI
+    } catch (error) {
+      console.error("Error deleting chat session: ", error);
+      alert('Failed to delete chat session.');
+    }
+  };
 
   const handleStartNewSession = () => {
     setActiveSessionId(null);
@@ -202,15 +222,24 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                         </div>
                     ) : (
                         chatSessions?.map(session => (
-                            <Button 
-                                key={session.id}
-                                variant={activeSessionId === session.id ? "secondary" : "ghost"}
-                                className="w-full justify-start h-auto py-2"
-                                onClick={() => setActiveSessionId(session.id)}
-                            >
-                                <MessageSquareText className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span className="truncate text-xs">{session.title || 'Nova Conversa'}</span>
-                            </Button>
+                            <div key={session.id} className="group relative">
+                                <Button 
+                                    variant={activeSessionId === session.id ? "secondary" : "ghost"}
+                                    className="w-full justify-start h-auto py-2"
+                                    onClick={() => setActiveSessionId(session.id)}
+                                >
+                                    <MessageSquareText className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate text-xs">{session.title || 'Nova Conversa'}</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => handleDeleteSession(session.id, e)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-red-500/70 hover:text-red-500" />
+                                </Button>
+                            </div>
                         ))
                     )}
                     {chatSessions?.length === 0 && !isLoadingSessions && (
