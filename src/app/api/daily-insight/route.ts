@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     // 5. Chamar a API da Groq
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: finalPrompt }],
-      model: 'llama-3.1-70b-instant', 
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
       max_tokens: 150,
     });
