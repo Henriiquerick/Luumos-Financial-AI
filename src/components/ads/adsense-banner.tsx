@@ -19,7 +19,7 @@ export function AdSenseBanner({ slotId, className }: AdSenseBannerProps) {
   }, [slotId]); // Re-run if slotId changes
 
   return (
-    <div className={`flex justify-center items-center w-full my-4 ${className}`}>
+    <div className={`flex justify-center items-center w-full my-4 h-auto ${className}`}>
       <ins
         className="adsbygoogle"
         style={{ display: 'block' }}
