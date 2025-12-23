@@ -97,6 +97,7 @@ export type UserProfile = {
   dailyCredits: number;
   lastCreditReset: Date | Timestamp;
   adsWatchedToday?: number;
+  isAdmin?: boolean;
 };
 
 export type CustomCategory = {

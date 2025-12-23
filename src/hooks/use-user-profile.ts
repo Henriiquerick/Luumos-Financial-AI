@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -20,6 +21,7 @@ export interface UserProfile {
   dailyCredits?: number;
   lastCreditReset?: any;
   adsWatchedToday?: number;
+  isAdmin?: boolean;
 }
 
 export function useUserProfile() {

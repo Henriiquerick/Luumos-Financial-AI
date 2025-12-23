@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Gift, Loader2 } from 'lucide-react';
+import { Gift, Loader2, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { UserProfile, Subscription } from '@/lib/types';
@@ -24,6 +24,7 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  const isAdmin = userProfile.isAdmin === true;
 
   const userPlan = subscription?.plan || 'free';
   const dailyCreditsCap = PLAN_LIMITS[userPlan] ?? 0;
@@ -71,6 +72,16 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
       callback(); // Close the modal
     }
   };
+
+  if (isAdmin) {
+    return (
+        <div className="flex items-center gap-2 border bg-background/50 rounded-full p-1 pl-3 text-sm text-amber-400">
+            <span className='font-semibold tracking-wider flex items-center gap-2'>
+                <Crown className="h-4 w-4" /> ∞
+            </span>
+        </div>
+    )
+  }
 
   return (
     <>

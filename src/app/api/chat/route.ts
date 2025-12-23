@@ -17,6 +17,8 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const app = initAdmin();
 const db = getFirestore(app);
 
+const ADMIN_EMAIL = 'rickson.henrique2018@gmail.com';
+
 const getDateFromTimestamp = (date: any): Date | null => {
   if (date instanceof Timestamp) return date.toDate();
   if (date instanceof Date) return date;
@@ -77,17 +79,27 @@ export async function POST(req: Request) {
 
     let userProfile = userDoc.data() as UserProfile;
     const subscription = (subscriptionDoc.exists ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
+    
+    // Injeta a informação de email do auth no perfil para a verificação de admin
+    const authUser = await app.auth().getUser(userId);
+    const userEmail = authUser.email;
 
-    userProfile = await checkAndResetCredits(userId, userProfile, subscription);
+    // --- LÓGICA DE ADMIN ---
+    const isAdmin = userProfile.isAdmin === true || userEmail === ADMIN_EMAIL;
+    
+    if (!isAdmin) {
+        userProfile = await checkAndResetCredits(userId, userProfile, subscription);
 
-    if (userProfile.dailyCredits <= 0) {
-        return NextResponse.json(
-            { error: 'Insufficient credits', code: '403_INSUFFICIENT_CREDITS' }, 
-            { status: 403 }
-        );
+        if (userProfile.dailyCredits <= 0) {
+            return NextResponse.json(
+                { error: 'Insufficient credits', code: '403_INSUFFICIENT_CREDITS' }, 
+                { status: 403 }
+            );
+        }
+
+        await userRef.update({ dailyCredits: FieldValue.increment(-1) });
     }
-
-    await userRef.update({ dailyCredits: FieldValue.increment(-1) });
+    // --- FIM DA LÓGICA DE ADMIN ---
 
     const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
     const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
