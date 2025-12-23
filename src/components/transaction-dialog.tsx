@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -35,14 +36,14 @@ export function TransactionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20 flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-primary">{transactionToEdit ? t.modals.transaction.edit_title : t.modals.transaction.title}</DialogTitle>
           <DialogDescription>
             {transactionToEdit ? t.modals.transaction.edit_subtitle : t.modals.transaction.subtitle}
           </DialogDescription>
         </DialogHeader>
-        <div className="p-6 pt-2">
+        <div className="overflow-y-auto px-6">
             <TransactionForm 
             onSave={() => {
                 setIsOpen(false);

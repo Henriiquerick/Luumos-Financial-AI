@@ -32,21 +32,23 @@ export function AddCardDialog({ isOpen, setIsOpen, cardToEdit, onFinished, onCol
   
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
+      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20 flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-primary">{cardToEdit ? t.modals.card.edit.title : t.modals.card.add.title}</DialogTitle>
           <DialogDescription>
             {cardToEdit ? t.modals.card.edit.subtitle : t.modals.card.add.subtitle}
           </DialogDescription>
         </DialogHeader>
-        <CardForm 
-          onSave={(updatedCard) => {
-            setIsOpen(false);
-            onFinished(updatedCard); // Pass the updated card data up
-          }} 
-          cardToEdit={cardToEdit} 
-          onColorChange={onColorChange}
-        />
+        <div className="overflow-y-auto pr-6 -mr-6">
+            <CardForm 
+              onSave={(updatedCard) => {
+                setIsOpen(false);
+                onFinished(updatedCard); // Pass the updated card data up
+              }} 
+              cardToEdit={cardToEdit} 
+              onColorChange={onColorChange}
+            />
+        </div>
       </DialogContent>
     </Dialog>
   );
