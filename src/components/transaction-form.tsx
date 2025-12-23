@@ -299,7 +299,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             const installmentDate = addMonths(firstBillDate, i);
             
             const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
-              description: `${values.description} (${i + 1}/${values.installments})`,
+              description: i === 0 ? values.description : `${values.description} (${i + 1}/${values.installments})`,
               amount: installmentAmount,
               category: values.category,
               date: Timestamp.fromDate(installmentDate),
