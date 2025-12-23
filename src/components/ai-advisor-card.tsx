@@ -15,9 +15,6 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useTranslation } from '@/contexts/language-context';
 import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 
-// Nota: Removemos o useSubscription pois não bloqueamos mais por plano
-
-
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
   personality: AIPersonality;
@@ -95,8 +92,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     setUserInput(''); 
     
     const userMessage: ChatMessage = { role: 'user', content: userMessageContent, timestamp: Timestamp.now() };
-    
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
 
     let currentSessionId = activeSessionId;
 
@@ -129,31 +126,31 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid, messages: [...messages, userMessage], data: contextData }),
+        body: JSON.stringify({ userId: user.uid, messages: newMessages, data: contextData }),
       });
       
       const result = await response.json();
 
       if (!response.ok) {
-        // Lógica de Créditos mantida (Erro 403)
-        if (response.status === 403 && result.code === '403_INSUFFICIENT_CREDITS') {
-            setChatError("Você atingiu seu limite de créditos. Assista um anúncio para ganhar mais!");
-        } else {
-            throw new Error(result.error || 'Failed to get a response from the AI.');
-        }
-        setMessages(prev => prev.slice(0, -1));
-        return;
+        throw new Error(result.error || 'Failed to get a response from the AI.');
       }
       
       const modelMessage: ChatMessage = { role: 'model', content: result.text, timestamp: Timestamp.now() };
-
-      const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
-      await updateDoc(sessionRef, { messages: arrayUnion(modelMessage) });
+      
+      // We need to make sure we have a session ID before updating
+      if (currentSessionId) {
+          const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
+          await updateDoc(sessionRef, { messages: arrayUnion(modelMessage) });
+      } else {
+          // This case should ideally not happen if the logic above is correct
+          console.error("No active session ID to save model message");
+      }
 
     } catch (error: any) {
       console.error('Failed to get advice:', error);
-      const errorMessage: ChatMessage = { role: 'model', content: t.chat.error, timestamp: Timestamp.now() };
-      setMessages(prev => [...prev, errorMessage]);
+      // Revert the optimistic user message on error
+      setMessages(prev => prev.slice(0, -1));
+      setChatError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -203,10 +200,8 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     }
   };
 
-  // --- LÓGICA DE TROCA LIBERADA ---
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONALITIES.find(p => p.id === id);
-    // Verificação simples: Se existe e é diferente, troca. Sem checagem de plano.
     if (newPersonality && newPersonality.id !== personality.id) {
       onPersonalityChange(newPersonality);
       handleStartNewSession();
@@ -303,11 +298,9 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                   </SelectTrigger>
                   <SelectContent>
                     {PERSONALITIES.map(p => 
-                      // --- REMOVIDA A PROPRIEDADE DISABLED ---
                       <SelectItem key={p.id} value={p.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{p.name}</span>
-                          {/* REMOVIDO O ÍCONE DE PRO (ESTRELA) */}
                         </div>
                       </SelectItem>
                     )}
@@ -381,3 +374,5 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
+
+    

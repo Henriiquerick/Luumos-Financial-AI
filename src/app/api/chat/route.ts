@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { PLAN_LIMITS } from '@/lib/constants';
 import { isBefore, startOfToday } from 'date-fns';
@@ -79,7 +79,9 @@ export async function POST(req: Request) {
 
     // Adiciona o contexto financeiro à última mensagem do usuário
     const lastUserMessage = messagesForGroq[messagesForGroq.length - 1];
-    lastUserMessage.content = `${lastUserMessage.content}\n\n${financialContext}`;
+    if (lastUserMessage) {
+        lastUserMessage.content = `${lastUserMessage.content}\n\n${financialContext}`;
+    }
     
     const chatCompletion = await groq.chat.completions.create({
       messages: messagesForGroq,
@@ -103,3 +105,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 }); 
   } 
 }
+
+    
