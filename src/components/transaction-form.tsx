@@ -18,7 +18,7 @@ import type { Transaction, CreditCard, CustomCategory, RecurringExpense, Transac
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, Timestamp, doc, writeBatch } from 'firebase/firestore';
+import { collection, Timestamp, doc, writeBatch, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
@@ -241,9 +241,8 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             createdAt: Timestamp.now(),
         };
         
-        // Usamos setDoc com o ID que geramos para garantir a consistência
         const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
-        setDocumentNonBlocking(recurringDocRef, recurringData, { merge: false });
+        await setDoc(recurringDocRef, recurringData, { merge: false });
 
         toast({
             title: "Despesa Recorrente Criada",
