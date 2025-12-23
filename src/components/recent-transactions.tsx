@@ -1,10 +1,9 @@
-
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Transaction, CustomCategory, TransactionCategory } from '@/lib/types';
-import { CategoryIcon } from './category-icon';
 import { useTranslation } from '@/contexts/language-context';
 import { Button } from './ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -12,6 +11,7 @@ import { formatDate } from '@/lib/i18n-utils';
 import { useCurrency } from '@/contexts/currency-context';
 import { TRANSLATED_CATEGORIES, DEFAULT_CATEGORY_ICONS } from '@/lib/constants';
 import type { Language } from '@/lib/translations';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -23,10 +23,28 @@ interface RecentTransactionsProps {
 export function RecentTransactions({ transactions, categories, onEdit, onDelete }: RecentTransactionsProps) {
   const { t, language } = useTranslation();
   const { formatMoney } = useCurrency();
-  const recent = transactions
-    .sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime())
-    .slice(0, 5);
-  
+
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const sortedTransactions = useMemo(() => 
+    transactions.sort((a, b) => (b.date as Date).getTime() - (a.date as Date).getTime()),
+    [transactions]
+  );
+
+  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
+
+  const displayedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedTransactions.slice(startIndex, endIndex);
+  }, [sortedTransactions, currentPage, itemsPerPage]);
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page
+  };
+
   const getCategoryDisplay = (categoryName: string) => {
     const custom = categories.find(c => c.name === categoryName);
     if (custom) return { name: custom.name, icon: custom.icon };
@@ -38,7 +56,6 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
       return { name: defaultName, icon: defaultIcon };
     }
     
-    // Fallback for categories that might not be in either list (should not happen in normal use)
     return { name: categoryName, icon: '📦' };
   }
 
@@ -59,14 +76,14 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
             </TableRow>
           </TableHeader>
           <TableBody>
-            {recent.length === 0 ? (
+            {displayedTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground">
                   {t.transaction.no_transactions}
                 </TableCell>
               </TableRow>
             ) : (
-              recent.map((t) => {
+              displayedTransactions.map((t) => {
                 const categoryDisplay = getCategoryDisplay(t.category);
                 return (
                   <TableRow key={t.id}>
@@ -101,6 +118,42 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
           </TableBody>
         </Table>
       </CardContent>
+       <CardFooter className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Linhas por página:</span>
+          <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={itemsPerPage} />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 10, 20, 50].map(size => (
+                <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">
+            Página {currentPage} de {totalPages > 0 ? totalPages : 1}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            Próximo
+          </Button>
+        </div>
+      </CardFooter>
     </Card>
   );
 }
