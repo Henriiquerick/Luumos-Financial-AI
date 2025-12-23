@@ -48,7 +48,7 @@ export const PERSONALITIES: AIPersonality[] = [
     tagline: 'Lucro é a única métrica que importa. Corte despesas agora.',
     style: 'Sério, frio, Wall Street.',
     icon: '👔',
-    plan: 'pro'
+    plan: 'free'
   },
   {
     id: 'neytan',
@@ -57,7 +57,7 @@ export const PERSONALITIES: AIPersonality[] = [
     tagline: 'BORA, MONSTRO! É HORA DO SHOW! Onde está o foco?',
     style: 'Energético, agressivo, academia.',
     icon: '💪',
-    plan: 'pro'
+    plan: 'free'
   },
   {
     id: 'biris',

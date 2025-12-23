@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Bot, Send, MessageSquarePlus, Star, AlertCircle, Trash2, ChevronDown, Check, X, Pencil } from 'lucide-react';
+import { Loader2, Send, MessageSquarePlus, AlertCircle, Trash2, ChevronDown, Check, X, Pencil } from 'lucide-react';
 import type { AIPersonality, Transaction, CreditCard, AIKnowledgeLevel, ChatMessage, ChatSession } from '@/lib/types';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 import { ScrollArea } from './ui/scroll-area';
@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useTranslation } from '@/contexts/language-context';
 import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
-import { useSubscription } from '@/hooks/useSubscription';
+
+// Nota: Removemos o useSubscription pois não bloqueamos mais por plano
 
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
@@ -37,18 +38,15 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const [newSessionTitle, setNewSessionTitle] = useState('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isSendingRef = useRef(false);
+  const lastSubmissionTimeRef = useRef<number>(0);
   
   const { user } = useUser();
-  const { subscription } = useSubscription();
   const firestore = useFirestore();
   const { t, language } = useTranslation();
   
   const sessionsRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'chat_sessions'), orderBy('createdAt', 'desc')) : null, [user, firestore]);
-  const { data: chatSessions, isLoading: isLoadingSessions } = useCollection<ChatSession>(sessionsRef);
+  const { data: chatSessions } = useCollection<ChatSession>(sessionsRef);
 
-  // --- CORREÇÃO DO ERRO TYPESCRIPT AQUI ---
-  // Usamos (t.chat.welcomeMessages as any) para permitir acesso dinâmico
   const welcomeMessage = (t.chat.welcomeMessages as any)[personality.id] || t.chat.welcome;
   
   const activeSession = chatSessions?.find(s => s.id === activeSessionId);
@@ -75,14 +73,20 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
+      event.stopPropagation();
       handleSendMessage();
     }
   };
 
   const handleSendMessage = async () => {
-    if (!userInput.trim() || isSendingRef.current || !user) return;
+    if (!userInput.trim() || !user) return;
 
-    isSendingRef.current = true;
+    const now = Date.now();
+    if (now - lastSubmissionTimeRef.current < 1000) return;
+    lastSubmissionTimeRef.current = now;
+
+    if (isLoading) return;
+
     setIsLoading(true);
     setChatError(null);
     
@@ -130,8 +134,9 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       const result = await response.json();
 
       if (!response.ok) {
+        // Lógica de Créditos mantida (Erro 403)
         if (response.status === 403 && result.code === '403_INSUFFICIENT_CREDITS') {
-            setChatError("Você atingiu seu limite diário de mensagens. Faça upgrade para PRO para continuar.");
+            setChatError("Você atingiu seu limite de créditos. Assista um anúncio para ganhar mais!");
         } else {
             throw new Error(result.error || 'Failed to get a response from the AI.');
         }
@@ -143,7 +148,6 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
 
       const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
       await updateDoc(sessionRef, { messages: arrayUnion(modelMessage) });
-      setMessages(prev => [...prev, modelMessage]);
 
     } catch (error: any) {
       console.error('Failed to get advice:', error);
@@ -151,9 +155,6 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      setTimeout(() => {
-        isSendingRef.current = false;
-      }, 100);
     }
   };
 
@@ -201,13 +202,11 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     }
   };
 
+  // --- LÓGICA DE TROCA LIBERADA ---
   const handlePersonalityChange = (id: string) => {
     const newPersonality = PERSONALITIES.find(p => p.id === id);
+    // Verificação simples: Se existe e é diferente, troca. Sem checagem de plano.
     if (newPersonality && newPersonality.id !== personality.id) {
-       if (newPersonality.plan === 'pro' && subscription?.plan === 'free') {
-        alert('This is a PRO feature. Please upgrade your plan to use this personality.');
-        return;
-      }
       onPersonalityChange(newPersonality);
       handleStartNewSession();
     }
@@ -303,15 +302,11 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
                   </SelectTrigger>
                   <SelectContent>
                     {PERSONALITIES.map(p => 
-                      <SelectItem key={p.id} value={p.id} disabled={p.plan === 'pro' && subscription?.plan === 'free'}>
+                      // --- REMOVIDA A PROPRIEDADE DISABLED ---
+                      <SelectItem key={p.id} value={p.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{p.name}</span>
-                          {p.plan === 'pro' && (
-                            <span className="flex items-center gap-1 text-xs text-amber-500">
-                              <Star className="w-3 h-3" />
-                              PRO
-                            </span>
-                          )}
+                          {/* REMOVIDO O ÍCONE DE PRO (ESTRELA) */}
                         </div>
                       </SelectItem>
                     )}
