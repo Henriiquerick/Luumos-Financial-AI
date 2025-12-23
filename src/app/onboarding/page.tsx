@@ -19,5 +19,5 @@ export default function OnboardingPage() {
     }
   };
 
-  return <PersonaOnboarding onComplete={handleOnboardingComplete} />;
+  return <PersonaOnboarding onComplete={() => {}} />;
 }
