@@ -1,10 +1,9 @@
 import 'server-only';
 import admin from 'firebase-admin';
 
-// Singleton: Garante que só inicializa uma vez
+// Função Singleton para garantir que só inicializamos uma vez
 if (!admin.apps.length) {
   try {
-    // Verifica se a chave existe antes de tentar parsear
     const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
     if (serviceAccountKey) {

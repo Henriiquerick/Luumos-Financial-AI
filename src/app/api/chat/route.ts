@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { PLAN_LIMITS } from '@/lib/constants';
 import { isBefore, startOfToday } from 'date-fns';
+
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
 
 const ADMIN_IDS = [ "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", "rickson.henrique2018@gmail.com" ];
