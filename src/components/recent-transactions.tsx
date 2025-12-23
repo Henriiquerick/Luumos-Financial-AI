@@ -12,6 +12,7 @@ import { useCurrency } from '@/contexts/currency-context';
 import { TRANSLATED_CATEGORIES, DEFAULT_CATEGORY_ICONS } from '@/lib/constants';
 import type { Language } from '@/lib/translations';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from './ui/badge';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -85,6 +86,8 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
             ) : (
               displayedTransactions.map((t) => {
                 const categoryDisplay = getCategoryDisplay(t.category);
+                const isFirstInstallment = t.installments > 1 && !t.description.match(/\(\d+\/\d+\)$/);
+                
                 return (
                   <TableRow key={t.id}>
                     <TableCell>
@@ -93,7 +96,10 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
                           <span role="img">{categoryDisplay.icon}</span>
                         </div>
                         <div>
-                          <div className="font-medium">{t.description}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {t.description}
+                            {isFirstInstallment && <Badge variant="secondary">1/{t.installments}</Badge>}
+                          </div>
                           <div className="text-sm text-muted-foreground hidden md:block">{categoryDisplay.name}</div>
                         </div>
                       </div>

@@ -9,6 +9,7 @@ import { getDateFromTimestamp } from '@/lib/finance-utils';
 // Tipagem para o retorno da query
 interface FinancialData {
   transactions: Transaction[];
+  visibleTransactions: Transaction[]; // Nova lista filtrada
   creditCards: CreditCard[];
   customCategories: CustomCategory[];
   goals: FinancialGoal[];
@@ -30,6 +31,7 @@ export function useFinancialData() {
       if (!user?.uid || !firestore) {
         return {
           transactions: [],
+          visibleTransactions: [],
           creditCards: [],
           customCategories: [],
           goals: [],
@@ -64,6 +66,9 @@ export function useFinancialData() {
         ...doc.data(),
         date: getDateFromTimestamp(doc.data().date) // Converte Timestamps para Dates
       } as Transaction));
+      
+      // FILTRO: Esconde as parcelas futuras (cuja descrição termina com (X/Y))
+      const visibleTransactions = transactions.filter(t => !/\(\d+\/\d+\)$/.test(t.description));
 
       const creditCards = cardsSnapshot.docs.map(doc => ({
         id: doc.id,
@@ -81,7 +86,7 @@ export function useFinancialData() {
       } as FinancialGoal));
       
       // Retorna um objeto único com todos os dados
-      return { transactions, creditCards, customCategories, goals };
+      return { transactions, visibleTransactions, creditCards, customCategories, goals };
     },
     // A query só será executada se o 'enabled' for true.
     enabled: !!user?.uid && !!firestore,

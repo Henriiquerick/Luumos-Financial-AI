@@ -53,6 +53,7 @@ export default function Dashboard() {
   const { data: financialData, isLoading: isFinancialDataLoading } = useFinancialData();
   const { 
     transactions = [], 
+    visibleTransactions = [],
     creditCards = [], 
     customCategories = [], 
     goals = [] 
@@ -338,7 +339,7 @@ export default function Dashboard() {
                 />
 
               <RecentTransactions 
-                transactions={transactions}
+                transactions={visibleTransactions}
                 categories={customCategories}
                 onEdit={handleEditTransaction}
                 onDelete={handleDeleteTransaction}
