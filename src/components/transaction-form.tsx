@@ -18,7 +18,7 @@ import type { Transaction, CreditCard, CustomCategory, RecurringExpense, Transac
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, Timestamp, doc, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, Timestamp, doc, writeBatch, setDoc, updateDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
@@ -193,154 +193,161 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (!user || !firestore) return;
     
     const formattedAmount = formatMoney(values.amount);
-    const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
-    const recurringId = crypto.randomUUID();
+    
+    try {
+      if (transactionToEdit) {
+        // UPDATE LOGIC
+        const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
+        
+        // Sanitize and prepare data for update
+        const dataToUpdate: Partial<Transaction> & { date: Timestamp, updatedAt: any } = {
+          description: values.description.trim(),
+          amount: Number(values.amount),
+          category: values.category,
+          date: Timestamp.fromDate(values.date),
+          type: values.type,
+          updatedAt: Timestamp.now(),
+        };
 
-    // Lógica para Despesa Recorrente
-    if (values.isRecurring && !transactionToEdit) {
-        // 1. Criar a primeira transação (gasto de hoje)
-        const initialTransactionData = {
+        if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
+          dataToUpdate.cardId = values.cardId;
+        } else {
+          dataToUpdate.cardId = undefined; // Explicitly remove if not a card payment
+        }
+        
+        // Remove any undefined keys to avoid Firestore errors
+        Object.keys(dataToUpdate).forEach(key => (dataToUpdate as any)[key] === undefined && delete (dataToUpdate as any)[key]);
+
+        await updateDoc(transactionRef, dataToUpdate);
+        toast({ title: "Transação Atualizada", description: `A transação foi atualizada com sucesso.` });
+
+      } else {
+        // CREATE LOGIC
+        const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+        const recurringId = crypto.randomUUID();
+
+        // Lógica para Despesa Recorrente
+        if (values.isRecurring) {
+            // 1. Criar a primeira transação (gasto de hoje)
+            const initialTransactionData = {
+                description: values.description,
+                amount: values.amount,
+                category: values.category,
+                date: Timestamp.fromDate(values.date),
+                type: 'expense',
+                installments: 1,
+                recurringId: recurringId, // Vincula à recorrência
+            };
+            addDocumentNonBlocking(transactionsRef, initialTransactionData);
+
+            // 2. Calcular a próxima data de cobrança
+            let nextTriggerDate;
+            switch (values.frequency) {
+                case 'weekly':
+                    nextTriggerDate = addWeeks(values.date, 1);
+                    break;
+                case 'yearly':
+                    nextTriggerDate = addYears(values.date, 1);
+                    break;
+                case 'monthly':
+                default:
+                    nextTriggerDate = addMonths(values.date, 1);
+                    break;
+            }
+
+            // 3. Criar o "contrato" de recorrência
+            const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
+            const recurringData: Omit<RecurringExpense, 'id'> = {
+                id: recurringId,
+                userId: user.uid,
+                description: values.description,
+                amount: values.amount,
+                category: values.category,
+                frequency: values.frequency!,
+                startDate: Timestamp.fromDate(values.date),
+                endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
+                nextTriggerDate: Timestamp.fromDate(nextTriggerDate),
+                isActive: true,
+                createdAt: Timestamp.now(),
+            };
+            
+            const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
+            await setDoc(recurringDocRef, recurringData, { merge: false });
+
+            toast({
+                title: "Despesa Recorrente Criada",
+                description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
+            });
+            
+        } else if (values.isInstallment && values.type === 'expense' && values.paymentMethod === 'card' && values.installments) {
+          const batch = writeBatch(firestore);
+          const installmentId = crypto.randomUUID();
+          const installmentAmount = values.amount / values.installments;
+
+          const selectedCard = creditCards.find(c => c.id === values.cardId);
+          let firstBillDate = values.date;
+
+          if (selectedCard && selectedCard.closingDay > 0) {
+              const purchaseDay = getDate(values.date);
+              if (purchaseDay > selectedCard.closingDay) {
+                  firstBillDate = addMonths(values.date, 1);
+              }
+          }
+          
+          for (let i = 0; i < values.installments; i++) {
+            const newDocRef = doc(transactionsRef);
+            const installmentDate = addMonths(firstBillDate, i);
+            
+            const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
+              description: `${values.description} (${i + 1}/${values.installments})`,
+              amount: installmentAmount,
+              category: values.category,
+              date: Timestamp.fromDate(installmentDate),
+              type: 'expense',
+              installments: values.installments,
+              installmentId: installmentId,
+              cardId: values.cardId,
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
+            };
+            batch.set(newDocRef, transactionData);
+          }
+          await batch.commit();
+          toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
+        
+        } else { 
+          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string, category: string } = {
             description: values.description,
             amount: values.amount,
             category: values.category,
             date: Timestamp.fromDate(values.date),
-            type: 'expense',
+            type: values.type,
             installments: 1,
-            recurringId: recurringId, // Vincula à recorrência
-        };
-        addDocumentNonBlocking(transactionsRef, initialTransactionData);
-
-        // 2. Calcular a próxima data de cobrança
-        let nextTriggerDate;
-        switch (values.frequency) {
-            case 'weekly':
-                nextTriggerDate = addWeeks(values.date, 1);
-                break;
-            case 'yearly':
-                nextTriggerDate = addYears(values.date, 1);
-                break;
-            case 'monthly':
-            default:
-                nextTriggerDate = addMonths(values.date, 1);
-                break;
-        }
-
-        // 3. Criar o "contrato" de recorrência
-        const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
-        const recurringData: Omit<RecurringExpense, 'id'> = {
-            id: recurringId,
-            userId: user.uid,
-            description: values.description,
-            amount: values.amount,
-            category: values.category,
-            frequency: values.frequency!,
-            startDate: Timestamp.fromDate(values.date),
-            endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
-            nextTriggerDate: Timestamp.fromDate(nextTriggerDate),
-            isActive: true,
-            createdAt: Timestamp.now(),
-        };
-        
-        const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
-        await setDoc(recurringDocRef, recurringData, { merge: false });
-
-        toast({
-            title: "Despesa Recorrente Criada",
-            description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
-        });
-
-        onSave();
-        form.reset();
-        return;
-    }
-    
-    if (transactionToEdit) {
-      // UPDATE LOGIC
-      const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
-      const dataToUpdate: Partial<Transaction> & { date: Timestamp, category: string } = {
-        description: values.description,
-        amount: values.amount,
-        category: values.category,
-        date: Timestamp.fromDate(values.date),
-        type: values.type,
-      };
-
-      if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
-        dataToUpdate.cardId = values.cardId;
-      } else {
-        dataToUpdate.cardId = undefined;
-      }
-      
-      updateDocumentNonBlocking(transactionRef, dataToUpdate);
-      toast({ title: "Transaction Updated", description: `Transaction of ${formattedAmount} was updated.` });
-
-    } else {
-      // CREATE LOGIC
-      
-      const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
-
-      if (values.isInstallment && isCardPayment && values.installments) {
-        const batch = writeBatch(firestore);
-        const installmentId = crypto.randomUUID();
-        const installmentAmount = values.amount / values.installments;
-
-        // LÓGICA DE FATURA CORRIGIDA
-        const selectedCard = creditCards.find(c => c.id === values.cardId);
-        let firstBillDate = values.date;
-
-        if (selectedCard && selectedCard.closingDay > 0) {
-            const purchaseDay = getDate(values.date);
-            // Se a compra for DEPOIS do dia do fechamento, a 1ª parcela cai no mês seguinte.
-            if (purchaseDay > selectedCard.closingDay) {
-                firstBillDate = addMonths(values.date, 1);
-            }
-        }
-        
-        for (let i = 0; i < values.installments; i++) {
-          const newDocRef = doc(transactionsRef);
-          // A data de cada parcela é calculada a partir da `firstBillDate`
-          const installmentDate = addMonths(firstBillDate, i);
-          
-          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
-            description: `${values.description} (${i + 1}/${values.installments})`,
-            amount: installmentAmount,
-            category: values.category,
-            date: Timestamp.fromDate(installmentDate),
-            type: 'expense',
-            installments: values.installments,
-            installmentId: installmentId,
-            cardId: values.cardId,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
           };
-          batch.set(newDocRef, transactionData);
-        }
-        await batch.commit();
-        toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
-      } else { 
-        const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string, category: string } = {
-          description: values.description,
-          amount: values.amount,
-          category: values.category,
-          date: Timestamp.fromDate(values.date),
-          type: values.type,
-          installments: 1,
-        };
-        
-        if (isCardPayment) {
-          transactionData.cardId = values.cardId;
-        }
+          
+          if (values.type === 'expense' && values.paymentMethod === 'card') {
+            transactionData.cardId = values.cardId;
+          }
 
-        addDocumentNonBlocking(transactionsRef, transactionData as any);
-        toast({
-          title: t.toasts.transaction.title,
-          description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
-        });
+          addDocumentNonBlocking(transactionsRef, transactionData as any);
+          toast({
+            title: t.toasts.transaction.title,
+            description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
+          });
+        }
       }
+      
+      onSave();
+      form.reset();
+
+    } catch (e) {
+        console.error("Erro ao salvar transação:", e);
+        toast({
+            variant: "destructive",
+            title: t.toasts.error.title,
+            description: `Ocorreu um erro ao salvar. Verifique o console para mais detalhes.`,
+        });
     }
-    
-    onSave();
-    form.reset();
   }
 
   const isSubmitDisabled = form.formState.isSubmitting || (paymentMethod === 'card' && (!selectedCardId || isLimitExceeded));
@@ -528,7 +535,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isInstallment && !transactionToEdit}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isInstallment && !!transactionToEdit}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
@@ -550,7 +557,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment && !transactionToEdit}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment && !!transactionToEdit}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
@@ -569,7 +576,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 )}
               />
             )}
-            {paymentMethod === 'card' && (
+            {paymentMethod === 'card' && !transactionToEdit && (
               <FormField
                 control={control}
                 name="isInstallment"
