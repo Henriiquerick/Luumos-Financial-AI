@@ -19,10 +19,10 @@ export function AdSenseBanner({ slotId, className }: AdSenseBannerProps) {
   }, [slotId]); // Re-run if slotId changes
 
   return (
-    <div className={`flex justify-center items-center w-full my-4 h-auto ${className}`}>
+    <div className={`flex justify-center items-center w-full my-4 h-auto min-h-[90px] ${className}`}>
       <ins
         className="adsbygoogle"
-        style={{ display: 'block' }}
+        style={{ display: 'block', width: '100%' }}
         data-ad-client={process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}
         data-ad-slot={slotId}
         data-ad-format="auto"

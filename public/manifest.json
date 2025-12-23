@@ -1,10 +1,16 @@
 {
   "name": "Lucent AI",
   "short_name": "Lucent AI",
-  "description": "Seu assistente financeiro pessoal com inteligência artificial.",
+  "description": "Seu assistente financeiro pessoal com IA.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#39FF14",
-  "icons": []
+  "icons": [
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

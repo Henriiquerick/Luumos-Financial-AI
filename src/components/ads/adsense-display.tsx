@@ -23,7 +23,7 @@ export function AdSenseDisplay({ slotId, clientId, className }: AdSenseDisplayPr
     <div className="flex justify-center items-center w-full min-h-[250px] bg-muted/30 rounded-lg">
       <ins
         className="adsbygoogle"
-        style={{ display: 'inline-block', width: '300px', height: '250px' }}
+        style={{ display: 'block', width: '300px', height: '250px' }}
         data-ad-client={clientId}
         data-ad-slot={slotId}
       ></ins>
