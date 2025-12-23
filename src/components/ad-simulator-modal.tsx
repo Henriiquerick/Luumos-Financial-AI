@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, 'useState', 'useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -110,7 +110,11 @@ const NewDialogContent = React.forwardRef<
       }}
     >
       {children}
-      {hideCloseButton && <div className="absolute right-4 top-4 hidden" />}
+      {!hideCloseButton && (
+        <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <span className="sr-only">Close</span>
+        </Dialog.Close>
+      )}
     </OriginalDialogContent>
   );
 });
