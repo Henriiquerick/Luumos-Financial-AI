@@ -1,11 +1,12 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, 'useState', 'useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Confetti from 'react-confetti';
+import { AdSenseDisplay } from './ads/adsense-display';
 
 interface AdSimulatorModalProps {
   isOpen: boolean;
@@ -57,18 +58,22 @@ export function AdSimulatorModal({ isOpen, onClose, onReward, isLoading, showCon
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className="w-screen h-screen max-w-none bg-black/90 backdrop-blur-sm border-none flex flex-col items-center justify-center text-white"
+        className="w-screen h-screen max-w-none bg-black/90 backdrop-blur-sm border-none flex flex-col items-center justify-center text-white p-4"
         hideCloseButton={!isFinished}
       >
         <DialogTitle className="sr-only">Simulação de Anúncio</DialogTitle>
         {showConfetti && <Confetti recycle={false} numberOfPieces={400}/>}
         {!isFinished ? (
-          <>
-            <p className="text-xl font-medium text-muted-foreground mb-4">Exibindo publicidade de parceiro...</p>
-            <div className="text-8xl font-bold tabular-nums">
-              {countdown}
+          <div className="flex flex-col items-center gap-4 text-center">
+            <p className="text-xl font-medium text-muted-foreground">Exibindo publicidade de parceiro...</p>
+            <AdSenseDisplay 
+              slotId={process.env.NEXT_PUBLIC_ADSENSE_REWARD_SLOT_ID!} 
+              clientId={process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID!}
+            />
+            <div className="text-lg font-bold tabular-nums text-muted-foreground">
+              Você poderá fechar em {countdown}s
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-6">
             <h2 className="text-3xl font-bold text-primary">Obrigado por seu apoio!</h2>
@@ -98,10 +103,6 @@ const NewDialogContent = React.forwardRef<
     <OriginalDialogContent
       ref={ref}
       {...props}
-      // This is a way to conditionally render the close button by overriding its style
-      // This is a bit of a hack, but it's the easiest way to do it without re-implementing the entire DialogContent component
-      // A better way would be to fork the component and add a prop to control the close button
-      // For the sake of this example, this is fine
       onInteractOutside={(e) => {
         if (hideCloseButton) {
           e.preventDefault();
@@ -117,6 +118,3 @@ NewDialogContent.displayName = "DialogContent";
 
 // Replace DialogContent with our new version
 (Dialog as any).Content = NewDialogContent;
-
-
-
