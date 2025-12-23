@@ -10,7 +10,9 @@ import {
   Lightbulb, 
   ShieldCheck, 
   ArrowRight, 
-  HelpCircle 
+  HelpCircle,
+  BrainCircuit,
+  Users
 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AdSenseBanner } from '@/components/ads/adsense-banner';
+import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 
 export default function HelpPage() {
   return (
@@ -129,6 +132,60 @@ export default function HelpPage() {
              <AdSenseBanner slotId={process.env.NEXT_PUBLIC_ADSENSE_SQUARE_SLOT_ID!} />
           </div>
         </section>
+        
+        <Separator />
+
+        {/* Support Levels Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2">
+            <BrainCircuit className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-semibold">Níveis de Suporte (O Cérebro da IA)</h2>
+          </div>
+          <p className="text-muted-foreground">Cada nível ajusta a profundidade e o foco dos conselhos que a IA oferece, adaptando-se ao seu momento financeiro.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {KNOWLEDGE_LEVELS.map(level => (
+              <Card key={level.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <span className="text-2xl">{level.icon}</span>
+                    {level.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">{level.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+        
+        <Separator />
+
+        {/* Personalities Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2">
+            <Users className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-semibold">Personalidades (A Voz da IA)</h2>
+          </div>
+          <p className="text-muted-foreground">A personalidade define o "tom de voz" do seu assistente. Escolha a que mais combina com você para uma experiência mais divertida e engajadora.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {PERSONALITIES.map(persona => (
+              <Card key={persona.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <span className="text-2xl">{persona.icon}</span>
+                    {persona.name}
+                  </CardTitle>
+                  <CardDescription>{persona.style}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground italic">"{persona.tagline}"</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
 
         {/* FAQ Section */}
         <section className="space-y-6">
