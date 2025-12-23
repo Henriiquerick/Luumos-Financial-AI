@@ -30,6 +30,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useFinancialData } from '@/hooks/use-financial-data';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { AdSenseBanner } from './ads/adsense-banner';
 
 
 const InstallmentTunnelChart = dynamic(
@@ -308,6 +309,8 @@ export default function Dashboard() {
                 />
               </div>
           </div>
+          
+          <AdSenseBanner slotId={process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT_ID!} />
 
           <div className="mt-6 space-y-6">
               <CardsCarousel 
