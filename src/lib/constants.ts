@@ -90,3 +90,4 @@ export const DEFAULT_CATEGORY_ICONS: Record<TransactionCategory, string> =
     acc[cat.value] = cat.icon;
     return acc;
   }, {} as Record<TransactionCategory, string>);
+
