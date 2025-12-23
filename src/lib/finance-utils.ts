@@ -96,41 +96,30 @@ export function calculateCardBillProjection(
     if (!t.cardId || t.type !== 'expense') return; // Only card expenses
     
     const card = cards.find(c => c.id === t.cardId);
-    if (!card || !card.closingDay) return;
+    if (!card) return; // Se o cartão não for encontrado, pula a transação
 
     const transactionDate = getDateFromTimestamp(t.date);
     const transactionDay = getDate(transactionDate);
 
-    // 3. Determine the correct bill month for the transaction based on closing day
-    let firstBillDate;
-    if (transactionDay > card.closingDay) {
-      // If purchase is after closing day, it falls into the next month's bill
-      firstBillDate = addMonths(transactionDate, 1);
+    // 3. CORREÇÃO: Determina o mês correto da fatura
+    // Se a compra for FEITA DEPOIS do dia do fechamento, ela entra na fatura do MÊS SEGUINTE.
+    // Se for feita ANTES ou NO DIA do fechamento, entra na fatura do MÊS ATUAL.
+    let billDate;
+    if (card.closingDay > 0 && transactionDay > card.closingDay) {
+      billDate = addMonths(transactionDate, 1);
     } else {
-      // Otherwise, it's in the current month's bill
-      firstBillDate = transactionDate;
+      billDate = transactionDate;
     }
     
-    // For single purchases, just add the amount to the correct bill month.
-    const isInstallment = t.installments && t.installments > 1;
-    
-    if (!isInstallment) {
-      const monthKey = format(startOfMonth(firstBillDate), 'yyyy-MM');
-      if (monthKey in monthlyBills) {
-        monthlyBills[monthKey][card.name] += t.amount;
-      }
-    } else {
-      // For installment purchases, the amount is already the value of ONE installment.
-      const installmentAmount = t.amount; // The amount is already the monthly value
-      const totalInstallments = t.installments || 1;
+    const monthKey = format(startOfMonth(billDate), 'yyyy-MM');
 
-      // This logic assumes that when a user creates 'N' installments,
-      // 'N' separate transaction documents are created in Firestore, each representing one month.
-      // So, we just need to place this single transaction's amount in the correct bill.
-      const monthKey = format(startOfMonth(firstBillDate), 'yyyy-MM');
-      if (monthKey in monthlyBills) {
-          monthlyBills[monthKey][card.name] += installmentAmount;
-      }
+    // A lógica de parcelamento já cria uma transação para cada mês,
+    // então apenas precisamos adicionar o valor ao mês da fatura correto.
+    if (monthKey in monthlyBills) {
+        if (!monthlyBills[monthKey][card.name]) {
+            monthlyBills[monthKey][card.name] = 0;
+        }
+        monthlyBills[monthKey][card.name] += t.amount;
     }
   });
 

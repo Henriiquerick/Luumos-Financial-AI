@@ -284,23 +284,28 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         const installmentId = crypto.randomUUID();
         const installmentAmount = values.amount / values.installments;
 
+        // LÓGICA DE FATURA CORRIGIDA
         const selectedCard = creditCards.find(c => c.id === values.cardId);
-        let baseInstallmentDate = values.date;
+        let firstBillDate = values.date;
 
         if (selectedCard && selectedCard.closingDay > 0) {
             const purchaseDay = getDate(values.date);
-            if (purchaseDay >= selectedCard.closingDay) {
-                baseInstallmentDate = addMonths(values.date, 1);
+            // Se a compra for DEPOIS do dia do fechamento, a 1ª parcela cai no mês seguinte.
+            if (purchaseDay > selectedCard.closingDay) {
+                firstBillDate = addMonths(values.date, 1);
             }
         }
         
         for (let i = 0; i < values.installments; i++) {
           const newDocRef = doc(transactionsRef);
+          // A data de cada parcela é calculada a partir da `firstBillDate`
+          const installmentDate = addMonths(firstBillDate, i);
+          
           const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
             description: `${values.description} (${i + 1}/${values.installments})`,
             amount: installmentAmount,
             category: values.category,
-            date: Timestamp.fromDate(addMonths(baseInstallmentDate, i)),
+            date: Timestamp.fromDate(installmentDate),
             type: 'expense',
             installments: values.installments,
             installmentId: installmentId,
