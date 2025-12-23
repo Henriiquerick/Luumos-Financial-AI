@@ -4,8 +4,8 @@ import type { Language } from './translations';
 
 export const PLAN_LIMITS: Record<string, number> = {
     free: 5,
-    pro: 45,
-    gold: 45, // Adicionando o plano gold conforme solicitado
+    pro: 50,
+    gold: 45,
 };
 
 export const ADS_WATCH_LIMITS: Record<string, number> = {

@@ -1,36 +1,28 @@
+import 'server-only';
 import admin from 'firebase-admin';
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 
-// Função Singleton para inicializar o Firebase Admin
-function createFirebaseAdminApp(): App {
-  if (getApps().length > 0) {
-    return getApps()[0];
-  }
-
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-  if (!serviceAccountKey) {
-    throw new Error('A variável de ambiente FIREBASE_SERVICE_ACCOUNT_KEY não foi definida.');
-  }
-
+// Singleton: Garante que só inicializa uma vez
+if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    // Transforma os literais "\\n" em quebras de linha reais
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    // Verifica se a chave existe antes de tentar parsear
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+    if (serviceAccountKey) {
+      // Remove quebras de linha que as vezes estragam o JSON vindo de ENV
+      const cleanKey = serviceAccountKey.replace(/\\n/g, '\n');
+      const serviceAccount = JSON.parse(cleanKey);
+      
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } else {
+      console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY não encontrada no Build. O Admin não foi iniciado.');
     }
-    
-    return initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } catch (error: any) {
-    throw new Error(`Falha ao inicializar o Firebase Admin: ${error.message}`);
+  } catch (error) {
+    console.error('❌ Erro ao iniciar Firebase Admin:', error);
   }
 }
 
-// Inicializa o app e exporta a instância do Firestore
-const adminApp = createFirebaseAdminApp();
-export const adminDb = getFirestore(adminApp);
-export const adminAuth = adminApp.auth();
-
+// Exporta o Firestore seguro (se falhar o init, ele vai tentar usar o default, o que é melhor que crashar o build)
+export const adminDb = admin.firestore();
+export const adminAuth = admin.auth();
