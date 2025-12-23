@@ -21,9 +21,24 @@ export type Transaction = {
   date: Date | Timestamp;
   installments: number;
   installmentId?: string;
+  recurringId?: string;
   category: string; // Can be default or custom
   type: 'income' | 'expense';
   cardId?: string;
+};
+
+export type RecurringExpense = {
+  id: string;
+  userId: string;
+  description: string;
+  amount: number;
+  category: string;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  startDate: Timestamp | Date;
+  endDate?: Timestamp | Date;
+  nextTriggerDate: Timestamp | Date;
+  isActive: boolean;
+  createdAt: Timestamp;
 };
 
 export type AIPersonality = {
