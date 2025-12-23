@@ -2,13 +2,15 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { UserProfile, Transaction } from '@/lib/types';
 import { PERSONALITIES } from '@/lib/agent-config';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 const getDateFromTimestamp = (date: any): Date => {
   if (date instanceof Timestamp) return date.toDate();
@@ -37,8 +39,6 @@ export async function POST(req: Request) {
     console.log(`CACHE MISS for user: ${userId}`);
     // --- FIM DA LÓGICA DE CACHE ---
 
-
-    // 1. Buscar dados diretamente do Firebase Admin (se o cache falhar)
     const userRef = adminDb.collection('users').doc(userId);
     const transactionsRef = userRef.collection('transactions').orderBy('date', 'desc').limit(50);
     
@@ -56,7 +56,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ insight: noTransactionInsight });
     }
 
-
     const userProfile = userDoc.data() as UserProfile;
     const transactions = transactionsSnapshot.docs.map(doc => {
         const data = doc.data() as Transaction;
@@ -70,13 +69,11 @@ export async function POST(req: Request) {
       categoria: t.category,
       valor: t.amount,
       tipo: t.type,
-      data: t.date.toISOString().split('T')[0] // Formato YYYY-MM-DD
+      data: t.date.toISOString().split('T')[0]
     }));
 
-    // 3. Obter a personalidade e instrução do sistema
     const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'biris')!;
     
-    // 4. Montar o prompt para o Gemini
     const finalPrompt = `
       ${personality.instruction}
       
@@ -88,12 +85,21 @@ export async function POST(req: Request) {
       Análise de Transações Recentes: ${JSON.stringify(simplifiedTransactions)}
     `;
 
-    // 5. Chamar a API do Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const result = await model.generateContent(finalPrompt);
-    const response = await result.response;
-    const insightText = response.text();
+    const chatCompletion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: "system",
+                content: "Você é um especialista financeiro que analisa dados de transações para gerar um insight diário curto e engajador para o usuário, seguindo uma persona específica."
+            },
+            {
+                role: "user",
+                content: finalPrompt,
+            }
+        ],
+        model: "llama-3.1-70b-versatile",
+    });
 
+    const insightText = chatCompletion.choices[0]?.message?.content || "Não foi possível gerar um insight hoje. Tente novamente mais tarde.";
 
     // --- SALVAR NO CACHE ---
     await cacheRef.set({
@@ -106,7 +112,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ insight: insightText });
 
   } catch (error: any) {
-    console.error("Gemini API or Firebase Error in Daily Insight:", error);
+    console.error("Groq API or Firebase Error in Daily Insight:", error);
     return NextResponse.json(
       { error: error.message, stack: error.stack }, 
       { status: 500 }
