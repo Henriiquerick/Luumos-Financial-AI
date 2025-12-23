@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addMonths, getDate, addWeeks, addYears } from 'date-fns';
-import { Loader2, Sparkles, Repeat } from 'lucide-react';
+import { Loader2, Sparkles, Repeat, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,8 @@ import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
 import { DatePicker } from './ui/date-picker';
 import { MoneyInput } from './ui/money-input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatDate } from '@/lib/i18n-utils';
 
 
 const formSchema = z.object({
@@ -82,8 +84,8 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (transactionToEdit) {
       const isCard = !!transactionToEdit.cardId;
       reset({
-        description: transactionToEdit.description,
-        amount: transactionToEdit.amount,
+        description: transactionToEdit.description.replace(/\s\(\d+\/\d+\)$/, ''), // Remove sufixo da parcela
+        amount: transactionToEdit.installments > 1 ? transactionToEdit.amount * transactionToEdit.installments : transactionToEdit.amount,
         date: getDateFromTimestamp(transactionToEdit.date),
         type: transactionToEdit.type,
         category: transactionToEdit.category,
@@ -91,7 +93,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         installments: transactionToEdit.installments,
         paymentMethod: isCard ? 'card' : 'cash',
         cardId: transactionToEdit.cardId || undefined,
-        isRecurring: false, // Don't allow editing recurring status for now
+        isRecurring: false,
       });
     } else {
       reset({
@@ -129,6 +131,15 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     }
     return null;
   }, [selectedCardId, paymentMethod, transactions, creditCards]);
+    
+  // Lógica para encontrar e exibir parcelas
+  const isEditingInstallmentParent = transactionToEdit?.installments && transactionToEdit.installments > 1 && transactionToEdit.installmentId && !/\(\d+\/\d+\)$/.test(transactionToEdit.description);
+  const futureInstallments = useMemo(() => {
+    if (!isEditingInstallmentParent || !transactionToEdit) return [];
+    return transactions
+      .filter(t => t.installmentId === transactionToEdit.installmentId && getDateFromTimestamp(t.date) > getDateFromTimestamp(transactionToEdit.date))
+      .sort((a, b) => getDateFromTimestamp(a.date).getTime() - getDateFromTimestamp(b.date).getTime());
+  }, [isEditingInstallmentParent, transactionToEdit, transactions]);
 
   const isLimitExceeded = useMemo(() => {
     if (cardUsage && amount > 0) {
@@ -174,7 +185,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   }, [getValues, setValue, transactions, customCategories, toast, t]);
   
   useEffect(() => {
-    if (transactionToEdit) return; // Não alterar valores padrão ao editar
+    if (transactionToEdit) return; 
 
     if (transactionType === 'income') {
       setValue('paymentMethod', 'cash'); 
@@ -196,10 +207,8 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     
     try {
       if (transactionToEdit) {
-        // UPDATE LOGIC
         const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
         
-        // Sanitize and prepare data for update
         const dataToUpdate: Partial<Transaction> & { date: Timestamp, updatedAt: any } = {
           description: values.description.trim(),
           amount: Number(values.amount),
@@ -208,14 +217,16 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           type: values.type,
           updatedAt: Timestamp.now(),
         };
-
-        if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
-          dataToUpdate.cardId = values.cardId;
-        } else {
-          dataToUpdate.cardId = undefined; // Explicitly remove if not a card payment
+        
+        // Se a transação editada for uma parcela, não podemos alterar esses campos
+        if (transactionToEdit.installments <= 1) {
+            if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
+                dataToUpdate.cardId = values.cardId;
+            } else {
+                dataToUpdate.cardId = undefined;
+            }
         }
         
-        // Remove any undefined keys to avoid Firestore errors
         Object.keys(dataToUpdate).forEach(key => (dataToUpdate as any)[key] === undefined && delete (dataToUpdate as any)[key]);
 
         await updateDoc(transactionRef, dataToUpdate);
@@ -226,9 +237,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
         const recurringId = crypto.randomUUID();
 
-        // Lógica para Despesa Recorrente
         if (values.isRecurring) {
-            // 1. Criar a primeira transação (gasto de hoje)
             const initialTransactionData = {
                 description: values.description,
                 amount: values.amount,
@@ -236,11 +245,11 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 date: Timestamp.fromDate(values.date),
                 type: 'expense',
                 installments: 1,
-                recurringId: recurringId, // Vincula à recorrência
+                recurringId: recurringId,
+                cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
             };
             addDocumentNonBlocking(transactionsRef, initialTransactionData);
 
-            // 2. Calcular a próxima data de cobrança
             let nextTriggerDate;
             switch (values.frequency) {
                 case 'weekly':
@@ -254,8 +263,6 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     nextTriggerDate = addMonths(values.date, 1);
                     break;
             }
-
-            // 3. Criar o "contrato" de recorrência
             const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
             const recurringData: Omit<RecurringExpense, 'id'> = {
                 id: recurringId,
@@ -411,7 +418,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             name="amount"
             render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
-                <FormLabel>{t.modals.transaction.fields.amount}</FormLabel>
+                <FormLabel>{isInstallment ? `Valor Total da Compra` : t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
                   <MoneyInput
                     placeholder="R$ 0,00"
@@ -621,6 +628,30 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           {transactionToEdit ? t.modals.transaction.submit.save : (transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense)}
         </Button>
+        
+        {isEditingInstallmentParent && futureInstallments.length > 0 && (
+          <Collapsible className="mt-4 border-t pt-4">
+            <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between">
+                    <span>Ver parcelas futuras ({futureInstallments.length})</span>
+                    <ChevronsUpDown className="h-4 w-4"/>
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="mt-2 space-y-2 rounded-md border p-2">
+                {futureInstallments.map(installment => (
+                    <div key={installment.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/50">
+                        <span className="text-muted-foreground">{installment.description}</span>
+                        <div className="text-right">
+                            <span className="font-semibold">{formatMoney(installment.amount)}</span>
+                            <p className="text-xs text-muted-foreground">{formatDate(language, getDateFromTimestamp(installment.date))}</p>
+                        </div>
+                    </div>
+                ))}
+                </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </form>
     </Form>
   );
