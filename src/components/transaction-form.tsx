@@ -6,15 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addMonths, getDate } from 'date-fns';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { ALL_CATEGORIES, TRANSLATED_CATEGORIES, DEFAULT_CATEGORIES } from '@/lib/constants';
-import type { Transaction, TransactionCategory, CreditCard, CustomCategory } from '@/lib/types';
+import { TRANSLATED_CATEGORIES, DEFAULT_CATEGORIES } from '@/lib/constants';
+import type { Transaction, CreditCard, CustomCategory, RecurringExpense, TransactionCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { useFirestore, useUser } from '@/firebase';
@@ -36,6 +36,10 @@ const formSchema = z.object({
   installments: z.coerce.number().int().min(2).max(60).optional(),
   paymentMethod: z.enum(['cash', 'card']),
   cardId: z.string().optional(),
+  // Campos Recorrentes
+  isRecurring: z.boolean(),
+  frequency: z.enum(['weekly', 'monthly', 'yearly']).optional(),
+  endDate: z.date().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,6 +71,8 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       isInstallment: false,
       installments: 2,
       paymentMethod: 'cash',
+      isRecurring: false,
+      frequency: 'monthly',
     },
   });
 
@@ -85,6 +91,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         installments: transactionToEdit.installments,
         paymentMethod: isCard ? 'card' : 'cash',
         cardId: transactionToEdit.cardId || undefined,
+        isRecurring: false, // Don't allow editing recurring status for now
       });
     } else {
       reset({
@@ -96,13 +103,16 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         isInstallment: false,
         installments: 2,
         paymentMethod: creditCards.length > 0 ? 'card' : 'cash',
-        cardId: creditCards.length > 0 ? creditCards[0].id : undefined
+        cardId: creditCards.length > 0 ? creditCards[0].id : undefined,
+        isRecurring: false,
+        frequency: 'monthly',
       });
     }
   }, [transactionToEdit, reset, creditCards]);
 
 
   const isInstallment = watch('isInstallment');
+  const isRecurring = watch('isRecurring');
   const transactionType = watch('type');
   const paymentMethod = watch('paymentMethod');
   const selectedCardId = watch('cardId');
@@ -169,7 +179,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (transactionType === 'income') {
       setValue('paymentMethod', 'cash'); 
       setValue('isInstallment', false); 
-      // Apenas mude a categoria se a categoria atual for de despesa
+      setValue('isRecurring', false);
       const currentCategory = getValues('category');
       const isExpenseCategory = DEFAULT_CATEGORIES.find(c => c.value === currentCategory && c.type === 'expense');
       if (isExpenseCategory || !currentCategory) {
@@ -183,6 +193,32 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (!user || !firestore) return;
     
     const formattedAmount = formatMoney(values.amount);
+
+    // Lógica para Despesa Recorrente
+    if (values.isRecurring && !transactionToEdit) {
+      const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
+      const recurringData: Omit<RecurringExpense, 'id' | 'createdAt'> = {
+        userId: user.uid,
+        description: values.description,
+        amount: values.amount,
+        category: values.category,
+        frequency: values.frequency!,
+        startDate: Timestamp.fromDate(values.date),
+        endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
+        nextTriggerDate: Timestamp.fromDate(values.date), // Primeira cobrança é na data de início
+        isActive: true,
+      };
+      
+      addDocumentNonBlocking(recurringRef, recurringData);
+      toast({
+        title: "Despesa Recorrente Criada",
+        description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
+      });
+
+      onSave();
+      form.reset();
+      return;
+    }
     
     if (transactionToEdit) {
       // UPDATE LOGIC
@@ -198,7 +234,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
         dataToUpdate.cardId = values.cardId;
       } else {
-        dataToUpdate.cardId = undefined; // Usa undefined para remover o campo
+        dataToUpdate.cardId = undefined;
       }
       
       updateDocumentNonBlocking(transactionRef, dataToUpdate);
@@ -347,7 +383,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>{t.modals.transaction.fields.date}</FormLabel>
+                <FormLabel>{isRecurring ? "Data de Início" : t.modals.transaction.fields.date}</FormLabel>
                  <FormControl>
                     <DatePicker 
                         value={field.value}
@@ -387,7 +423,65 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           )}
         />
         
-        {transactionType === 'expense' && (
+        {transactionType === 'expense' && !transactionToEdit && (
+            <FormField
+              control={control}
+              name="isRecurring"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center"><Repeat className="mr-2 h-4 w-4"/>Despesa Recorrente?</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+        )}
+
+        {isRecurring && !transactionToEdit && (
+            <div className="p-4 border-l-4 border-primary/50 bg-muted/30 rounded-r-lg space-y-4">
+                 <FormField
+                    control={control}
+                    name="frequency"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Frequência</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Selecione a frequência" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="weekly">Semanal</SelectItem>
+                                <SelectItem value="monthly">Mensal</SelectItem>
+                                <SelectItem value="yearly">Anual</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name="endDate"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Termina em (Opcional)</FormLabel>
+                        <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                        />
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
+        )}
+        
+        {transactionType === 'expense' && !isRecurring && (
           <>
             <FormField
               control={form.control}
@@ -485,3 +579,4 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
+
