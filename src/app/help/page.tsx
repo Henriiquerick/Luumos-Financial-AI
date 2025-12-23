@@ -111,21 +111,16 @@ export default function HelpPage() {
 
         <Separator />
 
-        {/* Persona Section */}
+        {/* Mission Section */}
         <section className="grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-6 h-6 text-yellow-500" />
-              <h2 className="text-2xl font-semibold">Quem é o Jorgin?</h2>
+              <h2 className="text-2xl font-semibold">Nosso objetivo:</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              O Jorgin não é um gerente de banco engravatado. Ele é uma IA baseada em <strong>Llama-3</strong> com personalidade <strong>Geração Z</strong>. 
-              Ele foi treinado para ser direto, usar gírias e, acima de tudo, ser sincero sobre seus gastos.
+              Nós queremos ajudar todas as pessoas a terem uma maior educação financeira, maior controle de gastos e evolução monetária, no nosso app você vai aprender a investir, quando gastar, quanto gastar e como economizar.
             </p>
-            <div className="bg-muted/40 p-4 rounded-lg border-l-4 border-primary italic text-sm">
-              "Amiga, se manca! Você tá comprando café de 20 reais enquanto deve pro banco? O Serasa tá vendo, hein! 💀"
-              <div className="mt-2 text-xs font-bold text-primary">— Jorgin (Exemplo de Insight)</div>
-            </div>
           </div>
           
           {/* AdSlot: Quadrado Lateral */}
@@ -153,7 +148,7 @@ export default function HelpPage() {
               <AccordionTrigger>Meus dados estão seguros?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <div className="flex flex-col gap-2">
-                  <p>Sim. Utilizamos autenticação segura via <strong>Clerk</strong> e banco de dados <strong>Firebase</strong> com regras estritas de segurança.</p>
+                  <p>Sim. Utilizamos autenticação segura via <strong>Firebase Auth</strong> e banco de dados <strong>Firebase</strong> com regras estritas de segurança.</p>
                   <p className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium">
                     <ShieldCheck className="w-4 h-4" /> 
                     Seus dados sensíveis são anonimizados antes de passar pela IA.
