@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAdminDb } from '@/lib/firebase-admin'; // <--- Importa nossa função modular
-import { FieldValue, Timestamp } from 'firebase-admin/firestore'; // Importação de tipos/estáticos
+import { getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { PLAN_LIMITS } from '@/lib/constants';
 import { isBefore, startOfToday } from 'date-fns';
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
@@ -10,20 +10,22 @@ const ADMIN_IDS = [ "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", "rickson.henrique2018@gmail.
 
 const getDateFromTimestamp = (date: any): Date | null => { if (!date) return null; if (date instanceof Timestamp) return date.toDate(); if (date._seconds) return new Date(date._seconds * 1000); if (date instanceof Date) return date; return null; };
 
-export async function POST(req: Request) { try { // --- 1. Conexão ao Banco --- const db = getAdminDb(); // Isso agora deve retornar o Firestore ou lançar erro
+export async function POST(req: Request) { try { 
+// 1. Conexão ao Banco 
+const db = getAdminDb();
 
 if (!db) {
-    throw new Error("O objeto 'db' retornou undefined/null.");
+    throw new Error("O objeto 'db' retornou undefined.");
 }
 const { userId, messages, data } = await req.json();
 if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-// --- 2. Operações no Banco ---
-const userRef = db.collection('users').doc(userId); // Aqui que estava o erro
+// 2. Operações no Banco
+const userRef = db.collection('users').doc(userId);
 const userDoc = await userRef.get();
 if (!userDoc.exists) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 const userData = userDoc.data();
 const isAdmin = ADMIN_IDS.includes(userId) || userData?.isAdmin === true;
-// --- 3. Lógica de Créditos ---
+// 3. Lógica de Créditos
 if (!isAdmin) {
   const today = startOfToday();
   const lastReset = getDateFromTimestamp(userData?.lastCreditReset);
@@ -43,7 +45,7 @@ if (!isAdmin) {
     );
   }
 }
-// --- 4. Gemini ---
+// 4. Gemini
 const systemInstruction = `
   Atue como consultor financeiro.
   Dados: ${JSON.stringify(data || {})}
@@ -57,7 +59,7 @@ const chat = model.startChat({
 });
 const result = await chat.sendMessage(messages[messages.length - 1]?.content || "Olá");
 const textResponse = result.response.text();
-// --- 5. Cobrança ---
+// 5. Cobrança
 if (!isAdmin) {
     if ((userData?.dailyCredits || 0) > 0) {
         await userRef.update({ dailyCredits: FieldValue.increment(-1) });
