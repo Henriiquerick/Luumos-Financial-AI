@@ -47,7 +47,8 @@ export function CreditCardCard({
   const usage = getCardUsage(card.id, allTransactions, allCards);
   
   const brand = CARD_BRANDS[card.brand as keyof typeof CARD_BRANDS];
-  const theme = getBankTheme(card.name);
+  // CORREÇÃO: Usar card.issuer para buscar o tema, não o apelido (card.name)
+  const theme = getBankTheme(card.issuer);
 
 
   const handleDeleteConfirm = () => {
@@ -81,24 +82,25 @@ export function CreditCardCard({
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        <Image 
-          src={`/banks/${card.issuer}-icon.svg`}
-          alt={card.name}
-          width={224}
-          height={224}
-          className="absolute -bottom-10 -right-10 w-56 h-56 object-contain opacity-[0.07] rotate-12 brightness-0 invert pointer-events-none z-0"
-        />
+        <div 
+          className="absolute -bottom-8 -right-8 w-48 h-48 text-white/5 font-bold text-5xl transform-gpu rotate-12 pointer-events-none z-0"
+          style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
+        >
+          {card.issuer}
+        </div>
         <div 
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
 
         <div className="relative z-10">
+            {/* CORREÇÃO: Usar `issuer` para o logo, garantindo que o logo correto seja encontrado */}
             <Image 
-              src={`/banks/${card.issuer}-icon.svg`}
-              alt={card.name}
+              src={`https://img.icons8.com/color/48/${card.issuer.toLowerCase().replace(' ', '-')}.png`}
+              alt={card.issuer}
               width={48}
               height={32}
               className="absolute top-4 left-4 h-8 w-12 object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
 
             {brand && (
@@ -154,6 +156,7 @@ export function CreditCardCard({
 
             <CardHeader>
                 <CardTitle>
+                    {/* O Apelido do Cartão continua sendo o título principal */}
                     <span>{card.name}</span>
                 </CardTitle>
                 <CardDescription className="text-white/70">
