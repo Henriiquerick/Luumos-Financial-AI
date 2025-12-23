@@ -3,7 +3,7 @@ import type { TransactionCategory } from '@/lib/types';
 import type { Language } from './translations';
 
 export const PLAN_LIMITS: Record<string, number> = {
-    free: 15,
+    free: 5,
     pro: 45,
     gold: 45, // Adicionando o plano gold conforme solicitado
 };

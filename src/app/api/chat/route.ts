@@ -1,106 +1,113 @@
+
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { adminDb } from '@/lib/firebase-admin'; // Certifique-se que este arquivo exporta o getFirestore()
-import { FieldValue } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { PLAN_LIMITS } from '@/lib/constants'; // Importe seus limites
+import { isBefore, startOfToday } from 'date-fns';
 
-// Inicializa o Google Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
+
+// IDs dos Admins (Você não gasta créditos)
+const ADMIN_IDS = [
+  "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", 
+  "rickson.henrique2018@gmail.com"
+];
+
+// Helper para converter data do Firestore
+const getDateFromTimestamp = (date: any): Date | null => {
+  if (date instanceof Timestamp) return date.toDate();
+  if (date instanceof Date) return date;
+  return null;
+};
 
 export async function POST(req: Request) {
   try {
     const { userId, messages, data } = await req.json();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+    if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
 
-    // --- 1. CONFIGURAÇÃO DE ADMIN (Seu ID Mestre) ---
-    const ADMIN_IDS = [
-      "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", // SEU ID DO FIREBASE
-      "rickson.henrique2018@gmail.com" // Fallback de email se necessário
-    ];
-
-    // --- 2. BUSCAR DADOS DO USUÁRIO ---
+    // 1. Busca Usuário no Banco
     const userRef = adminDb.collection('users').doc(userId);
     const userDoc = await userRef.get();
-    if (!userDoc.exists) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+
+    if (!userDoc.exists) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
     const userData = userDoc.data();
+    
+    // Verifica se é Admin
+    const isAdmin = ADMIN_IDS.includes(userId) || userData?.isAdmin === true || userData?.email === ADMIN_IDS[1];
 
-    // Verifica se é Admin (pelo ID ou pela flag no banco)
-    const isAdmin = ADMIN_IDS.includes(userId) || userData?.isAdmin === true;
-
-    // --- 3. VERIFICAÇÃO DE CRÉDITOS ---
-    // Se NÃO for admin, verifica se tem saldo
+    // 2. Lógica de Reset Diário (Se não for Admin)
     if (!isAdmin) {
-      // Verifica se credits existe e é maior que 0
-      // Nota: Se quiser manter compatibilidade com 'dailyCredits', verifique ambos
-      const currentCredits = userData?.credits ?? userData?.dailyCredits ?? 0;
-      if (currentCredits <= 0) {
+      const today = startOfToday();
+      const lastReset = getDateFromTimestamp(userData?.lastCreditReset);
+
+      // Se nunca resetou ou resetou antes de hoje, renova os créditos
+      if (!lastReset || isBefore(lastReset, today)) {
+        // Pega o plano (se não tiver, assume 'free')
+        // Nota: Se a subscrição ficar em outra coleção, simplifique assumindo 'free' ou busque lá.
+        // Aqui assumimos 'free' para simplificar e evitar erro de busca complexa
+        const planLimit = PLAN_LIMITS.free; 
+
+        await userRef.update({
+          dailyCredits: planLimit,
+          lastCreditReset: FieldValue.serverTimestamp()
+        });
+        
+        // Atualiza a variável local para a verificação abaixo não falhar
+        if (userData) userData.dailyCredits = planLimit;
+        console.log(`♻️ Créditos renovados para ${userId}: ${planLimit}`);
+      }
+    }
+
+    // 3. Verificação de Saldo
+    if (!isAdmin) {
+      // Prioriza 'credits' (adquiridos) e depois 'dailyCredits' (do plano)
+      const totalCredits = (userData?.credits || 0) + (userData?.dailyCredits || 0);
+
+      if (totalCredits <= 0) {
         return NextResponse.json(
-          { 
-            error: 'Créditos insuficientes. Assista um anúncio para recarregar!', 
-            code: '403_INSUFFICIENT_CREDITS' 
-          },
+          { error: 'Sem créditos diários. Assista um anúncio!', code: '403_INSUFFICIENT_CREDITS' },
           { status: 403 }
         );
       }
     }
 
-    // --- 4. PREPARAÇÃO DO PROMPT (Contexto) ---
-    const lastMessage = messages[messages.length - 1];
-    const userQuestion = lastMessage.content;
-
-    // Monta o contexto financeiro se disponível
-    const financialContext = data ? `
-      Saldo Atual: R$ ${data.balance || 0}
-      Transações Recentes: ${JSON.stringify(data.transactions || [])}
-      Cartões: ${JSON.stringify(data.cards || [])}
-    ` : "Sem dados financeiros.";
-
-    const systemContext = `
-      Você é um assistente financeiro inteligente.
-      Personalidade ID: ${data?.personalityId || 'padrão'}.
-      Nível de Conhecimento: ${data?.knowledgeId || 'básico'}.
-      Idioma: ${data?.language || 'pt-BR'}.
-      
-      CONTEXTO FINANCEIRO:
-      ${financialContext}
-
-      Responda de forma direta, útil e curta.
+    // 4. Gera Resposta com Gemini
+    const systemInstruction = `
+      Atue como um consultor financeiro.
+      Contexto: ${JSON.stringify(data || {})}
+      Seja direto e útil.
     `;
 
-    // --- 5. CHAMADA AI (GOOGLE GEMINI) ---
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const chat = model.startChat({ 
-      history: [ 
-        { role: "user", parts: [{ text: systemContext }] }, 
-        { role: "model", parts: [{ text: "Entendido. Analisarei os dados financeiros." }] }, 
-      ], 
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: systemInstruction }] },
+        { role: "model", parts: [{ text: "Ok." }] },
+      ],
     });
 
-    const result = await chat.sendMessage(userQuestion);
-    const response = await result.response;
-    const textResponse = response.text();
+    const lastMsgContent = messages[messages.length - 1]?.content || "Olá";
+    const result = await chat.sendMessage(lastMsgContent);
+    const textResponse = result.response.text();
 
-    // --- 6. COBRANÇA (Só se não for Admin) ---
+    // 5. Desconta Créditos
     if (!isAdmin) {
-      // Tenta descontar de 'credits' (novo padrão) ou 'dailyCredits' (legado)
-      const fieldToUpdate = userData?.credits !== undefined ? 'credits' : 'dailyCredits';
-      
-      await userRef.update({
-        [fieldToUpdate]: FieldValue.increment(-1)
-      });
+        // Tenta descontar do 'dailyCredits' primeiro, se acabar, desconta de 'credits'
+        // Simplificação: Desconta de dailyCredits se tiver, senão credits
+        if ((userData?.dailyCredits || 0) > 0) {
+            await userRef.update({ dailyCredits: FieldValue.increment(-1) });
+        } else {
+            await userRef.update({ credits: FieldValue.increment(-1) });
+        }
     }
 
     return NextResponse.json({ text: textResponse });
 
-  } catch (error: any) { 
-    console.error('Chat API Error:', error); 
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message }, 
-      { status: 500 } 
-    ); 
-  } 
+  } catch (error: any) {
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
