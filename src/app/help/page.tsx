@@ -157,7 +157,7 @@ export default function HelpPage() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-3">
-              <AccordionTrigger>Posso mudar a personalidade do Jorgin?</AccordionTrigger>
+              <AccordionTrigger>Posso escolher qualquer personalidade dentro do menu?</AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 Sim! Se você prefere algo mais formal, vá nas configurações do chat e altere a personalidade para "O Estrategista" (mais sério) ou "O Otimista". Mas o padrão "Sem Filtro" é o nosso favorito.
               </AccordionContent>
