@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -26,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Importar Tabs
 import { formatDate } from '@/lib/i18n-utils';
 import { useCurrency } from '@/contexts/currency-context';
 import { Loader2, ArrowLeft, Pencil, Trash2 } from 'lucide-react';
@@ -40,6 +40,7 @@ import { TransactionDialog } from './transaction-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from './ui/toast';
 import type { Language } from '@/lib/translations';
+import { RecurringExpensesList } from './recurring-expenses-list'; // Importar novo componente
 
 const TRANSACTIONS_PER_PAGE = 20;
 
@@ -243,81 +244,90 @@ export function HistoryPage() {
             <CardDescription>{t.history.subtitle}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <Select value={period} onValueChange={setPeriod}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t.history.filters.period} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.history.filters.all_time}</SelectItem>
-                  <SelectItem value="this_month">{t.history.filters.this_month}</SelectItem>
-                  <SelectItem value="last_3_months">{t.history.filters.last_3_months}</SelectItem>
-                  <SelectItem value="this_year">{t.history.filters.this_year}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t.transaction.header}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
-                  <TableHead className="text-right">{t.transaction.amount}</TableHead>
-                  <TableHead className="text-right">{t.transaction.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {typedTransactions.map((t) => {
-                  const categoryDisplay = getCategoryDisplay(t.category);
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-muted/50 rounded-md text-xl">
-                            <span role="img">{categoryDisplay.icon}</span>
-                          </div>
-                          <div>
-                            <div className="font-medium">{t.description}</div>
-                            <div className="text-sm text-muted-foreground hidden md:block">{categoryDisplay.name}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
-                      <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
-                        {t.type === 'income' ? '+' : '-'}
-                        {formatMoney(t.amount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditTransaction(t)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteTransaction(t)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
+            <Tabs defaultValue="transactions" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="transactions">Transações</TabsTrigger>
+                <TabsTrigger value="recurring">Recorrências</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="transactions">
+                <div className="my-4">
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder={t.history.filters.period} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t.history.filters.all_time}</SelectItem>
+                      <SelectItem value="this_month">{t.history.filters.this_month}</SelectItem>
+                      <SelectItem value="last_3_months">{t.history.filters.last_3_months}</SelectItem>
+                      <SelectItem value="this_year">{t.history.filters.this_year}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t.transaction.header}</TableHead>
+                      <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
+                      <TableHead className="text-right">{t.transaction.amount}</TableHead>
+                      <TableHead className="text-right">{t.transaction.actions}</TableHead>
                     </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-
-            {isLoading && (
-              <div className="flex justify-center my-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            )}
-
-            {!isLoading && transactions.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">{t.transaction.no_transactions}</p>
-            )}
-
-            {hasMore && !isLoading && (
-              <div className="text-center mt-6">
-                <Button onClick={() => fetchTransactions(false)} variant="outline">
-                  {t.history.load_more}
-                </Button>
-              </div>
-            )}
+                  </TableHeader>
+                  <TableBody>
+                    {typedTransactions.map((t) => {
+                      const categoryDisplay = getCategoryDisplay(t.category);
+                      return (
+                        <TableRow key={t.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-muted/50 rounded-md text-xl">
+                                <span role="img">{categoryDisplay.icon}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{t.description}</div>
+                                <div className="text-sm text-muted-foreground hidden md:block">{categoryDisplay.name}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
+                          <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
+                            {t.type === 'income' ? '+' : '-'}
+                            {formatMoney(t.amount)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditTransaction(t)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTransaction(t)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+                {isLoading && (
+                  <div className="flex justify-center my-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                )}
+                {!isLoading && transactions.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">{t.transaction.no_transactions}</p>
+                )}
+                {hasMore && !isLoading && (
+                  <div className="text-center mt-6">
+                    <Button onClick={() => fetchTransactions(false)} variant="outline">
+                      {t.history.load_more}
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="recurring">
+                  <RecurringExpensesList />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
