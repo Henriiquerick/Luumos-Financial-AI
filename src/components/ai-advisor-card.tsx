@@ -17,6 +17,7 @@ import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, s
 
 // Nota: Removemos o useSubscription pois não bloqueamos mais por plano
 
+
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
   personality: AIPersonality;
