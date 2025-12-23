@@ -87,9 +87,8 @@ export function CreditCardCard({
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         {issuerData?.icon && (
-            <img 
-                src={issuerData.icon} 
-                alt="" 
+            <BrandIcon
+                icon={issuerData.icon} 
                 className="absolute -bottom-10 -right-10 w-56 h-56 object-contain opacity-[0.07] rotate-12 brightness-0 invert pointer-events-none z-0" 
             />
         )}

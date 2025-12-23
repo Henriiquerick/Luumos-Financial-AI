@@ -41,15 +41,15 @@ export const CARD_ISSUERS: CardEntity[] = [
 
 
 export const CARD_BRANDS: CardEntity[] = [
-  { value: 'visa', label: 'Visa', icon: 'https://raw.githubusercontent.com/datatrans/payment-logos/master/assets/cards/visa.svg', supportedTypes: ['credit', 'debit'] },
-  { value: 'mastercard', label: 'Mastercard', icon: 'https://raw.githubusercontent.com/datatrans/payment-logos/master/assets/cards/mastercard.svg', supportedTypes: ['credit', 'debit'] },
-  { value: 'amex', label: 'American Express', icon: 'https://www.vectorlogo.zone/logos/americanexpress/americanexpress-icon.svg', supportedTypes: ['credit', 'debit'] },
-  { value: 'elo', label: 'Elo', icon: 'https://www.vectorlogo.zone/logos/cartaoelocombr/cartaoelocombr-ar21.svg', supportedTypes: ['credit', 'debit'] },
-  { value: 'hipercard', label: 'Hipercard', icon: 'https://www.vectorlogo.zone/logos/hipercard/hipercard-icon.svg', supportedTypes: ['credit'] },
-  { value: 'diners', label: 'Diners Club', icon: 'https://www.vectorlogo.zone/logos/dinersclub/dinersclub-icon.svg', supportedTypes: ['credit'] },
-  { value: 'discover', label: 'Discover', icon: 'https://www.vectorlogo.zone/logos/discover/discover-icon.svg', supportedTypes: ['credit'] },
-  { value: 'jcb', label: 'JCB', icon: 'https://www.vectorlogo.zone/logos/jcb/jcb-icon.svg', supportedTypes: ['credit'] },
-  { value: 'aura', label: 'Aura', icon: 'https://raw.githubusercontent.com/tuna-pay/tuna-docs/master/assets/payment-methods/aura.png', supportedTypes: ['credit'] },
+  { value: 'visa', label: 'Visa', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/visa.svg', supportedTypes: ['credit', 'debit'] },
+  { value: 'mastercard', label: 'Mastercard', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/mastercard.svg', supportedTypes: ['credit', 'debit'] },
+  { value: 'amex', label: 'American Express', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/amex.svg', supportedTypes: ['credit', 'debit'] },
+  { value: 'elo', label: 'Elo', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/elo.svg', supportedTypes: ['credit', 'debit'] },
+  { value: 'hipercard', label: 'Hipercard', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/hipercard.svg', supportedTypes: ['credit'] },
+  { value: 'diners', label: 'Diners Club', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/diners.svg', supportedTypes: ['credit'] },
+  { value: 'discover', label: 'Discover', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/discover.svg', supportedTypes: ['credit'] },
+  { value: 'jcb', label: 'JCB', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/jcb.svg', supportedTypes: ['credit'] },
+  { value: 'aura', label: 'Aura', icon: 'https://raw.githubusercontent.com/diegomier/payment-icons/master/assets/aura.svg', supportedTypes: ['credit'] },
   
   // Voucher brands can mirror issuers
   ...CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes('voucher'))
