@@ -1,5 +1,5 @@
 
-import { Bot, LogOut, Tags, Menu } from 'lucide-react';
+import { Bot, LogOut, Tags, Menu, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import Link from 'next/link';
 
 interface HeaderProps {
   userProfile: UserProfile | null;
@@ -80,6 +81,12 @@ export default function Header({ userProfile }: HeaderProps) {
               <Tags className="h-5 w-5" />
               <span className="sr-only">Gerenciar Categorias</span>
             </Button>
+            <Link href="/help" title="Central de Ajuda">
+              <Button variant="ghost" size="icon">
+                <HelpCircle className="w-5 h-5" />
+                <span className="sr-only">Ajuda</span>
+              </Button>
+            </Link>
             <UserProfileDialog />
             <ModeToggle />
             <LanguageSwitcher />
@@ -117,6 +124,12 @@ export default function Header({ userProfile }: HeaderProps) {
                 <DropdownMenuItem onSelect={() => setIsCategoryDialogOpen(true)}>
                   <Tags className="mr-2" />
                   <span>Gerenciar Categorias</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/help">
+                    <HelpCircle className="mr-2" />
+                    <span>Central de Ajuda</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                    <div className="flex items-center justify-between w-full">
