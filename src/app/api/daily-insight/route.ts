@@ -2,16 +2,13 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
-import { initAdmin } from '@/firebase/admin';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { adminDb } from '@/lib/firebase-admin';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { UserProfile, Transaction } from '@/lib/types';
 import { PERSONALITIES } from '@/lib/agent-config';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-const app = initAdmin();
-const db = getFirestore(app);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
 
 const getDateFromTimestamp = (date: any): Date => {
   if (date instanceof Timestamp) return date.toDate();
@@ -20,10 +17,6 @@ const getDateFromTimestamp = (date: any): Date => {
 };
 
 export async function POST(req: Request) {
-  if (!app) {
-    return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
-  }
-
   try {
     const { userId } = await req.json();
 
@@ -33,7 +26,7 @@ export async function POST(req: Request) {
 
     // --- LÓGICA DE CACHE ---
     const todayStr = new Date().toISOString().split('T')[0];
-    const cacheRef = db.collection('users').doc(userId).collection('cache').doc('daily_insight');
+    const cacheRef = adminDb.collection('users').doc(userId).collection('cache').doc('daily_insight');
     const cacheDoc = await cacheRef.get();
 
     if (cacheDoc.exists && cacheDoc.data()?.date === todayStr) {
@@ -46,7 +39,7 @@ export async function POST(req: Request) {
 
 
     // 1. Buscar dados diretamente do Firebase Admin (se o cache falhar)
-    const userRef = db.collection('users').doc(userId);
+    const userRef = adminDb.collection('users').doc(userId);
     const transactionsRef = userRef.collection('transactions').orderBy('date', 'desc').limit(50);
     
     const [userDoc, transactionsSnapshot] = await Promise.all([
@@ -83,7 +76,7 @@ export async function POST(req: Request) {
     // 3. Obter a personalidade e instrução do sistema
     const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'biris')!;
     
-    // 4. Montar o prompt para a Groq
+    // 4. Montar o prompt para o Gemini
     const finalPrompt = `
       ${personality.instruction}
       
@@ -95,15 +88,12 @@ export async function POST(req: Request) {
       Análise de Transações Recentes: ${JSON.stringify(simplifiedTransactions)}
     `;
 
-    // 5. Chamar a API da Groq
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: finalPrompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 150,
-    });
+    // 5. Chamar a API do Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(finalPrompt);
+    const response = await result.response;
+    const insightText = response.text();
 
-    const insightText = completion.choices[0]?.message?.content || "Não foi possível gerar um insight hoje. Tente mais tarde.";
 
     // --- SALVAR NO CACHE ---
     await cacheRef.set({
@@ -116,7 +106,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ insight: insightText });
 
   } catch (error: any) {
-    console.error("Groq API or Firebase Error in Daily Insight:", error);
+    console.error("Gemini API or Firebase Error in Daily Insight:", error);
     return NextResponse.json(
       { error: error.message, stack: error.stack }, 
       { status: 500 }

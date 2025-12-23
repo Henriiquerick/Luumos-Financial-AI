@@ -1,161 +1,106 @@
-
-'use server';
-
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
-import { initAdmin } from '@/firebase/admin';
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
-import { PLAN_LIMITS } from '@/lib/constants';
-import type { UserProfile, Subscription, ChatMessage } from '@/lib/types';
-import { isBefore, startOfToday } from 'date-fns';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { adminDb } from '@/lib/firebase-admin'; // Certifique-se que este arquivo exporta o getFirestore()
+import { FieldValue } from 'firebase-admin/firestore';
 
-// Initialize Groq SDK
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// Initialize Firebase Admin
-const app = initAdmin();
-const db = getFirestore(app);
-
-const ADMIN_EMAIL = 'rickson.henrique2018@gmail.com';
-
-const getDateFromTimestamp = (date: any): Date | null => {
-  if (date instanceof Timestamp) return date.toDate();
-  if (date instanceof Date) return date;
-  return null;
-};
-
-async function checkAndResetCredits(userId: string, userProfile: UserProfile, subscription: Subscription): Promise<UserProfile> {
-    const today = startOfToday();
-    const lastResetDate = getDateFromTimestamp(userProfile.lastCreditReset);
-    
-    if (!lastResetDate || isBefore(lastResetDate, today)) {
-        const userPlan = subscription?.plan || 'free';
-        const newCredits = PLAN_LIMITS[userPlan];
-        
-        const userRef = db.collection('users').doc(userId);
-        await userRef.update({
-            dailyCredits: newCredits,
-            lastCreditReset: FieldValue.serverTimestamp() 
-        });
-
-        console.log(`Credits reset for user ${userId}. Plan: ${userPlan}, Credits: ${newCredits}`);
-        
-        return {
-            ...userProfile,
-            dailyCredits: newCredits,
-            lastCreditReset: new Date(),
-        };
-    }
-
-    return userProfile;
-}
+// Inicializa o Google Gemini
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || '');
 
 export async function POST(req: Request) {
-  if (!app) {
-      return NextResponse.json({ error: "Server configuration missing" }, { status: 500 });
-  }
-
   try {
-    const body = await req.json();
-    const { userId, messages, data: contextData } = body;
+    const { userId, messages, data } = await req.json();
 
     if (!userId) {
-        return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const userMessageContent = messages?.[messages.length - 1]?.content || '';
-    if (!userMessageContent) {
-      return NextResponse.json({ error: "Empty message" }, { status: 400 });
-    }
-
-    const userRef = db.collection('users').doc(userId);
-    const subscriptionRef = userRef.collection('subscription').doc('status');
-    const [userDoc, subscriptionDoc] = await Promise.all([userRef.get(), subscriptionRef.get()]);
-
-    if (!userDoc.exists) {
-        return NextResponse.json({ error: "User profile not found" }, { status: 404 });
-    }
-
-    let userProfile = userDoc.data() as UserProfile;
-    const subscription = (subscriptionDoc.exists ? subscriptionDoc.data() : { plan: 'free' }) as Subscription;
-    
-    // Injeta a informação de email do auth no perfil para a verificação de admin
-    const authUser = await app.auth().getUser(userId);
-    const userEmail = authUser.email;
-
-    // --- LÓGICA DE ADMIN ---
-    const isAdmin = userProfile.isAdmin === true || userEmail === ADMIN_EMAIL;
-    
-    if (!isAdmin) {
-        userProfile = await checkAndResetCredits(userId, userProfile, subscription);
-
-        if (userProfile.dailyCredits <= 0) {
-            return NextResponse.json(
-                { error: 'Insufficient credits', code: '403_INSUFFICIENT_CREDITS' }, 
-                { status: 403 }
-            );
-        }
-
-        await userRef.update({ dailyCredits: FieldValue.increment(-1) });
-    }
-    // --- FIM DA LÓGICA DE ADMIN ---
-
-    const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
-    const personality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
-
-    const langInstruction = 
-        contextData?.language === 'pt' ? 'Responda estritamente em Português do Brasil.' :
-        contextData?.language === 'es' ? 'Responda estritamente em Espanhol.' :
-        'Answer strictly in English.';
-
-    const genderInstruction = (userProfile as any).gender === 'female' 
-        ? "O usuário se identifica como mulher. Use pronomes femininos e adjetivos como 'preparada', 'focada', 'gata', 'diva'." 
-        : "O usuário se identifica como homem. Use pronomes masculinos e adjetivos como 'preparado', 'focado', 'campeão', 'monstro'.";
-
-    const systemPrompt = `
-      --- DIRETRIZ DE GÊNERO ---
-      ${genderInstruction}
-
-      --- DIRETRIZ DE IDIOMA ---
-      ${langInstruction}
-
-      --- DIRETRIZES DE CONHECIMENTO (O CÉREBRO) ---
-      ${knowledge.instruction}
-
-      --- DIRETRIZES DE PERSONALIDADE (A VOZ) ---
-      ${personality.instruction}
-
-      --- DADOS DO USUÁRIO ---
-      ${contextData ? JSON.stringify(contextData, null, 2) : "Nenhum dado financeiro disponível."}
-
-      --- INSTRUÇÃO FINAL ---
-      Responda à mensagem do usuário usando APENAS o conhecimento do seu Nível e estritamente o tom da sua Personalidade, no idioma e gênero solicitados.
-    `;
-
-    const groqMessages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessageContent }
+    // --- 1. CONFIGURAÇÃO DE ADMIN (Seu ID Mestre) ---
+    const ADMIN_IDS = [
+      "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", // SEU ID DO FIREBASE
+      "rickson.henrique2018@gmail.com" // Fallback de email se necessário
     ];
 
-    const completion = await groq.chat.completions.create({
-      messages: groqMessages as any,
-      model: 'llama-3.1-8b-instant', 
-      temperature: 0.7,
+    // --- 2. BUSCAR DADOS DO USUÁRIO ---
+    const userRef = adminDb.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    const userData = userDoc.data();
+
+    // Verifica se é Admin (pelo ID ou pela flag no banco)
+    const isAdmin = ADMIN_IDS.includes(userId) || userData?.isAdmin === true;
+
+    // --- 3. VERIFICAÇÃO DE CRÉDITOS ---
+    // Se NÃO for admin, verifica se tem saldo
+    if (!isAdmin) {
+      // Verifica se credits existe e é maior que 0
+      // Nota: Se quiser manter compatibilidade com 'dailyCredits', verifique ambos
+      const currentCredits = userData?.credits ?? userData?.dailyCredits ?? 0;
+      if (currentCredits <= 0) {
+        return NextResponse.json(
+          { 
+            error: 'Créditos insuficientes. Assista um anúncio para recarregar!', 
+            code: '403_INSUFFICIENT_CREDITS' 
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // --- 4. PREPARAÇÃO DO PROMPT (Contexto) ---
+    const lastMessage = messages[messages.length - 1];
+    const userQuestion = lastMessage.content;
+
+    // Monta o contexto financeiro se disponível
+    const financialContext = data ? `
+      Saldo Atual: R$ ${data.balance || 0}
+      Transações Recentes: ${JSON.stringify(data.transactions || [])}
+      Cartões: ${JSON.stringify(data.cards || [])}
+    ` : "Sem dados financeiros.";
+
+    const systemContext = `
+      Você é um assistente financeiro inteligente.
+      Personalidade ID: ${data?.personalityId || 'padrão'}.
+      Nível de Conhecimento: ${data?.knowledgeId || 'básico'}.
+      Idioma: ${data?.language || 'pt-BR'}.
+      
+      CONTEXTO FINANCEIRO:
+      ${financialContext}
+
+      Responda de forma direta, útil e curta.
+    `;
+
+    // --- 5. CHAMADA AI (GOOGLE GEMINI) ---
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const chat = model.startChat({ 
+      history: [ 
+        { role: "user", parts: [{ text: systemContext }] }, 
+        { role: "model", parts: [{ text: "Entendido. Analisarei os dados financeiros." }] }, 
+      ], 
     });
 
-    const responseText = completion.choices[0]?.message?.content || '';
-    
-    // We don't save the chat history in the backend anymore with this simplified approach
-    // The frontend handles the state.
+    const result = await chat.sendMessage(userQuestion);
+    const response = await result.response;
+    const textResponse = response.text();
 
-    return NextResponse.json({ text: responseText });
+    // --- 6. COBRANÇA (Só se não for Admin) ---
+    if (!isAdmin) {
+      // Tenta descontar de 'credits' (novo padrão) ou 'dailyCredits' (legado)
+      const fieldToUpdate = userData?.credits !== undefined ? 'credits' : 'dailyCredits';
+      
+      await userRef.update({
+        [fieldToUpdate]: FieldValue.increment(-1)
+      });
+    }
 
-  } catch (error: any) {
-    console.error("Groq API or Firebase Error:", error);
+    return NextResponse.json({ text: textResponse });
+
+  } catch (error: any) { 
+    console.error('Chat API Error:', error); 
     return NextResponse.json(
-      { error: error.message, stack: error.stack }, 
-      { status: 500 }
-    );
-  }
+      { error: 'Internal Server Error', details: error.message }, 
+      { status: 500 } 
+    ); 
+  } 
 }
