@@ -61,12 +61,18 @@ export async function POST(req: Request) {
     const personality = PERSONALITIES.find(p => p.id === data.personalityId) || PERSONALITIES[0];
     const systemPrompt = personality.instruction;
 
+    // --- CORREÇÃO: SANITIZAÇÃO DAS MENSAGENS ---
+    const cleanUserMessages = messages.map((msg: any) => ({
+      role: msg.role === 'model' ? 'assistant' : msg.role, // Converte 'model' para 'assistant'
+      content: msg.content
+    }));
+
     const messagesForGroq = [
       {
         role: 'system',
         content: systemPrompt,
       },
-      ...messages // Histórico de mensagens do usuário/modelo
+      ...cleanUserMessages // Usa o array de mensagens limpo
     ];
 
     const financialContext = data ? `
@@ -79,12 +85,12 @@ export async function POST(req: Request) {
 
     // Adiciona o contexto financeiro à última mensagem do usuário
     const lastUserMessage = messagesForGroq[messagesForGroq.length - 1];
-    if (lastUserMessage) {
+    if (lastUserMessage && lastUserMessage.role === 'user') {
         lastUserMessage.content = `${lastUserMessage.content}\n\n${financialContext}`;
     }
     
     const chatCompletion = await groq.chat.completions.create({
-      messages: messagesForGroq,
+      messages: messagesForGroq, // Envia o array final e sanitizado
       model: "llama-3.1-8b-instant",
       temperature: 0.8,
       max_tokens: 1024,
@@ -105,5 +111,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 }); 
   } 
 }
-
-    
