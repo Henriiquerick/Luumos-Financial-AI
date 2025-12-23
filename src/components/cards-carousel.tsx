@@ -1,4 +1,3 @@
-
 "use client";
 
 import { CreditCardCard } from "@/components/credit-card-card";
@@ -14,9 +13,10 @@ interface CardsCarouselProps {
   transactions: Transaction[];
   onAddCard: () => void;
   onEditCard: (card: CreditCard) => void;
+  onDeleteCard: (cardId: string) => void;
 }
 
-export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: CardsCarouselProps) {
+export function CardsCarousel({ cards, transactions, onAddCard, onEditCard, onDeleteCard }: CardsCarouselProps) {
     const { t } = useTranslation();
   return (
     <>
@@ -29,7 +29,13 @@ export function CardsCarousel({ cards, transactions, onAddCard, onEditCard }: Ca
         <CarouselContent className="-ml-4">
           {cards.map((card) => (
             <CarouselItem key={card.id} className="pl-4 md:basis-1/2">
-              <CreditCardCard card={card} allTransactions={transactions} allCards={cards} onEdit={() => onEditCard(card)} />
+              <CreditCardCard 
+                card={card} 
+                allTransactions={transactions} 
+                allCards={cards} 
+                onEdit={() => onEditCard(card)} 
+                onDelete={onDeleteCard}
+              />
             </CarouselItem>
           ))}
           <CarouselItem className="pl-4 md:basis-1/2">

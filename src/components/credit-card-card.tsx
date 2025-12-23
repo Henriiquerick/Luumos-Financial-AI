@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,16 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
-import { useFirestore, useUser } from '@/firebase';
-import {
-  collection,
-  doc,
-  writeBatch,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
@@ -39,19 +28,18 @@ interface CreditCardCardProps {
   allTransactions: Transaction[];
   allCards: CreditCard[];
   onEdit: () => void;
+  onDelete: (cardId: string) => void; // A função de exclusão agora é uma prop
 }
 
 export function CreditCardCard({
   card,
   allTransactions,
   allCards,
-  onEdit
+  onEdit,
+  onDelete
 }: CreditCardCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const firestore = useFirestore();
-  const { user } = useUser();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { formatMoney } = useCurrency();
 
@@ -66,41 +54,8 @@ export function CreditCardCard({
   };
 
 
-  const handleDeleteCard = async () => {
-    if (!user) return;
-    try {
-      const cardDocRef = doc(firestore, 'users', user.uid, 'cards', card.id);
-
-      const transactionsRef = collection(
-        firestore,
-        'users',
-        user.uid,
-        'transactions'
-      );
-      const q = query(transactionsRef, where('cardId', '==', card.id));
-      const querySnapshot = await getDocs(q);
-
-      const batch = writeBatch(firestore);
-      querySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      batch.delete(cardDocRef);
-
-      await batch.commit();
-
-      toast({
-        title: t.toasts.card.deleted.title,
-        description: t.toasts.card.deleted.description.replace('{cardName}', card.name),
-      });
-    } catch (error) {
-      console.error('Error deleting card:', error);
-      toast({
-        variant: 'destructive',
-        title: t.toasts.error.title,
-        description: t.toasts.error.description,
-      });
-    }
+  const handleDeleteConfirm = () => {
+    onDelete(card.id);
     setIsDeleteDialogOpen(false);
     setIsMenuOpen(false);
   };
@@ -261,7 +216,7 @@ export function CreditCardCard({
           <AlertDialogFooter>
             <AlertDialogCancel>{t.modals.delete_card.cancel}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCard}
+              onClick={handleDeleteConfirm}
               className="bg-destructive hover:bg-destructive/90"
             >
               {t.modals.delete_card.confirm}

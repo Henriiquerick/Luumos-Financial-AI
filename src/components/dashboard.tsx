@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
+  const [optimisticDeletedCardIds, setOptimisticDeletedCardIds] = useState<string[]>([]);
   
   const handleInvalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
@@ -142,6 +143,49 @@ export default function Dashboard() {
   const handleEditCard = (card: CreditCard) => {
     setEditingCard(card);
     setIsCardDialogOpen(true);
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!user) return;
+
+    const cardToDelete = creditCards.find(c => c.id === cardId);
+    if (!cardToDelete) return;
+
+    // Passo A (Imediato): Adiciona o ID ao estado otimista para esconder o cartão da UI
+    setOptimisticDeletedCardIds(prev => [...prev, cardId]);
+
+    try {
+      // Passo B (Async): Executa a exclusão no banco de dados
+      const cardDocRef = doc(firestore, 'users', user.uid, 'cards', cardId);
+      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+      const q = query(transactionsRef, where('cardId', '==', cardId));
+      const querySnapshot = await getDocs(q);
+
+      const batch = writeBatch(firestore);
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      batch.delete(cardDocRef);
+      await batch.commit();
+
+      toast({
+        title: t.toasts.card.deleted.title,
+        description: t.toasts.card.deleted.description.replace('{cardName}', cardToDelete.name),
+      });
+
+      // Consolida o estado invalidando a query, que irá buscar os dados frescos
+      handleInvalidateQueries();
+
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      toast({
+        variant: 'destructive',
+        title: t.toasts.error.title,
+        description: t.toasts.error.description,
+      });
+      // Passo C (Erro): Reverte a UI otimista se a exclusão falhar
+      setOptimisticDeletedCardIds(prev => prev.filter(id => id !== cardId));
+    }
   };
   
   const handleAddTransaction = () => {
@@ -234,6 +278,8 @@ export default function Dashboard() {
       }
     }
   };
+  
+  const visibleCards = creditCards.filter(card => !optimisticDeletedCardIds.includes(card.id));
 
   return (
         <div className="w-full max-w-7xl mx-auto">
@@ -264,10 +310,11 @@ export default function Dashboard() {
 
           <div className="mt-6 space-y-6">
               <CardsCarousel 
-                cards={creditCards} 
+                cards={visibleCards} 
                 transactions={transactions} 
                 onAddCard={handleAddCard}
                 onEditCard={handleEditCard}
+                onDeleteCard={handleDeleteCard}
               />
 
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
