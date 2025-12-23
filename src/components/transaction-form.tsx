@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { addMonths, getDate } from 'date-fns';
+import { addMonths, getDate, addWeeks, addYears } from 'date-fns';
 import { Loader2, Sparkles, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -193,31 +193,66 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (!user || !firestore) return;
     
     const formattedAmount = formatMoney(values.amount);
+    const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+    const recurringId = crypto.randomUUID();
 
     // Lógica para Despesa Recorrente
     if (values.isRecurring && !transactionToEdit) {
-      const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
-      const recurringData: Omit<RecurringExpense, 'id' | 'createdAt'> = {
-        userId: user.uid,
-        description: values.description,
-        amount: values.amount,
-        category: values.category,
-        frequency: values.frequency!,
-        startDate: Timestamp.fromDate(values.date),
-        endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
-        nextTriggerDate: Timestamp.fromDate(values.date), // Primeira cobrança é na data de início
-        isActive: true,
-      };
-      
-      addDocumentNonBlocking(recurringRef, recurringData);
-      toast({
-        title: "Despesa Recorrente Criada",
-        description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
-      });
+        // 1. Criar a primeira transação (gasto de hoje)
+        const initialTransactionData = {
+            description: values.description,
+            amount: values.amount,
+            category: values.category,
+            date: Timestamp.fromDate(values.date),
+            type: 'expense',
+            installments: 1,
+            recurringId: recurringId, // Vincula à recorrência
+        };
+        addDocumentNonBlocking(transactionsRef, initialTransactionData);
 
-      onSave();
-      form.reset();
-      return;
+        // 2. Calcular a próxima data de cobrança
+        let nextTriggerDate;
+        switch (values.frequency) {
+            case 'weekly':
+                nextTriggerDate = addWeeks(values.date, 1);
+                break;
+            case 'yearly':
+                nextTriggerDate = addYears(values.date, 1);
+                break;
+            case 'monthly':
+            default:
+                nextTriggerDate = addMonths(values.date, 1);
+                break;
+        }
+
+        // 3. Criar o "contrato" de recorrência
+        const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
+        const recurringData: Omit<RecurringExpense, 'id'> = {
+            id: recurringId,
+            userId: user.uid,
+            description: values.description,
+            amount: values.amount,
+            category: values.category,
+            frequency: values.frequency!,
+            startDate: Timestamp.fromDate(values.date),
+            endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
+            nextTriggerDate: Timestamp.fromDate(nextTriggerDate),
+            isActive: true,
+            createdAt: Timestamp.now(),
+        };
+        
+        // Usamos setDoc com o ID que geramos para garantir a consistência
+        const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
+        setDocumentNonBlocking(recurringDocRef, recurringData, { merge: false });
+
+        toast({
+            title: "Despesa Recorrente Criada",
+            description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
+        });
+
+        onSave();
+        form.reset();
+        return;
     }
     
     if (transactionToEdit) {
@@ -242,7 +277,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
 
     } else {
       // CREATE LOGIC
-      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+      
       const isCardPayment = values.type === 'expense' && values.paymentMethod === 'card';
 
       if (values.isInstallment && isCardPayment && values.installments) {
@@ -579,4 +614,3 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     </Form>
   );
 }
-
