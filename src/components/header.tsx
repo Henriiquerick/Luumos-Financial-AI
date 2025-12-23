@@ -82,8 +82,8 @@ export default function Header({ userProfile }: HeaderProps) {
               <span className="sr-only">Gerenciar Categorias</span>
             </Button>
             <Link href="/help" title="Central de Ajuda">
-              <Button variant="ghost" size="icon">
-                <HelpCircle className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="relative group">
+                <HelpCircle className="w-5 h-5 text-yellow-400 animate-pulse group-hover:animate-none" />
                 <span className="sr-only">Ajuda</span>
               </Button>
             </Link>
@@ -126,8 +126,8 @@ export default function Header({ userProfile }: HeaderProps) {
                   <span>Gerenciar Categorias</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/help">
-                    <HelpCircle className="mr-2" />
+                  <Link href="/help" className="flex items-center">
+                    <HelpCircle className="mr-2 text-yellow-400" />
                     <span>Central de Ajuda</span>
                   </Link>
                 </DropdownMenuItem>
