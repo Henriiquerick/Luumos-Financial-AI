@@ -8,16 +8,16 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import type { CreditCard } from '@/lib/types';
+import { CARD_BRANDS, CARD_ISSUERS, VOUCHER_ISSUERS, CARD_TYPES } from '@/lib/card-brands';
+import type { CardType } from '@/lib/types';
 import { useEffect, useMemo, useRef } from 'react';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useTranslation } from '@/contexts/language-context';
-import { Combobox } from './ui/combobox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CARD_TYPES, getIssuer, CARD_ISSUERS, CARD_BRANDS } from '@/lib/card-data';
-import type { CardType } from '@/lib/types';
+import { getBankTheme } from '@/lib/bank-colors';
 import { MoneyInput } from './ui/money-input';
 
 const formSchema = z.object({
@@ -82,14 +82,13 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
   const { user } = useUser();
   const { t } = useTranslation();
   const isInitialLoad = useRef(true);
-  const hasNotifiedInitialColor = useRef(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       issuer: '',
-      brand: '',
+      brand: 'visa',
       type: 'credit',
       totalLimit: 1000,
       closingDay: '', 
@@ -101,35 +100,29 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
   const cardType = form.watch('type');
   const issuerValue = form.watch('issuer');
-  const colorValue = form.watch('color');
-
-  // Propagate color changes to parent
+  
+  // Apenas notifica a cor para o componente pai quando ela muda
   useEffect(() => {
-    if (cardToEdit && colorValue) {
-      if (hasNotifiedInitialColor.current) {
-        onColorChange(colorValue);
-      } else {
-        hasNotifiedInitialColor.current = true;
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'color' && value.color) {
+        onColorChange(value.color);
       }
-    }
-  }, [colorValue, cardToEdit, onColorChange]);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onColorChange]);
+
 
   const availableIssuers = useMemo(() => {
-    return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes(cardType));
+    if (cardType === 'voucher') {
+        return VOUCHER_ISSUERS;
+    }
+    return CARD_ISSUERS;
   }, [cardType]);
 
-  const availableBrands = useMemo(() => {
-    if (cardType === 'voucher') {
-      return CARD_ISSUERS.filter(issuer => issuer.supportedTypes.includes('voucher'));
-    }
-    return CARD_BRANDS.filter(brand => brand.supportedTypes.includes(cardType));
-  }, [cardType]);
 
   // Efeito para resetar o formulário quando o cartão muda
   useEffect(() => {
     isInitialLoad.current = true;
-    hasNotifiedInitialColor.current = false;
-    
     if (cardToEdit) {
       form.reset({
         name: cardToEdit.name,
@@ -142,11 +135,12 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         dueDay: cardToEdit.dueDay ? String(cardToEdit.dueDay) : '',
         expiryDate: cardToEdit.expiryDate || '',
       });
+      onColorChange(cardToEdit.color);
     } else {
       form.reset({
         name: '',
         issuer: '',
-        brand: '',
+        brand: 'visa',
         type: 'credit',
         totalLimit: 1000,
         color: '#333333',
@@ -154,27 +148,27 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
         dueDay: '',
         expiryDate: '',
       });
+      onColorChange('#333333');
     }
     setTimeout(() => { isInitialLoad.current = false; }, 100);
-  }, [cardToEdit, form]);
+  }, [cardToEdit, form, onColorChange]);
 
   // Lógica de auto-preenchimento de cor e bandeira
   useEffect(() => {
     if (isInitialLoad.current) return;
   
+    // Se for voucher, a bandeira é o próprio emissor.
     if (cardType === 'voucher') {
-      const currentBrand = form.getValues('brand');
-      if (currentBrand !== issuerValue) {
-        form.setValue('brand', issuerValue, { shouldDirty: false });
-      }
+      form.setValue('brand', issuerValue.toLowerCase(), { shouldDirty: false });
     }
   
-    const issuerData = getIssuer(issuerValue);
+    // Auto-preenche a cor baseada no banco se o campo de cor não tiver sido alterado manualmente
+    const bankTheme = getBankTheme(issuerValue);
     const { isDirty } = form.getFieldState('color');
     const currentColor = form.getValues('color');
   
-    if (issuerData?.color && !isDirty && currentColor !== issuerData.color) {
-      form.setValue('color', issuerData.color, { shouldDirty: false });
+    if (bankTheme && !isDirty && currentColor !== bankTheme.bg) {
+      form.setValue('color', bankTheme.bg, { shouldDirty: false });
     }
   }, [cardType, issuerValue, form]);
 
@@ -194,7 +188,7 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
 
     const cardData = {
       ...values,
-      brand: values.type === 'voucher' ? values.issuer : values.brand,
+      brand: values.brand?.toLowerCase(),
       totalLimit: (values.type === 'voucher' || values.type === 'credit') ? Number(values.totalLimit) : 0,
       closingDay: values.type === 'credit' ? Number(values.closingDay) : 0,
       dueDay: values.type === 'credit' ? Number(values.dueDay) : 0,
@@ -272,16 +266,22 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
           control={form.control}
           name="issuer"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem>
               <FormLabel>Banco / Emissor</FormLabel>
-              <Combobox
-                options={availableIssuers}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Selecione o emissor"
-                searchPlaceholder="Procurar emissor..."
-                notfoundText="Nenhum emissor encontrado."
-              />
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o emissor" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {availableIssuers.map((issuer) => (
+                    <SelectItem key={issuer} value={issuer}>
+                      {issuer}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -292,16 +292,22 @@ export function CardForm({ onSave, cardToEdit, onColorChange }: CardFormProps) {
             control={form.control}
             name="brand"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem>
                 <FormLabel>Bandeira do Cartão</FormLabel>
-                <Combobox
-                  options={availableBrands}
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  placeholder="Selecione a bandeira"
-                  searchPlaceholder="Procurar bandeira..."
-                  notfoundText="Nenhuma bandeira encontrada."
-                />
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a bandeira" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(CARD_BRANDS).map(([key, brand]) => (
+                      <SelectItem key={key} value={key}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

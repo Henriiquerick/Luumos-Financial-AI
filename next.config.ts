@@ -11,10 +11,8 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'www.vectorlogo.zone' },
-      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
-      { protocol: 'https', hostname: 'upload.wikimedia.org' },
       { protocol: 'https', hostname: 'img.icons8.com' },
+      { protocol: 'https', hostname: 'upload.wikimedia.org' },
     ],
   },
   /* --- Correção para Firebase Auth (Popup Closed by User) --- */

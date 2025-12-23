@@ -61,19 +61,10 @@ export type AIKnowledgeLevel = {
 
 export type CardType = 'credit' | 'debit' | 'voucher';
 
-export interface CardEntity {
-  value: string;
-  label: string;
-  icon: string;
-  supportedTypes: CardType[];
-  color?: string; // Cor oficial da marca
-}
-
-
 export type CreditCard = {
   id: string;
   name: string;
-  issuer: string; // ex: 'nubank', 'itau'
+  issuer: string; // ex: 'Nubank', 'Itaú'
   brand: string;  // ex: 'visa', 'mastercard'
   type: CardType; // ex: 'credit', 'voucher'
   totalLimit: number;

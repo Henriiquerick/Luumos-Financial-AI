@@ -19,8 +19,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { BrandIcon } from "./brand-icon"
 import type { CardEntity } from "@/lib/card-data"
+import Image from "next/image"
 
 
 interface ComboboxProps {
@@ -58,7 +58,7 @@ export function Combobox({
         >
           <div className="flex items-center gap-2 truncate">
             {selectedOption?.icon && (
-                <BrandIcon icon={selectedOption.icon} className="h-5 w-8 object-contain" />
+                <Image src={selectedOption.icon} alt={selectedOption.label} width={32} height={20} className="h-5 w-8 object-contain" />
             )}
             {selectedOption ? selectedOption.label : placeholder}
           </div>
@@ -68,7 +68,7 @@ export function Combobox({
       <PopoverContent className="w-full p-0" style={{width: "var(--radix-popover-trigger-width)"}}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList className="max-h-[200px] overflow-y-auto">
+          <CommandList>
             <CommandEmpty>{notfoundText}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
@@ -88,7 +88,7 @@ export function Combobox({
                   />
                    <div className="flex items-center gap-3">
                     {option.icon && (
-                       <BrandIcon icon={option.icon} className="mr-2 h-6 w-10" />
+                        <Image src={option.icon} alt={option.label} width={40} height={24} className="mr-2 h-6 w-10 object-contain" />
                     )}
                     <span className="truncate">{option.label}</span>
                   </div>

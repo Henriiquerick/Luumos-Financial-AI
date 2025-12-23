@@ -20,8 +20,9 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
-import { getBrand, getIssuer } from '@/lib/card-data';
-import { BrandIcon } from './ui/brand-icon';
+import Image from 'next/image';
+import { getBankTheme } from '@/lib/bank-colors';
+import { CARD_BRANDS } from '@/lib/card-brands';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -45,13 +46,8 @@ export function CreditCardCard({
 
   const usage = getCardUsage(card.id, allTransactions, allCards);
   
-  const brandData = getBrand(card.brand);
-  const issuerData = getIssuer(card.issuer);
-
-  const theme = {
-    bg: card.color || '#242424',
-    text: '#FFFFFF', // Assuming dark backgrounds always use white text
-  };
+  const brand = CARD_BRANDS[card.brand as keyof typeof CARD_BRANDS];
+  const theme = getBankTheme(card.name);
 
 
   const handleDeleteConfirm = () => {
@@ -74,7 +70,6 @@ export function CreditCardCard({
 
   const formattedAvailable = formatMoney(usage.availableLimit);
   const formattedTotal = formatMoney(usage.totalLimit);
-  const formattedSpent = formatMoney(usage.spent);
 
   return (
     <>
@@ -86,30 +81,34 @@ export function CreditCardCard({
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        {issuerData?.icon && (
-            <BrandIcon
-                icon={issuerData.icon} 
-                className="absolute -bottom-10 -right-10 w-56 h-56 object-contain opacity-[0.07] rotate-12 brightness-0 invert pointer-events-none z-0" 
-            />
-        )}
+        <Image 
+          src={`/banks/${card.issuer}-icon.svg`}
+          alt={card.name}
+          width={224}
+          height={224}
+          className="absolute -bottom-10 -right-10 w-56 h-56 object-contain opacity-[0.07] rotate-12 brightness-0 invert pointer-events-none z-0"
+        />
         <div 
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
         ></div>
 
         <div className="relative z-10">
-            {issuerData?.icon && (
-              <div className="absolute top-4 left-4 h-8 w-12">
-                <BrandIcon 
-                  icon={issuerData.icon} 
-                  className="h-full w-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
-                />
-              </div>
-            )}
+            <Image 
+              src={`/banks/${card.issuer}-icon.svg`}
+              alt={card.name}
+              width={48}
+              height={32}
+              className="absolute top-4 left-4 h-8 w-12 object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
+            />
 
-            {brandData?.icon && (
-                <div className="absolute top-4 right-14 h-8 w-12">
-                    <BrandIcon icon={brandData.icon} className="h-full w-full" />
-                </div>
+            {brand && (
+                <Image 
+                    src={brand.icon}
+                    alt={brand.name}
+                    width={48}
+                    height={32}
+                    className="absolute top-4 right-14 h-8 w-12 object-contain"
+                />
             )}
             
             <div
@@ -157,46 +156,24 @@ export function CreditCardCard({
                 <CardTitle>
                     <span>{card.name}</span>
                 </CardTitle>
-                {card.expiryDate && (
-                    <CardDescription className="text-white/70">
-                        <span className="text-xs font-mono opacity-70 tracking-wider">{t.card.valid_thru} </span>
-                        <span className="text-sm font-semibold">{card.expiryDate}</span>
-                    </CardDescription>
-                )}
+                <CardDescription className="text-white/70">
+                    <span className="text-xs font-mono opacity-70 tracking-wider">{t.card.valid_thru} </span>
+                    <span className="text-sm font-semibold">{card.expiryDate}</span>
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {card.type === 'credit' ? (
-                <>
-                  <div>
-                    <Progress
-                      value={usage.usagePercentage}
-                      className={cn('h-4', theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
-                      indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
-                    />
-                  </div>
-                  <div className="text-sm font-medium">
-                    <p>
-                      {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Spacer to align content when there is no progress bar */}
-                  <div className='h-4'></div>
-                  {card.type === 'voucher' && (
-                      <div className="text-sm font-medium">
-                         <p>Saldo: {formattedAvailable}</p>
-                      </div>
-                  )}
-                   {card.type === 'debit' && (
-                      <div className="text-sm font-medium">
-                         <p>Gasto no mês: {formattedSpent}</p>
-                         <p className='text-xs opacity-70'>{getIssuer(card.issuer)?.label}</p>
-                      </div>
-                   )}
-                </>
-              )}
+              <div>
+                <Progress
+                  value={usage.usagePercentage}
+                  className={cn('h-4', theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+                  indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
+                />
+              </div>
+              <div className="text-sm font-medium">
+                <p>
+                  {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
+                </p>
+              </div>
             </CardContent>
         </div>
       </Card>
