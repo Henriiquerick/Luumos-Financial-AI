@@ -1,10 +1,11 @@
 
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
-import { getAdminDb } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { PLAN_LIMITS } from '@/lib/constants';
 import { isBefore, startOfToday } from 'date-fns';
+import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -12,10 +13,16 @@ const groq = new Groq({
 
 const ADMIN_IDS = [ "S5f4IWY1eFTKIIjE2tJH5o5EUwv1", "rickson.henrique2018@gmail.com" ];
 
-const getDateFromTimestamp = (date: any): Date | null => { if (!date) return null; if (date instanceof Timestamp) return date.toDate(); if (date._seconds) return new Date(date._seconds * 1000); if (date instanceof Date) return date; return null; };
+const getDateFromTimestamp = (date: any): Date | null => {
+  if (!date) return null;
+  if (date instanceof Timestamp) return date.toDate();
+  if (date._seconds) return new Date(date._seconds * 1000);
+  if (date instanceof Date) return date;
+  return null;
+};
 
-export async function POST(req: Request) { 
-  try { 
+export async function POST(req: Request) {
+  try {
     const db = getAdminDb();
 
     if (!db) {
@@ -49,26 +56,36 @@ export async function POST(req: Request) {
         );
       }
     }
-
-    const systemInstruction = `
-      Atue como consultor financeiro.
-      Dados: ${JSON.stringify(data || {})}
-    `;
     
-    const lastMessage = messages[messages.length - 1]?.content || "Olá";
+    // --- LÓGICA DE INJEÇÃO DE PERSONALIDADE ---
+    const personality = PERSONALITIES.find(p => p.id === data.personalityId) || PERSONALITIES[0];
+    const systemPrompt = personality.instruction;
 
+    const messagesForGroq = [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
+      ...messages // Histórico de mensagens do usuário/modelo
+    ];
+
+    const financialContext = data ? `
+      ---
+      INFORMAÇÕES FINANCEIRAS DO USUÁRIO (Use isso para basear suas respostas):
+      - Saldo Atual: R$ ${data.balance || 0}
+      - Idioma de Resposta: ${data.language || 'pt-BR'}
+      - Transações Recentes: ${JSON.stringify(data.transactions?.slice(0, 5) || [])}
+    ` : "Nenhum dado financeiro disponível.";
+
+    // Adiciona o contexto financeiro à última mensagem do usuário
+    const lastUserMessage = messagesForGroq[messagesForGroq.length - 1];
+    lastUserMessage.content = `${lastUserMessage.content}\n\n${financialContext}`;
+    
     const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-            role: "system",
-            content: systemInstruction
-        },
-        {
-            role: "user",
-            content: lastMessage,
-        },
-      ],
+      messages: messagesForGroq,
       model: "llama-3.1-8b-instant",
+      temperature: 0.8,
+      max_tokens: 1024,
     });
 
     const textResponse = chatCompletion.choices[0]?.message?.content || "";
