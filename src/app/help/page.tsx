@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AdSenseBanner } from '@/components/ads/adsense-banner';
 
 export default function HelpPage() {
   return (
@@ -38,8 +39,8 @@ export default function HelpPage() {
         </div>
 
         {/* AdSlot: Topo */}
-        <div className="w-full h-[100px] bg-muted/50 rounded-xl border border-border border-dashed flex items-center justify-center">
-          <span className="text-muted-foreground text-sm font-mono">[Espaço Publicitário - Topo]</span>
+        <div className="w-full h-auto bg-muted/50 rounded-xl border border-border border-dashed flex items-center justify-center">
+           <AdSenseBanner slotId={process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT_ID!} />
         </div>
 
         {/* Core Concept: The Math */}
@@ -124,9 +125,8 @@ export default function HelpPage() {
           </div>
           
           {/* AdSlot: Quadrado Lateral */}
-          <div className="w-full h-[250px] bg-muted/50 rounded-xl border border-border border-dashed flex items-center justify-center flex-col gap-2">
-            <span className="text-muted-foreground text-sm font-mono">[Espaço Publicitário - Lateral]</span>
-            <span className="text-xs text-muted-foreground/50">Recomendado: 300x250</span>
+          <div className="w-full h-auto bg-muted/50 rounded-xl border border-border border-dashed flex items-center justify-center flex-col gap-2 p-2">
+             <AdSenseBanner slotId={process.env.NEXT_PUBLIC_ADSENSE_SQUARE_SLOT_ID!} />
           </div>
         </section>
 
