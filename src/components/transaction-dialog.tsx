@@ -35,23 +35,25 @@ export function TransactionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[480px] bg-background border-primary/20 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-primary">{transactionToEdit ? t.modals.transaction.edit_title : t.modals.transaction.title}</DialogTitle>
           <DialogDescription>
             {transactionToEdit ? t.modals.transaction.edit_subtitle : t.modals.transaction.subtitle}
           </DialogDescription>
         </DialogHeader>
-        <TransactionForm 
-          onSave={() => {
-            setIsOpen(false);
-            onFinished();
-          }}
-          transactions={transactions}
-          creditCards={creditCards}
-          customCategories={customCategories}
-          transactionToEdit={transactionToEdit}
-        />
+        <div className="p-6 pt-2">
+            <TransactionForm 
+            onSave={() => {
+                setIsOpen(false);
+                onFinished();
+            }}
+            transactions={transactions}
+            creditCards={creditCards}
+            customCategories={customCategories}
+            transactionToEdit={transactionToEdit}
+            />
+        </div>
       </DialogContent>
     </Dialog>
   );
