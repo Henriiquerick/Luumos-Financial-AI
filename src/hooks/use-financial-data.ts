@@ -68,7 +68,10 @@ export function useFinancialData() {
       } as Transaction));
       
       // FILTRO: Esconde as parcelas futuras (cuja descrição termina com (X/Y))
-      const visibleTransactions = transactions.filter(t => !/\(\d+\/\d+\)$/.test(t.description));
+      const visibleTransactions = transactions.filter(t => {
+        // Mostra a transação se a descrição NÃO terminar com o padrão (número/número)
+        return !/\(\d+\/\d+\)$/.test(t.description);
+      });
 
       const creditCards = cardsSnapshot.docs.map(doc => ({
         id: doc.id,

@@ -86,7 +86,8 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
             ) : (
               displayedTransactions.map((t) => {
                 const categoryDisplay = getCategoryDisplay(t.category);
-                const isFirstInstallment = t.installments > 1 && !t.description.match(/\(\d+\/\d+\)$/);
+                // A primeira parcela é aquela que tem installments > 1 mas não tem o sufixo (x/y)
+                const isFirstInstallment = t.installments > 1 && !/\(\d+\/\d+\)$/.test(t.description);
                 
                 return (
                   <TableRow key={t.id}>
