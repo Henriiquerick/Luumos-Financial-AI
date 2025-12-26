@@ -72,6 +72,11 @@ export default function Dashboard() {
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
   const [optimisticDeletedCardIds, setOptimisticDeletedCardIds] = useState<string[]>([]);
   
+  // State for AI Advisor
+  const [personality, setPersonality] = useState<AIPersonality>(PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!);
+  const [knowledge, setKnowledge] = useState<AIKnowledgeLevel>(KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!);
+
+
   const handleInvalidateQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['financial-data', user?.uid] });
   };
@@ -133,9 +138,6 @@ export default function Dashboard() {
     // Isso não deve acontecer se a proteção de rota funcionar, mas é uma salvaguarda
     return null; 
   }
-
-  const personality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!;
-  const knowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!;
 
   const handleAddCard = () => {
     setEditingCard(null);
@@ -334,8 +336,8 @@ export default function Dashboard() {
                 <AiAdvisorCard
                     knowledge={knowledge}
                     personality={personality}
-                    onKnowledgeChange={() => {}}
-                    onPersonalityChange={() => {}}
+                    onKnowledgeChange={setKnowledge}
+                    onPersonalityChange={setPersonality}
                     transactions={transactions}
                     cards={creditCards}
                     balance={netBalance}
