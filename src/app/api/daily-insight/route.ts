@@ -97,7 +97,7 @@ export async function POST(req: Request) {
                 content: finalPrompt,
             }
         ],
-        model: "llama-3.1-70b-versatile",
+        model: "llama-3.3-70b-versatile",
     });
 
     const insightText = chatCompletion.choices[0]?.message?.content || "Não foi possível gerar um insight hoje. Tente novamente mais tarde.";
