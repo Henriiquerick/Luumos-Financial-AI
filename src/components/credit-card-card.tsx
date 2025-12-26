@@ -23,6 +23,7 @@ import { useCurrency } from '@/contexts/currency-context';
 import Image from 'next/image';
 import { getBankTheme } from '@/lib/bank-colors';
 import { CARD_BRANDS } from '@/lib/card-brands';
+import { BrandIcon } from './ui/brand-icon';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -81,12 +82,10 @@ export function CreditCardCard({
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
-        <div 
-          className="absolute -bottom-8 -right-8 w-48 h-48 text-white/5 font-bold text-5xl transform-gpu rotate-12 pointer-events-none z-0"
-          style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
-        >
-          {card.issuer}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-20 pointer-events-none z-0 flex items-center justify-center">
+            <BrandIcon icon={brand?.icon} className="w-full h-full object-contain" />
         </div>
+        
         <div 
           className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300 z-0"
         ></div>
