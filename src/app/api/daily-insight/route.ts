@@ -3,7 +3,7 @@
 
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { UserProfile, Transaction } from '@/lib/types';
 import { PERSONALITIES } from '@/lib/agent-config';
@@ -19,6 +19,7 @@ const getDateFromTimestamp = (date: any): Date => {
 };
 
 export async function POST(req: Request) {
+  const adminDb = getAdminDb();
   try {
     const { userId } = await req.json();
 
