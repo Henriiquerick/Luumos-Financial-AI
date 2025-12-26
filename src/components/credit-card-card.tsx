@@ -29,7 +29,7 @@ interface CreditCardCardProps {
   allTransactions: Transaction[];
   allCards: CreditCard[];
   onEdit: () => void;
-  onDelete: (cardId: string) => void; // A função de exclusão agora é uma prop
+  onDelete: (cardId: string) => void;
 }
 
 export function CreditCardCard({
@@ -47,7 +47,6 @@ export function CreditCardCard({
   const usage = getCardUsage(card.id, allTransactions, allCards);
   
   const brand = CARD_BRANDS[card.brand as keyof typeof CARD_BRANDS];
-  // CORREÇÃO: Usar card.issuer para buscar o tema, não o apelido (card.name)
   const theme = getBankTheme(card.issuer);
 
 
@@ -89,90 +88,81 @@ export function CreditCardCard({
           {card.issuer}
         </div>
         <div 
-          className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300"
+          className="absolute inset-0 bg-black/30 opacity-20 group-hover:opacity-10 transition-opacity duration-300 z-0"
         ></div>
 
-        <div className="relative z-10">
-            {/* CORREÇÃO: Usar `issuer` para o logo, garantindo que o logo correto seja encontrado */}
-            <Image 
-              src={`https://img.icons8.com/color/48/${card.issuer.toLowerCase().replace(' ', '-')}.png`}
-              alt={card.issuer}
-              width={48}
-              height={32}
-              className="absolute top-4 left-4 h-8 w-12 object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] brightness-0 invert opacity-70"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
+        <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start">
+                <CardHeader className="p-4">
+                    <CardTitle className="font-semibold text-lg tracking-wide">{card.name}</CardTitle>
+                    <CardDescription className="text-white/70">
+                        <span className="text-xs font-mono opacity-70 tracking-wider">{t.card.valid_thru} </span>
+                        <span className="text-sm font-semibold">{card.expiryDate}</span>
+                    </CardDescription>
+                </CardHeader>
 
-            {brand && (
-                <Image 
-                    src={brand.icon}
-                    alt={brand.name}
-                    width={48}
-                    height={32}
-                    className="absolute top-4 right-14 h-8 w-12 object-contain"
-                />
-            )}
-            
-            <div
-              className="absolute top-2 right-2 z-50"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsMenuOpen(!isMenuOpen);
-                }}
-                className={cn(
-                  "p-2 rounded-full transition-colors cursor-pointer text-white bg-black/40 hover:bg-black/60 shadow-sm"
-                )}
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
+                <div className="p-4 flex items-start gap-2">
+                     {brand && (
+                        <Image 
+                            src={brand.icon}
+                            alt={brand.name}
+                            width={48}
+                            height={32}
+                            className="h-8 w-12 object-contain drop-shadow-md"
+                        />
+                    )}
+                    <div
+                      className="z-50"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsMenuOpen(!isMenuOpen);
+                        }}
+                        className={cn(
+                          "p-2 rounded-full transition-colors cursor-pointer text-white/80 bg-black/20 hover:bg-black/40 shadow-sm"
+                        )}
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
 
-              {isMenuOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-48 bg-background/80 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl z-30 overflow-hidden"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ul className="p-1">
-                    <li>
-                      <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted/50 focus:outline-none focus:bg-muted/50">
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>{t.card.menu.edit}</span>
-                      </button>
-                    </li>
-                    <li>
-                       <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>{t.card.menu.delete}</span>
-                      </button>
-                    </li>
-                  </ul>
+                      {isMenuOpen && (
+                        <div 
+                          className="absolute right-0 mt-2 w-48 bg-background/80 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl z-30 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ul className="p-1">
+                            <li>
+                              <button onClick={handleSelectEdit} className="flex items-center w-full text-left px-3 py-2 text-sm text-foreground rounded-md hover:bg-muted/50 focus:outline-none focus:bg-muted/50">
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>{t.card.menu.edit}</span>
+                              </button>
+                            </li>
+                            <li>
+                               <button onClick={handleSelectDelete} className="flex items-center w-full text-left px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-900/50 focus:outline-none focus:bg-red-900/50">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{t.card.menu.delete}</span>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                 </div>
-              )}
             </div>
 
-            <CardHeader>
-                <CardTitle>
-                    {/* O Apelido do Cartão continua sendo o título principal */}
-                    <span>{card.name}</span>
-                </CardTitle>
-                <CardDescription className="text-white/70">
-                    <span className="text-xs font-mono opacity-70 tracking-wider">{t.card.valid_thru} </span>
-                    <span className="text-sm font-semibold">{card.expiryDate}</span>
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="p-4 pt-0 space-y-2">
               <div>
                 <Progress
                   value={usage.usagePercentage}
-                  className={cn('h-4', theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
+                  className={cn('h-3', theme.text === '#FFFFFF' ? 'bg-white/20' : 'bg-black/20')}
                   indicatorClassName={cn(theme.text === '#FFFFFF' ? 'bg-white' : 'bg-black')}
                 />
               </div>
-              <div className="text-sm font-medium">
+              <div className="text-sm font-medium opacity-90">
                 <p>
                   {t.card.limit_info.replace('{available}', formattedAvailable).replace('{total}', formattedTotal)}
                 </p>
