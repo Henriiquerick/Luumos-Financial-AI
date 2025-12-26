@@ -4,9 +4,8 @@ import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { UserProfileDialog } from './user-profile-dialog';
-import type { UserProfile, Subscription } from '@/lib/types';
+import type { UserProfile, AIPersonality } from '@/lib/types';
 import { Badge } from './ui/badge';
-import { PERSONALITIES } from '@/lib/agent-config';
 import { ModeToggle } from './mode-toggle';
 import { LanguageSwitcher } from './language-switcher';
 import { useTranslation } from '@/contexts/language-context';
@@ -34,14 +33,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Link from 'next/link';
 
 interface HeaderProps {
   userProfile: UserProfile | null;
+  activePersonality: AIPersonality;
 }
 
-export default function Header({ userProfile }: HeaderProps) {
+export default function Header({ userProfile, activePersonality }: HeaderProps) {
   const auth = useAuth();
   const router = useRouter();
   const { t } = useTranslation();
@@ -54,8 +53,6 @@ export default function Header({ userProfile }: HeaderProps) {
       router.push('/');
     }
   };
-
-  const activePersonality = PERSONALITIES.find(p => p.id === userProfile?.aiPersonality);
 
   return (
     <>

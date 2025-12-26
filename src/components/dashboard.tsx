@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/header';
 import { BalanceCard } from '@/components/balance-card';
 import { RecentTransactions } from '@/components/recent-transactions';
@@ -72,9 +72,18 @@ export default function Dashboard() {
   const [goalToAddProgress, setGoalToAddProgress] = useState<FinancialGoal | null>(null);
   const [optimisticDeletedCardIds, setOptimisticDeletedCardIds] = useState<string[]>([]);
   
-  // State for AI Advisor
-  const [personality, setPersonality] = useState<AIPersonality>(PERSONALITIES.find(p => p.id === userProfile?.aiPersonality) || PERSONALITIES.find(p => p.id === 'neytan')!);
-  const [knowledge, setKnowledge] = useState<AIKnowledgeLevel>(KNOWLEDGE_LEVELS.find(k => k.id === userProfile?.aiKnowledgeLevel) || KNOWLEDGE_LEVELS.find(k => k.id === 'lumos-five')!);
+  // State for AI Advisor - LIFTED STATE
+  const [personality, setPersonality] = useState<AIPersonality>(PERSONALITIES[0]);
+  const [knowledge, setKnowledge] = useState<AIKnowledgeLevel>(KNOWLEDGE_LEVELS[0]);
+
+  useEffect(() => {
+    if (userProfile) {
+      const initialPersonality = PERSONALITIES.find(p => p.id === userProfile.aiPersonality) || PERSONALITIES[0];
+      const initialKnowledge = KNOWLEDGE_LEVELS.find(k => k.id === userProfile.aiKnowledgeLevel) || KNOWLEDGE_LEVELS[0];
+      setPersonality(initialPersonality);
+      setKnowledge(initialKnowledge);
+    }
+  }, [userProfile]);
 
 
   const handleInvalidateQueries = () => {
@@ -287,7 +296,7 @@ export default function Dashboard() {
 
   return (
         <div className="w-full max-w-7xl mx-auto">
-          <Header userProfile={userProfile as UserProfile} />
+          <Header userProfile={userProfile} activePersonality={personality} />
           <div className="mb-8">
             <h1 className="text-4xl font-bold tracking-tighter">
               {userProfile?.firstName ? `${t.dashboard.greeting} ${userProfile.firstName}!` : t.dashboard.welcome_back}
