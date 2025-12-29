@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { CreditCard, Transaction } from '@/lib/types';
 import { getCardUsage } from '@/lib/finance-utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -114,14 +114,13 @@ export function CreditCardCard({
                 </CardHeader>
 
                 <div className="p-4 flex items-center gap-2">
-                     {brand && card.type !== 'voucher' && (
-                        <Image 
-                            src={brand.icon}
-                            alt={brand.name}
-                            width={48}
-                            height={32}
-                            className="h-8 w-12 object-contain drop-shadow-md"
-                        />
+                    {issuerIcon && (
+                        <div className="bg-white/10 p-1 rounded-md backdrop-blur-sm">
+                            <BrandIcon
+                                icon={issuerIcon}
+                                className="h-6 w-auto max-w-[50px] object-contain"
+                            />
+                        </div>
                     )}
                     <div
                       className="z-50"
