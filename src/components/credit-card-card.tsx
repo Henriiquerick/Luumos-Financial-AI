@@ -22,7 +22,7 @@ import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
 import Image from 'next/image';
 import { getBankTheme } from '@/lib/bank-colors';
-import { CARD_BRANDS } from '@/lib/card-brands';
+import { CARD_BRANDS, VOUCHER_ISSUERS } from '@/lib/card-brands';
 import { BrandIcon } from './ui/brand-icon';
 
 interface CreditCardCardProps {
@@ -50,6 +50,19 @@ export function CreditCardCard({
   const brand = CARD_BRANDS[card.brand as keyof typeof CARD_BRANDS];
   const theme = getBankTheme(card.issuer);
 
+  const issuerIcon = useMemo(() => {
+    // Para vouchers, o ícone da bandeira é o mesmo do emissor
+    if (card.type === 'voucher') {
+        const issuerKey = card.issuer.toLowerCase().replace(/\s+/g, '');
+        const brandData = Object.values(CARD_BRANDS).find(b => b.name.toLowerCase().replace(/\s+/g, '').includes(issuerKey));
+        if (brandData) return brandData.icon;
+    }
+    // Para outros, tentamos achar um logo de banco, se não, usamos o da bandeira (Visa, etc)
+    const issuerKey = card.issuer.toLowerCase().replace(/\s+/g, '');
+    const bankBrandData = Object.values(CARD_BRANDS).find(b => b.name.toLowerCase().replace(/\s+/g, '') === issuerKey);
+    return bankBrandData?.icon || brand?.icon;
+  }, [card.issuer, card.type, brand]);
+
 
   const handleDeleteConfirm = () => {
     onDelete(card.id);
@@ -75,7 +88,7 @@ export function CreditCardCard({
   return (
     <>
       <Card
-        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 min-h-[190px] flex flex-col justify-between"
+        className="bg-card/50 backdrop-blur-sm relative overflow-hidden group border-white/10 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20 min-h-[190px] flex flex-col justify-between"
         style={{
           backgroundColor: theme.bg,
           color: theme.text,
@@ -83,7 +96,7 @@ export function CreditCardCard({
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-20 pointer-events-none z-0 flex items-center justify-center">
-            <BrandIcon icon={brand?.icon} className="w-full h-full object-contain" />
+            {issuerIcon && <BrandIcon icon={issuerIcon} className="w-full h-full object-contain" />}
         </div>
         
         <div 
@@ -100,8 +113,8 @@ export function CreditCardCard({
                     </CardDescription>
                 </CardHeader>
 
-                <div className="p-4 flex items-start gap-2">
-                     {brand && (
+                <div className="p-4 flex items-center gap-2">
+                     {brand && card.type !== 'voucher' && (
                         <Image 
                             src={brand.icon}
                             alt={brand.name}
