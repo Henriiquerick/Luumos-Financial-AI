@@ -9,7 +9,7 @@ export interface CardBrand {
 export const CARD_BRANDS: Record<string, CardBrand> = {
     'visa': { name: 'Visa', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg' },
     'mastercard': { name: 'Mastercard', icon: 'https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg' },
-    'elo': { name: 'Elo', icon: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Elo_logo.svg' },
+    'elo': { name: 'Elo', icon: 'https://cdn.vectorlogo.zone/logos/elocard/elocard-icon.svg' },
     'amex': { name: 'American Express', icon: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg'},
     'hipercard': { name: 'Hipercard', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Hipercard_logo.svg'},
 };
@@ -31,7 +31,9 @@ export const CARD_ISSUERS = [
     'PagBank',
     'PicPay',
     'Will Bank',
-    'Méliuz'
+    'Méliuz',
+    'Mercado Pago',
+    'Banco Pan'
 ];
 
 export const VOUCHER_ISSUERS = [
