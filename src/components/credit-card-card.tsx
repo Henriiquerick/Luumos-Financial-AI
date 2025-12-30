@@ -96,7 +96,7 @@ export function CreditCardCard({
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-20 pointer-events-none z-0 flex items-center justify-center">
-            {issuerIcon && <BrandIcon icon={issuerIcon} className="w-full h-full object-contain" />}
+            {brand?.icon && <BrandIcon icon={brand.icon} className="w-full h-full object-contain" />}
         </div>
         
         <div 
