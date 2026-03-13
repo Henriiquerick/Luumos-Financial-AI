@@ -1,9 +1,8 @@
-
 export const TRANSLATIONS = {
   en: {
     dashboard: {
       greeting: 'Welcome,',
-      welcome_back: 'Welcome to Lucent AI',
+      welcome_back: 'Welcome to FAInance',
       subtitle: 'Here is the summary of your financial life.',
       balance: 'Available Balance',
       real_available: 'Real Available',
@@ -122,7 +121,7 @@ export const TRANSLATIONS = {
           installments_number: 'Number of Installments',
           placeholderDesc: 'e.g., Coffee shop',
           placeholderCategory: 'Select a category',
-          placeholderPayment: 'Select a payment method',
+          placeholderPayment: 'Select a method',
           placeholderCard: 'Select a card',
           available: 'Available',
           cash: 'Cash / Debit',
@@ -187,7 +186,7 @@ export const TRANSLATIONS = {
   pt: {
     dashboard: {
       greeting: 'Bem-vindo(a),',
-      welcome_back: 'Bem-vindo(a) ao Lucent AI',
+      welcome_back: 'Bem-vindo(a) ao FAInance',
       subtitle: 'Aqui está o resumo da sua vida financeira.',
       balance: 'Saldo Disponível',
       real_available: 'Disponível Real',
@@ -219,7 +218,7 @@ export const TRANSLATIONS = {
         system: 'Sistema',
     },
     transaction: {
-      header: 'Transação',
+      header: 'Transaction',
       date: 'Data',
       amount: 'Valor',
       actions: 'Ações',
@@ -228,7 +227,7 @@ export const TRANSLATIONS = {
     chat: {
       agent_title: 'Agente Financeiro IA',
       acting_as: 'Atuando como:',
-      level: 'Nível:',
+      level: 'Nivel:',
       support_level: 'Nível de Suporte',
       personality: 'Personalidade',
       placeholder: 'Pergunte qualquer coisa para {personalityName}...',
@@ -306,7 +305,7 @@ export const TRANSLATIONS = {
           installments_number: 'Número de Parcelas',
           placeholderDesc: 'ex: Cafeteria',
           placeholderCategory: 'Selecione uma categoria',
-          placeholderPayment: 'Selecione um meio de pagamento',
+          placeholderPayment: 'Selecione um meio',
           placeholderCard: 'Selecione um cartão',
           available: 'Disponível',
           cash: 'Dinheiro / Débito',
@@ -371,7 +370,7 @@ export const TRANSLATIONS = {
   es: {
     dashboard: {
       greeting: 'Bienvenido(a),',
-      welcome_back: 'Bienvenido(a) a Lucent AI',
+      welcome_back: 'Bienvenido(a) a FAInance',
       subtitle: 'Aquí está el resumen de tu vida financiera.',
       balance: 'Saldo Disponible',
       real_available: 'Disponible Real',
@@ -403,7 +402,7 @@ export const TRANSLATIONS = {
         system: 'Sistema',
     },
     transaction: {
-      header: 'Transacción',
+      header: 'Transaction',
       date: 'Fecha',
       amount: 'Monto',
       actions: 'Acciones',
@@ -442,7 +441,7 @@ export const TRANSLATIONS = {
     },
     toasts: {
       profile: {
-        title: 'Perfil Actualizado',
+        title: 'Perfil Atualizado',
         description: 'Tu información ha sido guardada con éxito.',
       },
       transaction: {
@@ -457,7 +456,7 @@ export const TRANSLATIONS = {
         title: 'Éxito',
         description: 'Se crearon {count} cuotas.',
       },
-ai: {
+      ai: {
         title: 'Sugerencia de IA',
         description: 'Hemos categorizado esto como "{category}".',
       },
@@ -490,7 +489,7 @@ ai: {
           installments_number: 'Número de Cuotas',
           placeholderDesc: 'ej: Cafetería',
           placeholderCategory: 'Selecciona una categoría',
-          placeholderPayment: 'Selecciona un método de pago',
+          placeholderPayment: 'Selecciona un método',
           placeholderCard: 'Selecciona una tarjeta',
           available: 'Disponible',
           cash: 'Efectivo / Débito',
@@ -520,11 +519,11 @@ ai: {
       },
       card: {
           add: {
-              title: 'Añadir Nueva Tarjeta de Crédito',
+              title: 'Añadir Nueva Tarjeta',
               subtitle: 'Introduce los detalles de tu nueva tarjeta.'
           },
           edit: {
-              title: 'Editar Tarjeta de Crédito',
+              title: 'Editar Tarjeta',
               subtitle: 'Actualiza los detalles de tu tarjeta.'
           },
           fields: {

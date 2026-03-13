@@ -34,7 +34,7 @@ export default function HelpPage() {
             Central de Ajuda
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Entenda o <span className="text-primary">Lucent AI</span>
+            Entenda o <span className="text-primary">FAInance</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Descubra por que seu saldo bancário mente para você e como o Jorgin calcula sua verdadeira liberdade financeira.
@@ -109,7 +109,7 @@ export default function HelpPage() {
           </div>
           
           <p className="text-sm text-muted-foreground text-center italic mt-4">
-            "Não conte com o dinheiro que já tem dono. O Lucent protege você de gastar o que é da fatura."
+            "Não conte com o dinheiro que já tem dono. O FAInance protege você de gastar o que é da fatura."
           </p>
         </section>
 

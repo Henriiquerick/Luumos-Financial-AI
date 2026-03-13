@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +9,7 @@ import QueryProvider from '@/components/providers/query-provider';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Lucent AI',
+  title: 'FAInance',
   description: 'Your personal AI-powered finance assistant.',
   manifest: '/manifest.json',
 };

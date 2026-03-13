@@ -38,7 +38,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center bg-background">
       <div className="flex items-center gap-3 mb-4">
         <Bot className="w-12 h-12 text-primary" />
-        <h1 className="text-5xl font-bold tracking-tighter text-zinc-900 dark:text-white">Lucent AI</h1>
+        <h1 className="text-5xl font-bold tracking-tighter text-zinc-900 dark:text-white">FAInance</h1>
       </div>
       <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-md">
         Your personal AI-powered finance assistant. Sign in to continue your journey to financial clarity.

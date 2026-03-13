@@ -1,4 +1,3 @@
-
 import { Bot, LogOut, Tags, Menu, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { Button } from './ui/button';
@@ -59,7 +58,7 @@ export default function Header({ userProfile, activePersonality }: HeaderProps) 
       <header className="w-full max-w-7xl mx-auto mb-8 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Bot className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold tracking-tighter">Lucent AI</h1>
+          <h1 className="text-3xl font-bold tracking-tighter">FAInance</h1>
         </div>
         
         <AlertDialog>
