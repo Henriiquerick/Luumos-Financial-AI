@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FAInance</string>
+    <string name="title_activity_main">FAInance</string>
+    <string name="package_name">com.fainance.app</string>
+    <string name="custom_url_scheme">com.fainance.app</string>
+</resources>
