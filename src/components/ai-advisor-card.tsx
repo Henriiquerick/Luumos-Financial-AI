@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -14,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useTranslation } from '@/contexts/language-context';
 import { collection, query, orderBy, addDoc, updateDoc, arrayUnion, Timestamp, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { getApiUrl } from '@/lib/api-client';
 
 interface AiAdvisorCardProps {
   knowledge: AIKnowledgeLevel;
@@ -123,7 +125,7 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
         language,
       };
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(getApiUrl('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.uid, messages: newMessages, data: contextData }),
@@ -137,18 +139,13 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
       
       const modelMessage: ChatMessage = { role: 'model', content: result.text, timestamp: Timestamp.now() };
       
-      // We need to make sure we have a session ID before updating
       if (currentSessionId) {
           const sessionRef = doc(firestore, 'users', user.uid, 'chat_sessions', currentSessionId);
           await updateDoc(sessionRef, { messages: arrayUnion(modelMessage) });
-      } else {
-          // This case should ideally not happen if the logic above is correct
-          console.error("No active session ID to save model message");
       }
 
     } catch (error: any) {
       console.error('Failed to get advice:', error);
-      // Revert the optimistic user message on error
       setMessages(prev => prev.slice(0, -1));
       setChatError(error.message);
     } finally {
@@ -374,5 +371,3 @@ export function AiAdvisorCard({ knowledge, personality, onKnowledgeChange, onPer
     </Card>
   );
 }
-
-    

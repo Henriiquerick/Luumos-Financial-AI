@@ -8,6 +8,7 @@ import { Bot, AlertCircle } from 'lucide-react';
 import type { AIPersonality, Transaction } from '@/lib/types';
 import { useTranslation } from '@/contexts/language-context';
 import { useUser } from '@/firebase';
+import { getApiUrl } from '@/lib/api-client';
 
 interface DailyInsightCardProps {
   transactions: Transaction[];
@@ -29,7 +30,6 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
 
   useEffect(() => {
     const fetchInsight = async () => {
-      // 1. Guarda de segurança para garantir que o usuário está logado
       if (!user?.uid) {
         setError('User not authenticated.');
         setIsLoading(false);
@@ -46,7 +46,6 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
         const cachedItem = localStorage.getItem(cacheKey);
         if (cachedItem) {
           const cached: CachedInsight = JSON.parse(cachedItem);
-          // O insight agora independe da personalidade, então removemos a verificação
           if (cached.date === todayStr) {
             setInsight(cached.insight);
             setIsLoading(false);
@@ -54,8 +53,8 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
           }
         }
 
-        // 2. CORREÇÃO: Enviando o userId no corpo da requisição
-        const response = await fetch('/api/daily-insight', {
+        // Chamada usando a URL base absoluta para compatibilidade mobile
+        const response = await fetch(getApiUrl('/api/daily-insight'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -88,13 +87,12 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
       }
     };
 
-    // A chamada agora só depende do usuário estar logado
     if (user) {
       fetchInsight();
     } else if (!user) {
         setIsLoading(false);
     }
-  }, [user, t, personality.name]); // Removido transactions e balance para evitar re-chamadas desnecessárias
+  }, [user, t, personality.name]);
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 animate-fade-in">

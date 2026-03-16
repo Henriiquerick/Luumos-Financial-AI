@@ -26,6 +26,7 @@ import { DatePicker } from './ui/date-picker';
 import { MoneyInput } from './ui/money-input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatDate } from '@/lib/i18n-utils';
+import { getApiUrl } from '@/lib/api-client';
 
 
 const formSchema = z.object({
@@ -84,7 +85,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     if (transactionToEdit) {
       const isCard = !!transactionToEdit.cardId;
       reset({
-        description: transactionToEdit.description.replace(/\s\(\d+\/\d+\)$/, ''), // Remove sufixo da parcela
+        description: transactionToEdit.description.replace(/\s\(\d+\/\d+\)$/, ''), 
         amount: transactionToEdit.installments > 1 ? transactionToEdit.amount * transactionToEdit.installments : transactionToEdit.amount,
         date: getDateFromTimestamp(transactionToEdit.date),
         type: transactionToEdit.type,
@@ -132,7 +133,6 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     return null;
   }, [selectedCardId, paymentMethod, transactions, creditCards]);
     
-  // Lógica para encontrar e exibir parcelas
   const isEditingInstallmentParent = transactionToEdit?.installments && transactionToEdit.installments > 1 && transactionToEdit.installmentId && !/\(\d+\/\d+\)$/.test(transactionToEdit.description);
   const futureInstallments = useMemo(() => {
     if (!isEditingInstallmentParent || !transactionToEdit) return [];
@@ -156,7 +156,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
     try {
       const userHistory = transactions.slice(0, 10).map(t => ({ description: t.description, category: t.category }));
       
-      const response = await fetch('/api/categorize', {
+      const response = await fetch(getApiUrl('/api/categorize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description, userHistory }),
@@ -218,7 +218,6 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           updatedAt: Timestamp.now(),
         };
         
-        // Se a transação editada for uma parcela, não podemos alterar esses campos
         if (transactionToEdit.installments <= 1) {
             if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
                 dataToUpdate.cardId = values.cardId;
@@ -233,7 +232,6 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         toast({ title: "Transação Atualizada", description: `A transação foi atualizada com sucesso.` });
 
       } else {
-        // CREATE LOGIC
         const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
         const recurringId = crypto.randomUUID();
 

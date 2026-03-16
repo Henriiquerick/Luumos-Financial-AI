@@ -11,6 +11,7 @@ import { PLAN_LIMITS, ADS_WATCH_LIMITS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AdSimulatorModal } from './ad-simulator-modal';
+import { getApiUrl } from '@/lib/api-client';
 
 interface EnergyCreditsDisplayProps {
   userProfile: UserProfile;
@@ -39,7 +40,8 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
 
     setIsAdLoading(true);
     try {
-      const response = await fetch('/api/reward-ad', {
+      // Chamada usando a URL base absoluta para compatibilidade mobile
+      const response = await fetch(getApiUrl('/api/reward-ad'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.uid }),
@@ -55,7 +57,7 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
       }
       
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000); // Stop confetti after 5 seconds
+      setTimeout(() => setShowConfetti(false), 5000); 
 
       toast({
         title: 'Recompensa Recebida!',
@@ -69,7 +71,7 @@ export function EnergyCreditsDisplay({ userProfile, subscription }: EnergyCredit
       });
     } finally {
       setIsAdLoading(false);
-      callback(); // Close the modal
+      callback(); 
     }
   };
 
