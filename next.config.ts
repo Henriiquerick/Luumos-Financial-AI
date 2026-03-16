@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // CORREÇÃO PARA AMBIENTE FIREBASE STUDIO / CLOUD WORKSTATIONS
+  // Permite que o Next.js aceite requisições do proxy do ambiente de desenvolvimento
+  experimental: {
+    allowedDevOrigins: [
+      '*.cloudworkstations.dev',
+      'localhost:9002'
+    ]
+  }
   
   // Nota: 'headers', 'rewrites' e 'redirects' não são suportados com 'output: export'
   // pois dependem de um servidor ativo. Configurações de CORS devem ser feitas na API (Vercel).
