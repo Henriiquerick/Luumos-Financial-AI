@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import type { CreditCard, Transaction } from '@/lib/types';
-import { getCardUsage } from '@/lib/finance-utils';
+import { getCardUsage, getDateFromTimestamp } from '@/lib/finance-utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
@@ -20,10 +20,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/contexts/language-context';
 import { useCurrency } from '@/contexts/currency-context';
-import Image from 'next/image';
 import { getBankTheme } from '@/lib/bank-colors';
-import { CARD_BRANDS, VOUCHER_ISSUERS } from '@/lib/card-brands';
+import { CARD_BRANDS } from '@/lib/card-brands';
 import { BrandIcon } from './ui/brand-icon';
+import { BankLogo } from './icons/bank-logos';
 
 interface CreditCardCardProps {
   card: CreditCard;
@@ -49,20 +49,6 @@ export function CreditCardCard({
   
   const brand = CARD_BRANDS[card.brand as keyof typeof CARD_BRANDS];
   const theme = getBankTheme(card.issuer);
-
-  const issuerIcon = useMemo(() => {
-    // Para vouchers, o ícone da bandeira é o mesmo do emissor
-    if (card.type === 'voucher') {
-        const issuerKey = card.issuer.toLowerCase().replace(/\s+/g, '');
-        const brandData = Object.values(CARD_BRANDS).find(b => b.name.toLowerCase().replace(/\s+/g, '').includes(issuerKey));
-        if (brandData) return brandData.icon;
-    }
-    // Para outros, tentamos achar um logo de banco, se não, usamos o da bandeira (Visa, etc)
-    const issuerKey = card.issuer.toLowerCase().replace(/\s+/g, '');
-    const bankBrandData = Object.values(CARD_BRANDS).find(b => b.name.toLowerCase().replace(/\s+/g, '') === issuerKey);
-    return bankBrandData?.icon || brand?.icon;
-  }, [card.issuer, card.type, brand]);
-
 
   const handleDeleteConfirm = () => {
     onDelete(card.id);
@@ -95,6 +81,7 @@ export function CreditCardCard({
         }}
         onClick={() => isMenuOpen && setIsMenuOpen(false)}
       >
+        {/* Camada da Marca D'água (Fundo) - BANDEIRA (Ex: Mastercard) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-20 pointer-events-none z-0 flex items-center justify-center">
             {brand?.icon && <BrandIcon icon={brand.icon} className="w-full h-full object-contain" />}
         </div>
@@ -114,14 +101,14 @@ export function CreditCardCard({
                 </CardHeader>
 
                 <div className="p-4 flex items-center gap-2">
-                    {issuerIcon && (
-                        <div className="bg-white/10 p-1 rounded-md backdrop-blur-sm">
-                            <BrandIcon
-                                icon={issuerIcon}
-                                className="h-6 w-auto max-w-[50px] object-contain"
-                            />
-                        </div>
-                    )}
+                    {/* LOGO DO BANCO (Substituindo a bandeira redundante) */}
+                    <div className="bg-white/10 p-1 rounded-md backdrop-blur-sm flex items-center justify-center w-10 h-8">
+                        <BankLogo
+                            brand={card.issuer}
+                            className="w-full h-full object-contain"
+                        />
+                    </div>
+                    
                     <div
                       className="z-50"
                       style={{ pointerEvents: 'auto' }}
