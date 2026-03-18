@@ -1,6 +1,6 @@
 'use client';
 import {
-  Auth, // Import Auth type for type hinting
+  Auth,
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -29,10 +29,33 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
   // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
 
-/** Initiate Google sign-in (non-blocking). */
+/** 
+ * Initiate Google sign-in (non-blocking) using Popup strategy.
+ * 
+ * IMPORTANT FOR MOBILE (Capacitor): 
+ * We must use signInWithPopup instead of signInWithRedirect because 
+ * WebViews often lose the application state during domain redirection, 
+ * causing "missing initial state" errors.
+ */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
-  // CRITICAL: Call signInWithPopup directly. Do NOT use 'await signInWithPopup(...)'.
-  signInWithPopup(authInstance, provider);
-   // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+  
+  // Custom scopes can be added here if needed
+  // provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+  signInWithPopup(authInstance, provider)
+    .then((result) => {
+      // Success is handled by the onAuthStateChanged listener in FirebaseProvider
+      console.log("Login social bem-sucedido:", result.user.displayName);
+    })
+    .catch((error) => {
+      // Handle mobile-specific popup issues
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.warn("O usuário fechou a janela de login antes de completar o processo.");
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        console.warn("Uma solicitação de popup anterior foi cancelada.");
+      } else {
+        console.error("Erro crítico na autenticação via Popup:", error.message);
+      }
+    });
 }

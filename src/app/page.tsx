@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2 } from "lucide-react";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { initiateGoogleSignIn } from "@/firebase/non-blocking-login";
 
 export default function LoginPage() {
   const { user, isUserLoading } = useUser();
@@ -20,10 +20,8 @@ export default function LoginPage() {
 
   const handleSignIn = () => {
     if (!auth) return;
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider).catch(error => {
-      console.error("Error signing in with Google:", error);
-    });
+    // Centralizamos a lógica no helper non-blocking para garantir consistência entre Web e Mobile
+    initiateGoogleSignIn(auth);
   };
 
   if (isUserLoading || user) {
