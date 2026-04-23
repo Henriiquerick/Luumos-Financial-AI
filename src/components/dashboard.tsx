@@ -221,6 +221,32 @@ export default function Dashboard() {
     setIsGoalDialogOpen(true);
   };
 
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!user || !firestore) return;
+
+    const goalToDelete = goals.find(g => g.id === goalId);
+    if (!goalToDelete) return;
+
+    if (window.confirm(t.modals.delete_goal.confirmation.replace('{goalTitle}', goalToDelete.title))) {
+      try {
+        const goalRef = doc(firestore, 'users', user.uid, 'goals', goalId);
+        await deleteDoc(goalRef);
+        toast({
+          title: t.toasts.goal_deleted.title,
+          description: t.toasts.goal_deleted.description,
+        });
+        handleInvalidateQueries();
+      } catch (error) {
+        console.error('Error deleting goal:', error);
+        toast({
+          variant: 'destructive',
+          title: t.toasts.error.title,
+          description: t.toasts.error.description,
+        });
+      }
+    }
+  };
+
   const handleAddProgress = (goal: FinancialGoal) => {
     setGoalToAddProgress(goal);
     setIsAddProgressDialogOpen(true);
@@ -338,6 +364,7 @@ export default function Dashboard() {
                     onAddGoal={handleAddGoal}
                     onEditGoal={handleEditGoal}
                     onAddProgress={handleAddProgress}
+                    onDeleteGoal={handleDeleteGoal}
                 />
                 <InstallmentTunnelChart transactions={transactions} cards={creditCards} />
               </div>

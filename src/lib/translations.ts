@@ -84,6 +84,10 @@ export const TRANSLATIONS = {
         title: 'Transaction Deleted',
         description: 'The transaction has been successfully removed.',
       },
+      goal_deleted: {
+        title: 'Goal Deleted',
+        description: 'The financial goal has been removed.',
+      },
       installments: {
         title: 'Success',
         description: '{count} installments were created.',
@@ -180,6 +184,9 @@ export const TRANSLATIONS = {
       },
       delete_transaction: {
           confirmation: 'Are you sure you want to delete this transaction?',
+      },
+      delete_goal: {
+          confirmation: 'Are you sure you want to delete the goal "{goalTitle}"?',
       }
     }
   },
@@ -267,6 +274,10 @@ export const TRANSLATIONS = {
       transaction_deleted: {
         title: 'Transação Excluída',
         description: 'A transação foi removida com sucesso.',
+      },
+      goal_deleted: {
+        title: 'Meta Excluída',
+        description: 'A meta financeira foi removida com sucesso.',
       },
       installments: {
         title: 'Sucesso',
@@ -364,6 +375,9 @@ export const TRANSLATIONS = {
       },
       delete_transaction: {
           confirmation: 'Você tem certeza que deseja excluir esta transação?',
+      },
+      delete_goal: {
+          confirmation: 'Tem certeza que deseja excluir a meta "{goalTitle}"?',
       }
     }
   },
@@ -409,7 +423,7 @@ export const TRANSLATIONS = {
       no_transactions: 'Aún no hay transacciones. ¡Añade una para empezar!',
     },
     chat: {
-      agent_title: 'Agente Financiero de IA',
+      agent_title: 'Agente Financeiro de IA',
       acting_as: 'Actuando como:',
       level: 'Nivel:',
       support_level: 'Nivel de Soporte',
@@ -452,6 +466,10 @@ export const TRANSLATIONS = {
         title: 'Transacción Eliminada',
         description: 'La transacción ha sido eliminada con éxito.',
       },
+      goal_deleted: {
+        title: 'Meta Eliminada',
+        description: 'La meta financiera ha sido eliminada con éxito.',
+      },
       installments: {
         title: 'Éxito',
         description: 'Se crearon {count} cuotas.',
@@ -492,7 +510,7 @@ export const TRANSLATIONS = {
           placeholderPayment: 'Selecciona un método',
           placeholderCard: 'Selecciona una tarjeta',
           available: 'Disponible',
-          cash: 'Efectivo / Débito',
+          cash: 'Efectivo / Debito',
           creditCard: 'Tarjeta de Crédito'
         },
         submit: {
@@ -548,6 +566,9 @@ export const TRANSLATIONS = {
       },
       delete_transaction: {
           confirmation: '¿Estás seguro de que quieres eliminar esta transacción?',
+      },
+      delete_goal: {
+          confirmation: '¿Estás seguro de que quieres eliminar la meta "{goalTitle}"?',
       }
     }
   },

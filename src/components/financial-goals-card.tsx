@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Target, Edit, PlusCircle } from 'lucide-react';
+import { Plus, Target, Edit, PlusCircle, Trash2 } from 'lucide-react';
 import type { FinancialGoal } from '@/lib/types';
 import { Progress } from './ui/progress';
 import { useCurrency } from '@/contexts/currency-context';
@@ -14,9 +13,10 @@ interface FinancialGoalsCardProps {
   onAddGoal: () => void;
   onEditGoal: (goal: FinancialGoal) => void;
   onAddProgress: (goal: FinancialGoal) => void;
+  onDeleteGoal: (goalId: string) => void;
 }
 
-export function FinancialGoalsCard({ goals, onAddGoal, onEditGoal, onAddProgress }: FinancialGoalsCardProps) {
+export function FinancialGoalsCard({ goals, onAddGoal, onEditGoal, onAddProgress, onDeleteGoal }: FinancialGoalsCardProps) {
   const { formatMoney } = useCurrency();
 
   return (
@@ -60,6 +60,9 @@ export function FinancialGoalsCard({ goals, onAddGoal, onEditGoal, onAddProgress
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => onEditGoal(goal)}>
                         <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDeleteGoal(goal.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                 </div>
               </div>
