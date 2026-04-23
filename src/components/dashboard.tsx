@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -317,6 +318,35 @@ export default function Dashboard() {
       }
     }
   };
+
+  const handleResetData = async () => {
+    if (!user || !firestore) return;
+    if (!window.confirm(t.modals.reset_data.confirmation)) return;
+
+    try {
+      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+      const snapshot = await getDocs(transactionsRef);
+      const batch = writeBatch(firestore);
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      
+      toast({
+        title: t.toasts.reset_success.title,
+        description: t.toasts.reset_success.description,
+      });
+
+      handleInvalidateQueries();
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      toast({
+        variant: 'destructive',
+        title: t.toasts.error.title,
+        description: t.toasts.error.description,
+      });
+    }
+  };
   
   const visibleCards = creditCards.filter(card => !optimisticDeletedCardIds.includes(card.id));
 
@@ -336,6 +366,7 @@ export default function Dashboard() {
                     netBalance={netBalance} 
                     cashBalance={cashBalance}
                     onAddTransaction={handleAddTransaction} 
+                    onResetData={handleResetData}
                 />
             </div>
               <div className='md:col-span-2 lg:col-span-2'>

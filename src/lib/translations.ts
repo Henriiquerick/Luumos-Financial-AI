@@ -8,6 +8,7 @@ export const TRANSLATIONS = {
       real_available: 'Real Available',
       in_account: 'In account:',
       add_transaction: 'Add Transaction',
+      reset_test: 'Reset Data (Test)',
       recent_activity: 'Recent Activity',
       last_transactions: 'Your last 5 transactions.',
       installment_tunnel: 'Installment Tunnel',
@@ -102,6 +103,10 @@ export const TRANSLATIONS = {
           description: 'The card "{cardName}" and its transactions have been removed.',
         },
       },
+      reset_success: {
+          title: 'Data Cleared',
+          description: 'All transactions have been removed for testing.',
+      },
       error: {
         title: 'Error',
         description: 'Could not complete the operation.',
@@ -187,6 +192,9 @@ export const TRANSLATIONS = {
       },
       delete_goal: {
           confirmation: 'Are you sure you want to delete the goal "{goalTitle}"?',
+      },
+      reset_data: {
+          confirmation: 'WARNING: This will delete ALL your transactions for testing purposes. This cannot be undone. Do you want to continue?',
       }
     }
   },
@@ -199,6 +207,7 @@ export const TRANSLATIONS = {
       real_available: 'Disponível Real',
       in_account: 'Em conta:',
       add_transaction: 'Adicionar Transação',
+      reset_test: 'Limpar Tudo (Teste)',
       recent_activity: 'Atividade Recente',
       last_transactions: 'Suas últimas 5 transações.',
       installment_tunnel: 'Túnel de Parcelas',
@@ -293,6 +302,10 @@ export const TRANSLATIONS = {
           description: 'O cartão "{cardName}" e suas transações foram removidos.',
         },
       },
+      reset_success: {
+          title: 'Dados Limpos',
+          description: 'Todas as transações foram removidas para teste.',
+      },
       error: {
         title: 'Erro',
         description: 'Não foi possível completar a operação.',
@@ -378,6 +391,9 @@ export const TRANSLATIONS = {
       },
       delete_goal: {
           confirmation: 'Tem certeza que deseja excluir a meta "{goalTitle}"?',
+      },
+      reset_data: {
+          confirmation: 'ATENÇÃO: Isso excluirá TODAS as suas transações para fins de teste. Esta ação não pode ser desfeita. Deseja continuar?',
       }
     }
   },
@@ -390,7 +406,8 @@ export const TRANSLATIONS = {
       real_available: 'Disponible Real',
       in_account: 'En cuenta:',
       add_transaction: 'Añadir Transacción',
-      recent_activity: 'Actividad Reciente',
+      reset_test: 'Limpiar Todo (Prueba)',
+      recent_activity: 'Atividad Reciente',
       last_transactions: 'Tus últimas 5 transacciones.',
       installment_tunnel: 'Túnel de Cuotas',
       installment_subtitle: 'Las facturas de tu tarjeta de crédito proyectadas para los próximos 6 meses.',
@@ -438,7 +455,7 @@ export const TRANSLATIONS = {
         rick: "Muy bien, Morty, ¿en qué lío financiero te has metido esta vez? No me hagas perder el tiempo.",
         biro: "¡Hola, campeón! Tu tío favorito está aquí. ¿Qué te preocupa? Vamos a resolverlo juntos.",
         jorgin: "¡Hola, cari! Cuéntame el chisme. ¿Qué vamos a manifestar hoy, un millón de dólares o solo el brunch? ✨",
-        luna: "Saludos, alma cósmica. Los astros me dicen que buscas alineación financiera. ¿Cómo puedo ayudarte a manifestar abundancia hoy? 🔮"
+        luna: "Saludos, alma cósmica. Los astros me dicen que busca alineación financiera. ¿Cómo puedo ayudarte a manifestar abundancia hoy? 🔮"
       }
     },
     header: {
@@ -484,9 +501,13 @@ export const TRANSLATIONS = {
           description: 'La tarjeta "{cardName}" y sus transacciones han sido eliminadas.',
         },
       },
+      reset_success: {
+          title: 'Datos Limpios',
+          description: 'Todas las transacciones han sido eliminadas para prueba.',
+      },
       error: {
         title: 'Error',
-        description: 'No se pudo completar la operación.',
+        description: 'No se pudo completar la operação.',
       },
     },
     modals: {
@@ -569,6 +590,9 @@ export const TRANSLATIONS = {
       },
       delete_goal: {
           confirmation: '¿Estás seguro de que quieres eliminar la meta "{goalTitle}"?',
+      },
+      reset_data: {
+          confirmation: 'ADVERTENCIA: Esto eliminará TODAS sus transacciones para fines de prueba. Esto no se puede deshacer. ¿Quieres continuar?',
       }
     }
   },

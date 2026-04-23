@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/contexts/currency-context';
@@ -12,9 +12,10 @@ interface BalanceCardProps {
   netBalance: number;
   cashBalance: number;
   onAddTransaction: () => void;
+  onResetData: () => void;
 }
 
-export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: BalanceCardProps) {
+export function BalanceCard({ netBalance, cashBalance, onAddTransaction, onResetData }: BalanceCardProps) {
   const { t } = useTranslation();
   const { formatMoney } = useCurrency();
   
@@ -26,10 +27,21 @@ export function BalanceCard({ netBalance, cashBalance, onAddTransaction }: Balan
     <Card className="bg-card/50 border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-gray-300">{t.dashboard.real_available}</CardTitle>
-        <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={onAddTransaction}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          {t.dashboard.add_transaction}
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden lg:flex text-muted-foreground hover:text-destructive" 
+                onClick={onResetData}
+                title={t.dashboard.reset_test}
+            >
+                <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="hidden lg:flex" onClick={onAddTransaction}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                {t.dashboard.add_transaction}
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className={cn(
