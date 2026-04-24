@@ -38,10 +38,13 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<void> {
 
   if (isNative) {
     try {
-      console.log("Iniciando login nativo do Google...");
+      console.log("Iniciando login nativo do Google com ClientID...");
       
-      // 1. Aciona o fluxo nativo (Android/iOS)
-      const result = await FirebaseAuthentication.signInWithGoogle();
+      // 1. Aciona o fluxo nativo (Android/iOS) passando o Web Client ID explicitamente
+      // Isso resolve o erro 10 (DEVELOPER_ERROR) ao garantir que o token seja gerado para a audiência correta.
+      const result = await FirebaseAuthentication.signInWithGoogle({
+        clientId: "543656462486-uno69olc77m798vd6ockucdovj9j3oie.apps.googleusercontent.com"
+      });
       
       if (result.credential?.idToken) {
         // 2. Transforma o token nativo em uma credencial do Firebase JS SDK
@@ -57,7 +60,7 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<void> {
       console.error("Erro no login nativo:", error.message);
       // O erro '12501' no Android significa que o usuário cancelou o popup
       if (error.code !== '12501') {
-        alert("Falha no login nativo. Verifique se o Google Play Services está atualizado.");
+        alert("Falha no login nativo. Verifique se o Google Play Services está atualizado e se o SHA-1 está correto no console Firebase.");
       }
     }
   } else {
