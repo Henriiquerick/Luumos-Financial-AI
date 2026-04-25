@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Configura o Next.js para gerar apenas arquivos estáticos (HTML/CSS/JS)
   // Essencial para empacotamento com Capacitor/Cordova
-  output: 'export',
+  // output: 'export',
   
   // Otimização de imagem nativa do Next.js requer um servidor Node.js rodando.
   // No modo 'export', precisamos desativar ou usar um loader externo.
