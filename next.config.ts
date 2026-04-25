@@ -30,7 +30,22 @@ const nextConfig: NextConfig = {
       '*.cloudworkstations.dev',
       'localhost:9002'
     ]
-  }
+  },
+  async headers() {
+    return [
+      {
+        // Aplica essas regras de liberação para TODAS as rotas dentro de /api
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          // O asterisco (*) libera o acesso para qualquer origem, incluindo o 'https://localhost' do celular
+          { key: "Access-Control-Allow-Origin", value: "*" }, 
+          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+          { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
+        ]
+      }
+    ];
+  },
 };
 
 export default nextConfig;
