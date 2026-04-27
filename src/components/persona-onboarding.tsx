@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -6,38 +5,34 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AIPersonality, AIKnowledgeLevel } from '@/lib/types';
-import { Bot, Loader2, UserCircle2 } from 'lucide-react'; // Adicionei UserCircle2
+import { Bot, Loader2, UserCircle2 } from 'lucide-react';
 import { KNOWLEDGE_LEVELS, PERSONALITIES } from '@/lib/agent-config';
-
-// Imports do Firebase (Mantendo a correção do loop)
 import { initializeFirebase } from '@/firebase'; 
 import { doc, setDoc } from 'firebase/firestore';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Briefcase, Calendar, MapPin, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface PersonaOnboardingProps {
   onComplete: (persona: AIPersonality, knowledge: AIKnowledgeLevel) => void;
 }
 
 export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedKnowledge, setSelectedKnowledge] = useState<AIKnowledgeLevel | null>(null);
   const [selectedPersonality, setSelectedPersonality] = useState<AIPersonality | null>(null);
-  
-  // NOVO ESTADO: Gênero
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
-  
   const [isLoading, setIsLoading] = useState(false);
 
-  // Estados do Perfil (Passo 1) 
+  // Estados do Perfil
   const [firstName, setFirstName] = useState(''); 
   const [lastName, setLastName] = useState(''); 
   const [birthDate, setBirthDate] = useState(''); 
   const [city, setCity] = useState(''); 
   const [jobTitle, setJobTitle] = useState(''); 
   const [company, setCompany] = useState('');
-
 
   const { auth, firestore: db } = initializeFirebase();
 
@@ -48,7 +43,6 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
   };
 
   const handleConfirm = async () => {
-    // Validação completa
     if (!selectedKnowledge || !selectedPersonality || !selectedGender) return;
 
     setIsLoading(true);
@@ -59,40 +53,35 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
       if (user && db) {
         const userRef = doc(db, 'users', user.uid);
         
-        console.log("💾 Salvando perfil completo...");
-        
         await setDoc(userRef, {
-           // Dados Pessoais
           firstName,
           lastName,
           birthDate,
           city,
           jobTitle,
           company,
-          displayName: `${firstName} ${lastName}`, // Nome composto para facilitar
-          
-          // Configurações da IA
+          displayName: `${firstName} ${lastName}`,
           aiPersonality: selectedPersonality.id,
           aiKnowledgeLevel: selectedKnowledge.id,
           gender: selectedGender,
-          
-          // Metadados
           onboardingCompleted: true,
           email: user.email,
           updatedAt: new Date(),
           uid: user.uid
         }, { merge: true });
 
-        console.log("✅ Sucesso!");
+        console.log("✅ Perfil criado com sucesso!");
+        
+        // Bug 2 Fix: Redirecionamento fluído para evitar hang de loading
+        router.push('/dashboard');
+        // Pequeno atraso para o roteador assumir o controle antes de sumir o loader
+        setTimeout(() => setIsLoading(false), 500); 
       }
     } catch (error: any) {
-      console.error("❌ ERRO:", error);
-      alert(`Erro ao salvar: ${error.message}`);
+      console.error("❌ ERRO NO SALVAMENTO:", error);
+      alert(`Erro ao salvar perfil: ${error.message}`);
       setIsLoading(false);
-      return; 
     }
-
-    window.location.href = '/dashboard';
   };
 
   const isProfileValid = firstName.trim() !== '' && lastName.trim() !== '';
@@ -232,7 +221,7 @@ export function PersonaOnboarding({ onComplete }: PersonaOnboardingProps) {
         </>
       )}
 
-      {/* --- PASSO 4: GÊNERO (NOVO) --- */}
+      {/* --- PASSO 4: GÊNERO --- */}
       {step === 4 && (
         <>
           <div className="flex items-center gap-3 mb-4">

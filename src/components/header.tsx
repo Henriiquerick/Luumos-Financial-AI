@@ -13,6 +13,8 @@ import { ManageCategoriesDialog } from './manage-categories-dialog';
 import { EnergyCreditsDisplay } from './energy-credits-display';
 import { useSubscription } from '@/hooks/useSubscription';
 import { CurrencySwitcher } from './currency-switcher';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,9 +48,20 @@ export default function Header({ userProfile, activePersonality }: HeaderProps) 
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const { subscription } = useSubscription();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (auth) {
-      auth.signOut();
+      // Bug 1 Fix: No celular, precisamos deslogar do plugin nativo para limpar o cache de contas do Google
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await FirebaseAuthentication.signOut();
+          console.log("Sessão nativa do Google encerrada.");
+        } catch (error) {
+          console.error("Erro ao encerrar sessão nativa:", error);
+        }
+      }
+      
+      // Encerra sessão no Firebase JS SDK
+      await auth.signOut();
       router.push('/');
     }
   };
