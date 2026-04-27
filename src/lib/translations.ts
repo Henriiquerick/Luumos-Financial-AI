@@ -1,7 +1,7 @@
 export const TRANSLATIONS = {
   en: {
     dashboard: {
-      greeting: 'Welcome,',
+      greeting: 'Greetings,',
       welcome_back: 'Welcome to FAInance',
       subtitle: 'Here is the summary of your financial life.',
       balance: 'Available Balance',
@@ -16,6 +16,16 @@ export const TRANSLATIONS = {
       daily_insight: 'Daily Insight',
       insight_error: '({personalityName}): The market is volatile, but I am watching. Try again later.',
       view_full_history: 'View Full History',
+      pagination: {
+        rows_per_page: 'Rows per page:',
+        page_of: 'Page {current} of {total}',
+        prev: 'Previous',
+        next: 'Next'
+      },
+      modules: {
+        goals: 'Financial Goals',
+        help: 'Help Center'
+      }
     },
     history: {
       title: 'Transaction History',
@@ -200,8 +210,8 @@ export const TRANSLATIONS = {
   },
   pt: {
     dashboard: {
-      greeting: 'Bem-vindo(a),',
-      welcome_back: 'Bem-vindo(a) ao FAInance',
+      greeting: 'Boas-vindas,',
+      welcome_back: 'Boas-vindas ao FAInance',
       subtitle: 'Aqui está o resumo da sua vida financeira.',
       balance: 'Saldo Disponível',
       real_available: 'Disponível Real',
@@ -215,6 +225,16 @@ export const TRANSLATIONS = {
       daily_insight: 'Insight Diário',
       insight_error: '({personalityName}): O mercado está volátil, mas estou de olho. Tente novamente mais tarde.',
       view_full_history: 'Ver Histórico Completo',
+      pagination: {
+        rows_per_page: 'Linhas por página:',
+        page_of: 'Página {current} de {total}',
+        prev: 'Anterior',
+        next: 'Próximo'
+      },
+      modules: {
+        goals: 'Metas Financeiras',
+        help: 'Central de Ajuda'
+      }
     },
     history: {
       title: 'Histórico de Transações',
@@ -234,7 +254,7 @@ export const TRANSLATIONS = {
         system: 'Sistema',
     },
     transaction: {
-      header: 'Transaction',
+      header: 'Transação',
       date: 'Data',
       amount: 'Valor',
       actions: 'Ações',
@@ -243,7 +263,7 @@ export const TRANSLATIONS = {
     chat: {
       agent_title: 'Agente Financeiro IA',
       acting_as: 'Atuando como:',
-      level: 'Nivel:',
+      level: 'Nível:',
       support_level: 'Nível de Suporte',
       personality: 'Personalidade',
       placeholder: 'Pergunte qualquer coisa para {personalityName}...',
@@ -399,7 +419,7 @@ export const TRANSLATIONS = {
   },
   es: {
     dashboard: {
-      greeting: 'Bienvenido(a),',
+      greeting: 'Boas-vindas,',
       welcome_back: 'Bienvenido(a) a FAInance',
       subtitle: 'Aquí está el resumen de tu vida financiera.',
       balance: 'Saldo Disponible',
@@ -414,6 +434,16 @@ export const TRANSLATIONS = {
       daily_insight: 'Insight Diario',
       insight_error: '({personalityName}): El mercado está volátil, pero estoy atento. Inténtalo de nuevo más tarde.',
       view_full_history: 'Ver Historial Completo',
+      pagination: {
+        rows_per_page: 'Filas por página:',
+        page_of: 'Página {current} de {total}',
+        prev: 'Anterior',
+        next: 'Siguiente'
+      },
+      modules: {
+        goals: 'Metas Financieras',
+        help: 'Centro de Ayuda'
+      }
     },
     history: {
       title: 'Historial de Transacciones',
@@ -433,7 +463,7 @@ export const TRANSLATIONS = {
         system: 'Sistema',
     },
     transaction: {
-      header: 'Transaction',
+      header: 'Transacción',
       date: 'Fecha',
       amount: 'Monto',
       actions: 'Acciones',
@@ -570,7 +600,7 @@ export const TRANSLATIONS = {
               limit: 'Límite Total',
               balance: 'Saldo Disponible',
               closingDay: 'Día de Cierre',
-              dueDay: 'Día de Vencimiento',
+              dueDay: 'Día de Vencimento',
               expiryDate: 'Fecha de Caducidad',
               color: 'Color de la Tarjeta',
               namePlaceholder: 'ej: Tarjeta Principal',

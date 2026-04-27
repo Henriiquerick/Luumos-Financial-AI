@@ -19,13 +19,14 @@ interface DailyInsightCardProps {
 interface CachedInsight {
   date: string;
   insight: string;
+  lang: string;
 }
 
 export function DailyInsightCard({ transactions, personality, balance }: DailyInsightCardProps) {
   const [insight, setInsight] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useUser();
 
   useEffect(() => {
@@ -46,33 +47,29 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
         const cachedItem = localStorage.getItem(cacheKey);
         if (cachedItem) {
           const cached: CachedInsight = JSON.parse(cachedItem);
-          if (cached.date === todayStr) {
+          // BUG FIX: Refetch if language changed or date is different
+          if (cached.date === todayStr && cached.lang === language) {
             setInsight(cached.insight);
             setIsLoading(false);
             return;
           }
         }
 
-        // Chamada usando a URL base absoluta para compatibilidade mobile
         const response = await fetch(getApiUrl('/api/daily-insight'), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId: user.uid }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.uid, language }),
         });
 
         const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch daily insight');
-        }
+        if (!response.ok) throw new Error(result.error || 'Failed to fetch daily insight');
         
         if (result.insight) {
           setInsight(result.insight);
           const newCache: CachedInsight = {
             date: todayStr,
             insight: result.insight,
+            lang: language
           };
           localStorage.setItem(cacheKey, JSON.stringify(newCache));
         } else {
@@ -89,10 +86,10 @@ export function DailyInsightCard({ transactions, personality, balance }: DailyIn
 
     if (user) {
       fetchInsight();
-    } else if (!user) {
+    } else {
         setIsLoading(false);
     }
-  }, [user, t, personality.name]);
+  }, [user, language, personality.name, t.dashboard.insight_error]);
 
   return (
     <Card className="bg-card/50 border-accent/20 shadow-lg shadow-accent/5 animate-fade-in">

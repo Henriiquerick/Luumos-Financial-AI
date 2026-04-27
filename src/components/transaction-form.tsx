@@ -39,7 +39,6 @@ const formSchema = z.object({
   installments: z.coerce.number().int().min(2).max(60).optional(),
   paymentMethod: z.enum(['cash', 'card']),
   cardId: z.string().optional(),
-  // Campos Recorrentes
   isRecurring: z.boolean(),
   frequency: z.enum(['weekly', 'monthly', 'yearly']).optional(),
   endDate: z.date().optional(),
@@ -126,7 +125,6 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
       try {
         return getCardUsage(selectedCardId, transactions, creditCards);
       } catch (error) {
-        console.error(error);
         return null;
       }
     }
@@ -162,16 +160,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
         body: JSON.stringify({ description, userHistory }),
       });
 
-      if (!response.ok) {
-        throw new Error('AI categorization request failed');
-      }
+      if (!response.ok) throw new Error('AI categorization request failed');
 
       const result = await response.json();
-      
-      const allCategoryNames = [
-        ...DEFAULT_CATEGORIES.map(c => c.value),
-        ...customCategories.map(c => c.name)
-      ];
+      const allCategoryNames = [...DEFAULT_CATEGORIES.map(c => c.value), ...customCategories.map(c => c.name)];
 
       if (result.category && allCategoryNames.includes(result.category)) {
         setValue('category', result.category);
@@ -186,30 +178,25 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   
   useEffect(() => {
     if (transactionToEdit) return; 
-
     if (transactionType === 'income') {
       setValue('paymentMethod', 'cash'); 
       setValue('isInstallment', false); 
       setValue('isRecurring', false);
       const currentCategory = getValues('category');
       const isExpenseCategory = DEFAULT_CATEGORIES.find(c => c.value === currentCategory && c.type === 'expense');
-      if (isExpenseCategory || !currentCategory) {
-        setValue('category', 'Salary'); 
-      }
+      if (isExpenseCategory || !currentCategory) setValue('category', 'Salary'); 
     }
   }, [transactionType, setValue, transactionToEdit, getValues]);
 
 
   async function onSubmit(values: FormValues) {
     if (!user || !firestore) return;
-    
     const formattedAmount = formatMoney(values.amount);
     
     try {
       if (transactionToEdit) {
         const transactionRef = doc(firestore, 'users', user.uid, 'transactions', transactionToEdit.id);
-        
-        const dataToUpdate: Partial<Transaction> & { date: Timestamp, updatedAt: any } = {
+        const dataToUpdate: any = {
           description: values.description.trim(),
           amount: Number(values.amount),
           category: values.category,
@@ -218,140 +205,111 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
           updatedAt: Timestamp.now(),
         };
         
-        if (transactionToEdit.installments <= 1) {
-            if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
-                dataToUpdate.cardId = values.cardId;
-            } else {
-                dataToUpdate.cardId = undefined;
-            }
+        // BUG FIX: Sanitize cardId to avoid Firestore Error (undefined)
+        if (values.type === 'expense' && values.paymentMethod === 'card' && values.cardId) {
+            dataToUpdate.cardId = values.cardId;
+        } else {
+            dataToUpdate.cardId = null; // Explicit null for Firestore
         }
         
-        Object.keys(dataToUpdate).forEach(key => (dataToUpdate as any)[key] === undefined && delete (dataToUpdate as any)[key]);
-
         await updateDoc(transactionRef, dataToUpdate);
         toast({ title: "Transação Atualizada", description: `A transação foi atualizada com sucesso.` });
-
       } else {
         const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
         const recurringId = crypto.randomUUID();
 
         if (values.isRecurring) {
-            const initialTransactionData = {
-                description: values.description,
-                amount: values.amount,
+            // BUG FIX: Sanitize cardId for Recurring Initial Transaction
+            const initialTransactionData: any = {
+                description: values.description.trim(),
+                amount: Number(values.amount),
                 category: values.category,
                 date: Timestamp.fromDate(values.date),
                 type: 'expense',
                 installments: 1,
                 recurringId: recurringId,
-                cardId: values.paymentMethod === 'card' ? values.cardId : undefined,
             };
+            if (values.paymentMethod === 'card' && values.cardId) {
+                initialTransactionData.cardId = values.cardId;
+            } else {
+                initialTransactionData.cardId = null;
+            }
+
             addDocumentNonBlocking(transactionsRef, initialTransactionData);
 
             let nextTriggerDate;
             switch (values.frequency) {
-                case 'weekly':
-                    nextTriggerDate = addWeeks(values.date, 1);
-                    break;
-                case 'yearly':
-                    nextTriggerDate = addYears(values.date, 1);
-                    break;
-                case 'monthly':
-                default:
-                    nextTriggerDate = addMonths(values.date, 1);
-                    break;
+                case 'weekly': nextTriggerDate = addWeeks(values.date, 1); break;
+                case 'yearly': nextTriggerDate = addYears(values.date, 1); break;
+                default: nextTriggerDate = addMonths(values.date, 1); break;
             }
-            const recurringRef = collection(firestore, 'users', user.uid, 'recurring_expenses');
-            const recurringData: Omit<RecurringExpense, 'id'> = {
+            
+            const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
+            const recurringData: any = {
                 id: recurringId,
                 userId: user.uid,
-                description: values.description,
-                amount: values.amount,
+                description: values.description.trim(),
+                amount: Number(values.amount),
                 category: values.category,
                 frequency: values.frequency!,
                 startDate: Timestamp.fromDate(values.date),
-                endDate: values.endDate ? Timestamp.fromDate(values.endDate) : undefined,
                 nextTriggerDate: Timestamp.fromDate(nextTriggerDate),
                 isActive: true,
                 createdAt: Timestamp.now(),
             };
-            
-            const recurringDocRef = doc(firestore, 'users', user.uid, 'recurring_expenses', recurringId);
-            await setDoc(recurringDocRef, recurringData, { merge: false });
+            if (values.endDate) recurringData.endDate = Timestamp.fromDate(values.endDate);
 
-            toast({
-                title: "Despesa Recorrente Criada",
-                description: `${values.description} será cobrado ${values.frequency === 'monthly' ? 'mensalmente' : values.frequency === 'weekly' ? 'semanalmente' : 'anualmente'}.`
-            });
+            await setDoc(recurringDocRef, recurringData);
+            toast({ title: "Despesa Recorrente Criada", description: `${values.description} criada com sucesso.` });
             
         } else if (values.isInstallment && values.type === 'expense' && values.paymentMethod === 'card' && values.installments) {
           const batch = writeBatch(firestore);
           const installmentId = crypto.randomUUID();
           const installmentAmount = values.amount / values.installments;
-
           const selectedCard = creditCards.find(c => c.id === values.cardId);
           let firstBillDate = values.date;
 
           if (selectedCard && selectedCard.closingDay > 0) {
-              const purchaseDay = getDate(values.date);
-              if (purchaseDay > selectedCard.closingDay) {
-                  firstBillDate = addMonths(values.date, 1);
-              }
+              if (getDate(values.date) > selectedCard.closingDay) firstBillDate = addMonths(values.date, 1);
           }
           
           for (let i = 0; i < values.installments; i++) {
             const newDocRef = doc(transactionsRef);
             const installmentDate = addMonths(firstBillDate, i);
-            
-            const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, createdAt: any, updatedAt: any, category: string } = {
-              description: i === 0 ? values.description : `${values.description} (${i + 1}/${values.installments})`,
+            batch.set(newDocRef, {
+              description: i === 0 ? values.description.trim() : `${values.description.trim()} (${i + 1}/${values.installments})`,
               amount: installmentAmount,
               category: values.category,
               date: Timestamp.fromDate(installmentDate),
               type: 'expense',
               installments: values.installments,
               installmentId: installmentId,
-              cardId: values.cardId,
+              cardId: values.cardId || null,
               createdAt: Timestamp.now(),
               updatedAt: Timestamp.now(),
-            };
-            batch.set(newDocRef, transactionData);
+            });
           }
           await batch.commit();
           toast({ title: t.toasts.installments.title, description: t.toasts.installments.description.replace('{count}', String(values.installments)) });
-        
         } else { 
-          const transactionData: Omit<Transaction, 'id' | 'date'> & { date: Timestamp, cardId?: string, category: string } = {
-            description: values.description,
-            amount: values.amount,
+          const transactionData: any = {
+            description: values.description.trim(),
+            amount: Number(values.amount),
             category: values.category,
             date: Timestamp.fromDate(values.date),
             type: values.type,
             installments: 1,
+            cardId: (values.type === 'expense' && values.paymentMethod === 'card') ? (values.cardId || null) : null
           };
-          
-          if (values.type === 'expense' && values.paymentMethod === 'card') {
-            transactionData.cardId = values.cardId;
-          }
-
-          addDocumentNonBlocking(transactionsRef, transactionData as any);
-          toast({
-            title: t.toasts.transaction.title,
-            description: t.toasts.transaction.description.replace('{amount}', formattedAmount),
-          });
+          addDocumentNonBlocking(transactionsRef, transactionData);
+          toast({ title: t.toasts.transaction.title, description: t.toasts.transaction.description.replace('{amount}', formattedAmount) });
         }
       }
-      
       onSave();
       form.reset();
-
     } catch (e) {
         console.error("Erro ao salvar transação:", e);
-        toast({
-            variant: "destructive",
-            title: t.toasts.error.title,
-            description: `Ocorreu um erro ao salvar. Verifique o console para mais detalhes.`,
-        });
+        toast({ variant: "destructive", title: t.toasts.error.title, description: `Erro ao salvar transação.` });
     }
   }
 
@@ -360,12 +318,10 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
   const categoriesToShow = useMemo(() => {
     const defaultCats = DEFAULT_CATEGORIES.filter(c => c.type === transactionType);
     const customCats = customCategories.filter(c => c.type === transactionType);
-    
-    const all = [
+    return [
       ...customCats.map(c => ({ value: c.name, label: c.name, icon: c.icon })),
       ...defaultCats.map(c => ({ value: c.value, label: TRANSLATED_CATEGORIES[language][c.labelKey as TransactionCategory], icon: c.icon }))
     ];
-    return all;
   }, [transactionType, customCategories, language]);
 
 
@@ -406,7 +362,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               </FormItem>
             )}
           />
-          <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-6 text-primary hover:text-accent" onClick={handleAutoCategorize} disabled={isCategorizing}>
+          <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-6 text-primary hover:text-accent w-12 h-12" onClick={handleAutoCategorize} disabled={isCategorizing}>
             {isCategorizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           </Button>
         </div>
@@ -416,14 +372,9 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             name="amount"
             render={({ field: { onChange, value, ...rest } }) => (
               <FormItem>
-                <FormLabel>{isInstallment ? `Valor Total da Compra` : t.modals.transaction.fields.amount}</FormLabel>
+                <FormLabel>{isInstallment ? `Total` : t.modals.transaction.fields.amount}</FormLabel>
                 <FormControl>
-                  <MoneyInput
-                    placeholder="R$ 0,00"
-                    value={value}
-                    onValueChange={(value) => onChange(value)}
-                    {...rest}
-                  />
+                  <MoneyInput placeholder="R$ 0,00" value={value} onValueChange={(value) => onChange(value)} {...rest} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -436,10 +387,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               <FormItem className="flex flex-col">
                 <FormLabel>{isRecurring ? "Data de Início" : t.modals.transaction.fields.date}</FormLabel>
                  <FormControl>
-                    <DatePicker 
-                        value={field.value}
-                        onChange={field.onChange}
-                    />
+                    <DatePicker value={field.value} onChange={field.onChange} />
                  </FormControl>
                 <FormMessage />
               </FormItem>
@@ -479,10 +427,8 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
               control={control}
               name="isRecurring"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel className="flex items-center"><Repeat className="mr-2 h-4 w-4"/>Despesa Recorrente?</FormLabel>
-                  </div>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                  <FormLabel className="flex items-center text-base"><Repeat className="mr-2 h-5 w-5"/>Despesa Recorrente?</FormLabel>
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
@@ -500,11 +446,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     <FormItem>
                         <FormLabel>Frequência</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Selecione a frequência" />
-                                </SelectTrigger>
-                            </FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="weekly">Semanal</SelectItem>
                                 <SelectItem value="monthly">Mensal</SelectItem>
@@ -521,10 +463,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                     render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Termina em (Opcional)</FormLabel>
-                        <DatePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                        />
+                        <DatePicker value={field.value} onChange={field.onChange} />
                         <FormMessage />
                     </FormItem>
                     )}
@@ -541,11 +480,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 <FormItem>
                   <FormLabel>{t.modals.transaction.fields.paymentMethod}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isInstallment && !!transactionToEdit}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} />
-                      </SelectTrigger>
-                    </FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t.modals.transaction.fields.placeholderPayment} /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="cash">{t.modals.transaction.fields.cash}</SelectItem>
                       <SelectItem value="card">{t.modals.transaction.fields.creditCard}</SelectItem>
@@ -563,11 +498,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.card}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || ''} disabled={isInstallment && !!transactionToEdit}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t.modals.transaction.fields.placeholderCard} />
-                        </SelectTrigger>
-                      </FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder={t.modals.transaction.fields.placeholderCard} /></SelectTrigger></FormControl>
                       <SelectContent>
                         {creditCards.map(card => <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>)}
                       </SelectContent>
@@ -586,13 +517,9 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 control={control}
                 name="isInstallment"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>{t.modals.transaction.fields.installments}</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} disabled={!!transactionToEdit}/>
-                    </FormControl>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                    <FormLabel className="text-base">{t.modals.transaction.fields.installments}</FormLabel>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} disabled={!!transactionToEdit}/></FormControl>
                   </FormItem>
                 )}
               />
@@ -604,9 +531,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.modals.transaction.fields.installments_number}</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="2" max="60" {...field} readOnly={!!transactionToEdit}/>
-                    </FormControl>
+                    <FormControl><Input type="number" min="2" max="60" {...field} readOnly={!!transactionToEdit}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -617,20 +542,17 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
        
         <Button 
           type="submit" 
-          className={cn(
-            "w-full",
-            transactionType === 'income' && !transactionToEdit ? 'bg-green-600 hover:bg-green-700' : ''
-          )} 
+          className={cn("w-full h-14 text-lg", transactionType === 'income' && !transactionToEdit ? 'bg-green-600 hover:bg-green-700' : '')} 
           disabled={isSubmitDisabled}
         >
-          {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {form.formState.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
           {transactionToEdit ? t.modals.transaction.submit.save : (transactionType === 'income' ? t.modals.transaction.submit.addIncome : t.modals.transaction.submit.addExpense)}
         </Button>
         
         {isEditingInstallmentParent && futureInstallments.length > 0 && (
           <Collapsible className="mt-4 border-t pt-4">
             <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between">
+                <Button variant="ghost" className="w-full justify-between h-12">
                     <span>Ver parcelas futuras ({futureInstallments.length})</span>
                     <ChevronsUpDown className="h-4 w-4"/>
                 </Button>
@@ -638,7 +560,7 @@ export function TransactionForm({ onSave, transactions, creditCards, customCateg
             <CollapsibleContent>
                 <div className="mt-2 space-y-2 rounded-md border p-2">
                 {futureInstallments.map(installment => (
-                    <div key={installment.id} className="flex justify-between items-center text-sm p-2 rounded bg-muted/50">
+                    <div key={installment.id} className="flex justify-between items-center text-sm p-3 rounded bg-muted/50">
                         <span className="text-muted-foreground">{installment.description}</span>
                         <div className="text-right">
                             <span className="font-semibold">{formatMoney(installment.amount)}</span>

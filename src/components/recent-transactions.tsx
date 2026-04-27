@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -43,7 +44,7 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
 
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
   };
 
   const getCategoryDisplay = (categoryName: string) => {
@@ -56,7 +57,6 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
       const defaultIcon = DEFAULT_CATEGORY_ICONS[categoryName as TransactionCategory] || '📦';
       return { name: defaultName, icon: defaultIcon };
     }
-    
     return { name: categoryName, icon: '📦' };
   }
 
@@ -67,69 +67,67 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
         <CardDescription>{t.dashboard.last_transactions}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t.transaction.header}</TableHead>
-              <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
-              <TableHead className="text-right">{t.transaction.amount}</TableHead>
-              <TableHead className="text-right">{t.transaction.actions}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayedTransactions.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  {t.transaction.no_transactions}
-                </TableCell>
+                <TableHead>{t.transaction.header}</TableHead>
+                <TableHead className="hidden md:table-cell">{t.transaction.date}</TableHead>
+                <TableHead className="text-right">{t.transaction.amount}</TableHead>
+                <TableHead className="text-right">{t.transaction.actions}</TableHead>
               </TableRow>
-            ) : (
-              displayedTransactions.map((t) => {
-                const categoryDisplay = getCategoryDisplay(t.category);
-                // A primeira parcela é aquela que tem installments > 1 mas não tem o sufixo (x/y)
-                const isFirstInstallment = t.installments > 1 && !/\(\d+\/\d+\)$/.test(t.description);
-                
-                return (
-                  <TableRow key={t.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted/50 rounded-md text-xl">
-                          <span role="img">{categoryDisplay.icon}</span>
-                        </div>
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {t.description}
-                            {isFirstInstallment && <Badge variant="secondary">1/{t.installments}</Badge>}
+            </TableHeader>
+            <TableBody>
+              {displayedTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-10">
+                    {t.transaction.no_transactions}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayedTransactions.map((t) => {
+                  const categoryDisplay = getCategoryDisplay(t.category);
+                  const isFirstInstallment = t.installments > 1 && !/\(\d+\/\d+\)$/.test(t.description);
+                  
+                  return (
+                    <TableRow key={t.id} className="h-16">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-muted/50 rounded-md text-xl min-w-[40px] flex items-center justify-center">
+                            <span role="img">{categoryDisplay.icon}</span>
                           </div>
-                          <div className="text-sm text-muted-foreground hidden md:block">{categoryDisplay.name}</div>
+                          <div className="truncate max-w-[120px] md:max-w-none">
+                            <div className="font-medium flex items-center gap-2 truncate">
+                              {t.description}
+                              {isFirstInstallment && <Badge variant="secondary" className="text-[10px]">1/{t.installments}</Badge>}
+                            </div>
+                            <div className="text-xs text-muted-foreground hidden md:block">{categoryDisplay.name}</div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
-                    <TableCell className={`text-right font-semibold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
-                      {t.type === 'income' ? '+' : '-'}
-                      {formatMoney(t.amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(t)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => onDelete(t)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{formatDate(language, t.date as Date)}</TableCell>
+                      <TableCell className={`text-right font-bold ${t.type === 'income' ? 'text-primary' : 'text-red-400'}`}>
+                        {t.type === 'income' ? '+' : '-'}{formatMoney(t.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(t)} className="w-11 h-11"><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onDelete(t)} className="w-11 h-11 text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
-       <CardFooter className="flex items-center justify-between flex-wrap gap-4">
+       <CardFooter className="flex items-center justify-between flex-wrap gap-4 pt-4 border-t">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Linhas por página:</span>
+          <span>{t.dashboard.pagination.rows_per_page}</span>
           <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-10 w-[80px]">
               <SelectValue placeholder={itemsPerPage} />
             </SelectTrigger>
             <SelectContent>
@@ -141,23 +139,25 @@ export function RecentTransactions({ transactions, categories, onEdit, onDelete 
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">
-            Página {currentPage} de {totalPages > 0 ? totalPages : 1}
+            {t.dashboard.pagination.page_of.replace('{current}', String(currentPage)).replace('{total}', String(totalPages > 0 ? totalPages : 1))}
           </span>
           <Button
             variant="outline"
             size="sm"
+            className="h-10 px-4"
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
-            Anterior
+            {t.dashboard.pagination.prev}
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="h-10 px-4"
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
           >
-            Próximo
+            {t.dashboard.pagination.next}
           </Button>
         </div>
       </CardFooter>
