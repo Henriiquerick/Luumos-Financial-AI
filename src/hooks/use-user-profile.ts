@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -24,48 +23,57 @@ export interface UserProfile {
   isAdmin?: boolean;
 }
 
+/**
+ * Hook centralizado para gerenciar o estado do Usuário (Auth) e seu Perfil (Firestore).
+ * Essencial para fluxos de redirecionamento e proteção de rotas.
+ */
 export function useUserProfile() {
   const { auth, firestore: db } = initializeFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Detecta o Usuário Auth
+  // 1. Monitora o estado de autenticação (Firebase Auth)
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
       return;
     };
+
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
+      
+      // Se não houver usuário logado, paramos o loading aqui
       if (!currentUser) {
         setProfile(null);
         setIsLoading(false);
       }
     });
+
     return () => unsubscribe();
   }, [auth]);
 
-  // 2. Busca o Documento do Firestore
+  // 2. Busca o perfil detalhado no Firestore se o usuário estiver logado
   useEffect(() => {
+    // Se não há usuário logado ou o DB não iniciou, não há perfil para buscar
     if (!user || !db) {
-        // Se não há usuário, a "carga" terminou.
-        if (!user) setIsLoading(false);
         return;
     };
 
     const userRef = doc(db, 'users', user.uid);
-    // Escuta em tempo real
+    
+    // Escuta o documento em tempo real para reagir a mudanças no onboarding
     const unsubscribe = onSnapshot(userRef, (docSnapshot) => {
       if (docSnapshot.exists()) {
         setProfile({ uid: user.uid, ...docSnapshot.data() } as UserProfile);
       } else {
-        console.warn("⚠️ Documento de usuário não encontrado no Firestore.");
+        console.warn("ℹ️ useUserProfile: Documento não encontrado. Usuário pode ser novo.");
         setProfile(null);
       }
+      // Marcar como carregado apenas após a tentativa de busca no Firestore
       setIsLoading(false);
     }, (error) => {
-      console.error("Erro ao buscar perfil:", error);
+      console.error("❌ useUserProfile: Erro ao buscar perfil:", error);
       setProfile(null);
       setIsLoading(false);
     });
