@@ -158,6 +158,73 @@ export default function Dashboard() {
   
   const handleAddTransaction = () => { setEditingTransaction(null); setIsTransactionDialogOpen(true); };
   const handleEditTransaction = (transaction: Transaction) => { setEditingTransaction(transaction); setIsTransactionDialogOpen(true); };
+
+  const handleUndoDelete = (deletedTransactions: Transaction[]) => {
+    if (!user || !firestore) return;
+    const batch = writeBatch(firestore);
+    deletedTransactions.forEach(t => {
+        const docRef = doc(firestore, 'users', user.uid, 'transactions', t.id);
+        const firestoreTransaction = { ...t, date: new Date(t.date as any) }; 
+        batch.set(docRef, firestoreTransaction);
+    });
+    batch.commit().then(() => {
+        toast({ title: "Restaurado!", description: "A transação foi restaurada." });
+        handleInvalidateQueries();
+    }).catch(err => {
+        console.error("Error undoing delete:", err);
+        toast({ title: "Erro", description: "Não foi possível restaurar a transação.", variant: "destructive" });
+    });
+  };
+
+  const handleDeleteTransaction = async (transactionToDelete: Transaction) => {
+    if (!user || !firestore) return;
+  
+    const isInstallment = transactionToDelete.installments && transactionToDelete.installments > 1;
+    const confirmationMessage = isInstallment
+      ? "Esta é uma compra parcelada. Deseja excluir esta e todas as parcelas futuras?"
+      : t.modals.delete_transaction.confirmation;
+  
+    if (window.confirm(confirmationMessage)) {
+      try {
+        const transactionsToDeleteRaw: Transaction[] = [];
+
+        if (isInstallment && transactionToDelete.installmentId) {
+          const batch = writeBatch(firestore);
+          const installmentsQuery = query(
+            collection(firestore, 'users', user.uid, 'transactions'),
+            where('installmentId', '==', transactionToDelete.installmentId),
+            where('date', '>=', transactionToDelete.date)
+          );
+  
+          const querySnapshot = await getDocs(installmentsQuery);
+          querySnapshot.forEach(docSnap => {
+            transactionsToDeleteRaw.push({ id: docSnap.id, ...docSnap.data() } as Transaction);
+            batch.delete(docSnap.ref);
+          });
+  
+          await batch.commit();
+          toast({ 
+              title: "Parcelas Excluídas", 
+              description: "A transação e suas parcelas futuras foram removidas.",
+              action: <ToastAction altText="Desfazer" onClick={() => handleUndoDelete(transactionsToDeleteRaw)}>Desfazer</ToastAction>
+          });
+        } else {
+          transactionsToDeleteRaw.push(transactionToDelete);
+          await deleteDoc(doc(firestore, 'users', user.uid, 'transactions', transactionToDelete.id));
+          toast({ 
+              title: t.toasts.transaction_deleted.title, 
+              description: t.toasts.transaction_deleted.description,
+              action: <ToastAction altText="Desfazer" onClick={() => handleUndoDelete(transactionsToDeleteRaw)}>Desfazer</ToastAction>
+          });
+        }
+        handleInvalidateQueries();
+      } catch (error) {
+        console.error("Error deleting transaction(s): ", error);
+        toast({ title: t.toasts.error.title, description: t.toasts.error.description, variant: 'destructive' });
+      }
+    }
+  };
+
   const handleAddGoal = () => { setEditingGoal(null); setIsGoalDialogOpen(true); };
   const handleEditGoal = (goal: FinancialGoal) => { setEditingGoal(goal); setIsGoalDialogOpen(true); };
 
@@ -196,7 +263,6 @@ export default function Dashboard() {
   
   const visibleCards = creditCards.filter(card => !optimisticDeletedCardIds.includes(card.id));
 
-  // FEATURE: Dashboard Reordering based on preferences
   const moduleOrder = userProfile.frequentModules || ['balance', 'insight', 'cards', 'goals', 'tunnel', 'advisor', 'transactions'];
 
   const renderModule = (mod: string) => {
